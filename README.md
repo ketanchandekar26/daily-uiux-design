@@ -20,7 +20,7 @@ Every daily challenge is executed under four core engineering pillars:
 | Day | Challenge Prompt | Category | Interactive Prototype | Status |
 | :---: | :--- | :--- | :--- | :---: |
 | **001** | **Sign Up & Onboarding** | Auth / SaaS | [Day 001 Prototype](./day-001-sign-up/index.html) | ✅ Completed |
-| **002** | Credit Card Checkout | E-Commerce / Fintech | *Upcoming* | ⏳ Queued |
+| **002** | **Credit Card Checkout** | E-Commerce / Fintech | [Day 002 Prototype](./day-002-checkout/index.html) | ✅ Completed |
 | **003** | Landing Page Hero & Value Prop | Marketing / SaaS | *Upcoming* | ⏳ Queued |
 | **004** | Calculator / Currency Converter | Utility / Fintech | *Upcoming* | ⏳ Queued |
 | **005** | App Icon & Brand Identity | Visual Design | *Upcoming* | ⏳ Queued |

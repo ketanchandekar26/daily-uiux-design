@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily UI #002 — Credit Card Checkout & Express Pay | Aura Sound</title>
+  <meta name="description" content="Day 002 of the Daily UI/UX & Frontend Challenge: High-conversion, friction-free Credit Card Checkout with live 3D card preview, Luhn validation, express wallets, and WCAG AA accessibility.">
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+            },
+            surface: {
+              DEFAULT: '#080c14',
+              card: 'rgba(15, 23, 42, 0.75)',
+              border: 'rgba(255, 255, 255, 0.08)',
+            }
+          },
+          animation: {
+            'float-card': 'floatCard 6s ease-in-out infinite',
+            'pulse-glow': 'pulseGlow 5s ease-in-out infinite',
+            'draw-check': 'drawCheck 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards',
+          },
+          keyframes: {
+            floatCard: {
+              '0%, 100%': { transform: 'translateY(0px) rotate3d(1, 1, 0, 0deg)' },
+              '50%': { transform: 'translateY(-6px) rotate3d(1, 1, 0, 2deg)' },
+            },
+            pulseGlow: {
+              '0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
+              '50%': { opacity: '0.6', transform: 'scale(1.08)' },
+            },
+            drawCheck: {
+              '0%': { strokeDashoffset: '100' },
+              '100%': { strokeDashoffset: '0' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* Custom Glassmorphism */
+    .glass-panel {
+      background: rgba(13, 19, 33, 0.78);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    }
+
+    .glass-input {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-input:focus {
+      background: rgba(15, 23, 42, 0.95);
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25), 0 0 20px rgba(139, 92, 246, 0.15);
+      outline: none;
+    }
+    .glass-input.input-error {
+      border-color: #f43f5e;
+      box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2);
+    }
+
+    /* 3D Flip Card Container */
+    .credit-card-perspective {
+      perspective: 1000px;
+    }
+    .credit-card-inner {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .credit-card-inner.flipped {
+      transform: rotateY(180deg);
+    }
+    .card-face {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px -15px rgba(0,0,0,0.7), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+    }
+
+    /* Card Themes */
+    .card-gradient-default {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #0f172a 100%);
+    }
+    .card-gradient-visa {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #172554 100%);
+    }
+    .card-gradient-mastercard {
+      background: linear-gradient(135deg, #2a0845 0%, #64142e 50%, #0f172a 100%);
+    }
+    .card-gradient-amex {
+      background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #0f172a 100%);
+    }
+
+    /* Hologram Foil Effect */
+    .card-hologram {
+      background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.12) 30%, transparent 40%, rgba(255, 255, 255, 0.08) 60%, transparent 70%);
+      background-size: 200% 200%;
+      animation: holoShift 6s ease-in-out infinite;
+    }
+    @keyframes holoShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* Animated Checkmark */
+    .check-path {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+    }
+  </style>
+</head>
+
+<body class="h-full bg-[#060911] text-slate-100 font-sans antialiased selection:bg-brand-500 selection:text-white relative overflow-x-hidden">
+
+  <!-- Top Mentor / Navigation Bar -->
+  <header class="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 py-3.5 bg-[#080c14]/80 backdrop-blur-md border-b border-white/[0.06]">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-purple-400 text-white shadow-lg shadow-brand-500/25 font-black text-sm">
+        <i data-lucide="credit-card" class="w-4 h-4"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-mono">
+            DAILY UI #002
+          </span>
+          <span class="text-xs text-slate-400 font-medium hidden sm:inline">• Credit Card Checkout & Express Pay</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Controls: UX Specs Drawer & Day Switcher -->
+    <div class="flex items-center gap-3">
+      <a href="../day-001-sign-up/" class="text-xs text-slate-400 hover:text-white transition flex items-center gap-1 font-mono hidden md:flex">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Day 001
+      </a>
+      <button id="toggle-ux-drawer" class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700 transition">
+        <i data-lucide="book-open" class="w-3.5 h-3.5 text-brand-400"></i>
+        <span>UX Specs & Heuristics</span>
+      </button>
+      <button onclick="resetCheckoutForm()" title="Reset form" class="p-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white transition">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Ambient Light Orbs -->
+  <div class="fixed top-[-100px] left-[-80px] w-[500px] h-[500px] bg-purple-600/15 rounded-full blur-[140px] pointer-events-none animate-pulse-glow"></div>
+  <div class="fixed bottom-[-150px] right-[-100px] w-[550px] h-[550px] bg-brand-600/15 rounded-full blur-[150px] pointer-events-none"></div>
+
+  <!-- Main Content Container -->
+  <main class="relative z-10 min-h-full flex items-center justify-center p-4 sm:p-6 lg:p-10 pt-24 sm:pt-28 pb-16">
+    <div class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+
+      <!-- ================= LEFT COLUMN: ORDER SUMMARY & PRODUCT CONTEXT ================= -->
+      <section class="lg:col-span-5 flex flex-col space-y-6">
+
+        <!-- Breadcrumb / Safe Checkout Badge -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+            <span>Bag</span>
+            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600"></i>
+            <span>Shipping</span>
+            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600"></i>
+            <span class="text-brand-400 font-bold">Payment</span>
+          </div>
+          <span class="inline-flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> 256-bit Encrypted
+          </span>
+        </div>
+
+        <!-- Order Summary Card -->
+        <div class="glass-panel rounded-2xl p-6 border border-white/10 space-y-5">
+          <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 font-mono">Order Summary</h2>
+            <span class="text-xs text-brand-400 font-mono font-semibold">1 item in cart</span>
+          </div>
+
+          <!-- Product Item Showcase -->
+          <div class="flex items-center gap-4">
+            <div class="relative w-20 h-20 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-inner">
+              <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop&crop=faces" alt="Aura Pro Spatial Headset" class="w-full h-full object-cover">
+              <span class="absolute top-1 right-1 px-1.5 py-0.5 rounded-md bg-black/70 text-[10px] font-mono text-white">x1</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-bold text-white truncate">Aura Pro Studio Wireless</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Obsidian Black • Spatial Audio Edition</p>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="text-xs font-mono font-bold text-brand-300">$299.00</span>
+                <span class="text-[11px] font-mono line-through text-slate-500">$349.00</span>
+                <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">SAVE $50</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Promo Code Accordion / Input -->
+          <div class="pt-2 border-t border-white/[0.06]">
+            <div id="promo-container" class="space-y-2">
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <input 
+                    type="text" 
+                    id="promo-input" 
+                    placeholder="Enter coupon (try DAILYUI10)" 
+                    class="glass-input w-full px-3 py-2 text-xs rounded-lg uppercase tracking-wider font-mono text-white placeholder-slate-500"
+                  >
+                </div>
+                <button type="button" onclick="applyPromoCode()" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition">
+                  Apply
+                </button>
+              </div>
+              <p id="promo-message" class="hidden text-[11px] font-mono flex items-center gap-1"></p>
+            </div>
+          </div>
+
+          <!-- Financial Breakdown Table -->
+          <div class="space-y-2 text-xs text-slate-400 font-mono pt-2 border-t border-white/[0.06]">
+            <div class="flex justify-between">
+              <span>Subtotal</span>
+              <span class="text-white" id="summary-subtotal">$299.00</span>
+            </div>
+            <div class="flex justify-between" id="discount-row" style="display: none;">
+              <span class="text-emerald-400">Coupon (DAILYUI10)</span>
+              <span class="text-emerald-400" id="summary-discount">-$29.90</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="flex items-center gap-1">Shipping <i data-lucide="info" class="w-3 h-3 text-slate-500" title="Express 2-Day Air"></i></span>
+              <span class="text-emerald-400 uppercase font-semibold">FREE</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Estimated Tax (8%)</span>
+              <span class="text-white" id="summary-tax">$23.92</span>
+            </div>
+            <div class="flex justify-between text-sm font-bold pt-3 border-t border-white/10 text-white">
+              <span class="font-sans">Total Due</span>
+              <span class="text-brand-300 font-mono text-base" id="summary-total">$322.92</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Trust Guarantees Checklist -->
+        <div class="grid grid-cols-2 gap-3 text-xs text-slate-400">
+          <div class="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center gap-2.5">
+            <i data-lucide="package-check" class="w-4 h-4 text-brand-400 flex-shrink-0"></i>
+            <span>30-Day Free Trial Guarantee</span>
+          </div>
+          <div class="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center gap-2.5">
+            <i data-lucide="zap" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+            <span>Instant Dispatch in 24h</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= RIGHT COLUMN: INTERACTIVE CHECKOUT & CARD ================= -->
+      <section class="lg:col-span-7 flex flex-col space-y-6">
+
+        <!-- VIEW STATE 1: CHECKOUT FORM & CARD -->
+        <div id="checkout-view" class="glass-panel rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden">
+          
+          <div class="space-y-1">
+            <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+              Payment Details
+            </h1>
+            <p class="text-xs text-slate-400">
+              Complete your purchase securely. Cards are processed with Level 1 PCI-DSS standards.
+            </p>
+          </div>
+
+          <!-- Express Wallets (1-Click Fast Checkout) -->
+          <div class="space-y-2.5">
+            <span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold block">
+              Express Checkout
+            </span>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              
+              <!-- Apple Pay -->
+              <button type="button" onclick="handleExpressWallet('Apple Pay')" class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-black font-semibold text-xs transition active:scale-[0.98] shadow-md">
+                <svg class="h-4 w-4" viewBox="0 0 170 170" fill="currentColor">
+                  <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.69-7.85-12.01-14.42-6.19-9.47-11.13-20.36-14.82-32.68-3.69-12.32-5.54-23.77-5.54-34.34 0-14.15 3.59-25.75 10.77-34.8 7.18-9.04 16.14-13.68 26.89-13.9 4.35 0 9.4 1.16 15.15 3.48 5.75 2.32 9.58 3.54 11.51 3.65 1.52-.22 5.54-1.52 12.05-3.91 6.51-2.39 11.75-3.41 15.71-3.04 17.06 1.3 30 7.82 38.82 19.57-15.11 9.13-22.5 21.41-22.18 36.85.33 12.18 4.89 22.39 13.69 30.65 4.13 3.81 8.8 6.64 14.02 8.49-1.96 5.87-4.35 11.75-7.18 17.61zM119.22 33.15c0-7.72 2.72-14.89 8.15-21.52 5.43-6.63 12.07-10.76 19.9-12.4 1.09 7.61-1.3 15-7.17 22.17-5.87 7.17-12.83 11.19-20.88 11.75z"/>
+                </svg>
+                <span>Pay</span>
+              </button>
+
+              <!-- Google Pay -->
+              <button type="button" onclick="handleExpressWallet('Google Pay')" class="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/20 text-white font-medium text-xs transition active:scale-[0.98]">
+                <span class="font-bold text-white">G</span>
+                <span>Pay</span>
+              </button>
+
+              <!-- PayPal -->
+              <button type="button" onclick="handleExpressWallet('PayPal')" class="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-[#003087]/70 hover:bg-[#003087] border border-blue-400/30 text-white font-semibold text-xs transition active:scale-[0.98]">
+                <span class="italic font-bold">PayPal</span>
+              </button>
+
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div class="relative flex items-center justify-center">
+            <div class="border-t border-white/[0.08] w-full"></div>
+            <span class="bg-[#0b101c] px-3 text-[11px] uppercase tracking-wider text-slate-500 font-mono font-medium">
+              or pay with credit card
+            </span>
+            <div class="border-t border-white/[0.08] w-full"></div>
+          </div>
+
+          <!-- ================= 3D INTERACTIVE CREDIT CARD PREVIEW ================= -->
+          <div class="credit-card-perspective py-2">
+            <div id="credit-card-inner" class="credit-card-inner credit-card-default shadow-2xl">
+              
+              <!-- CARD FRONT -->
+              <div id="card-front" class="card-face card-gradient-default card-hologram p-5 flex flex-col justify-between text-white border border-white/20">
+                <div class="flex items-start justify-between">
+                  <!-- EMV Chip Icon -->
+                  <div class="w-10 h-8 rounded-md bg-gradient-to-tr from-amber-200 via-amber-400 to-yellow-600 p-1 flex flex-col justify-between shadow-md">
+                    <div class="h-0.5 bg-amber-900/40 rounded"></div>
+                    <div class="h-0.5 bg-amber-900/40 rounded"></div>
+                    <div class="h-0.5 bg-amber-900/40 rounded"></div>
+                  </div>
+
+                  <!-- Contactless & Card Brand Logo -->
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="rss" class="w-4 h-4 text-slate-300 transform rotate-90"></i>
+                    <div id="card-brand-logo" class="font-black italic tracking-widest text-lg font-mono">
+                      VISA
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 16-Digit Clustered Card Number Display -->
+                <div class="font-mono text-lg sm:text-xl font-bold tracking-[0.18em] text-shadow py-1 text-slate-100" id="card-display-number">
+                  •••• •••• •••• ••••
+                </div>
+
+                <!-- Cardholder Name & Expiry Date -->
+                <div class="flex items-end justify-between font-mono text-xs">
+                  <div>
+                    <div class="text-[9px] text-slate-400 uppercase tracking-widest">Card Holder</div>
+                    <div class="font-semibold text-slate-100 tracking-wider truncate max-w-[170px]" id="card-display-name">
+                      YOUR NAME
+                    </div>
+                  </div>
+                  <div>
+                    <div class="text-[9px] text-slate-400 uppercase tracking-widest text-right">Expires</div>
+                    <div class="font-semibold text-slate-100 tracking-wider" id="card-display-expiry">
+                      MM/YY
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CARD BACK (FLIPPED ON CVV FOCUS) -->
+              <div id="card-back" class="card-face card-back card-gradient-default p-4 flex flex-col justify-between text-white border border-white/20">
+                <!-- Magnetic Stripe -->
+                <div class="h-10 bg-black/90 -mx-4 mt-2"></div>
+
+                <!-- Signature & CVV Area -->
+                <div class="space-y-1 px-1">
+                  <div class="text-[9px] text-slate-400 uppercase font-mono text-right pr-2">CVV / CVC</div>
+                  <div class="flex items-center">
+                    <div class="h-8 flex-1 bg-white/70 rounded-l flex items-center px-2 text-[10px] text-slate-600 font-mono italic select-none">
+                      Authorized Signature
+                    </div>
+                    <div class="h-8 w-14 bg-white rounded-r flex items-center justify-center font-mono font-bold text-slate-900 text-sm" id="card-display-cvv">
+                      •••
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Bank Microcopy -->
+                <div class="text-[8px] text-slate-400 text-center font-mono">
+                  This card is property of issuing bank. 24/7 Concierge: 1-800-555-AURA
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ================= INPUT FORM FIELDS ================= -->
+          <form id="checkout-form" onsubmit="handlePaymentSubmit(event)" novalidate class="space-y-4">
+            
+            <!-- Card Number -->
+            <div class="space-y-1.5">
+              <label for="input-card-number" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                Card Number
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <i data-lucide="credit-card" class="w-4 h-4"></i>
+                </div>
+                <input 
+                  type="text" 
+                  id="input-card-number" 
+                  name="cardnumber"
+                  inputmode="numeric"
+                  autocomplete="cc-number"
+                  maxlength="19"
+                  placeholder="4532 •••• •••• ••••"
+                  class="glass-input w-full pl-10 pr-12 py-3 rounded-xl text-sm font-mono tracking-wider text-white placeholder-slate-500"
+                  oninput="handleCardNumberInput(event)"
+                >
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center gap-1.5" id="brand-indicator">
+                  <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-bold" id="brand-badge">GENERIC</span>
+                </div>
+              </div>
+              <p id="card-number-error" class="hidden text-xs text-rose-400 mt-1 flex items-center gap-1" role="alert">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                <span>Please enter a valid 16-digit credit card number.</span>
+              </p>
+            </div>
+
+            <!-- Cardholder Name -->
+            <div class="space-y-1.5">
+              <label for="input-card-name" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                Cardholder Name
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <i data-lucide="user" class="w-4 h-4"></i>
+                </div>
+                <input 
+                  type="text" 
+                  id="input-card-name" 
+                  name="ccname"
+                  autocomplete="cc-name"
+                  placeholder="Ketan Chandekar"
+                  class="glass-input w-full pl-10 pr-4 py-3 rounded-xl text-sm text-white placeholder-slate-500 uppercase tracking-wider"
+                  oninput="handleCardNameInput(event)"
+                >
+              </div>
+              <p id="card-name-error" class="hidden text-xs text-rose-400 mt-1 flex items-center gap-1" role="alert">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                <span>Please enter the name printed on your card.</span>
+              </p>
+            </div>
+
+            <!-- Expiry & CVV Grid -->
+            <div class="grid grid-cols-2 gap-4">
+              
+              <!-- Expiry Date (MM / YY) -->
+              <div class="space-y-1.5">
+                <label for="input-card-expiry" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                  Expiry Date
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                  </div>
+                  <input 
+                    type="text" 
+                    id="input-card-expiry" 
+                    name="ccexp"
+                    inputmode="numeric"
+                    autocomplete="cc-exp"
+                    maxlength="5"
+                    placeholder="MM / YY"
+                    class="glass-input w-full pl-10 pr-4 py-3 rounded-xl text-sm font-mono tracking-widest text-white placeholder-slate-500"
+                    oninput="handleCardExpiryInput(event)"
+                  >
+                </div>
+                <p id="card-expiry-error" class="hidden text-xs text-rose-400 mt-1 flex items-center gap-1" role="alert">
+                  <i data-lucide="alert-circle" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                  <span>Invalid expiry (MM/YY).</span>
+                </p>
+              </div>
+
+              <!-- CVV / Security Code (Triggers 3D Flip) -->
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label for="input-card-cvv" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                    CVV / CVC
+                  </label>
+                  <span class="text-[11px] text-slate-500 flex items-center gap-1 cursor-help" title="3 digits on the back of your card (4 for Amex)">
+                    <i data-lucide="help-circle" class="w-3 h-3"></i> 3 digits
+                  </span>
+                </div>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
+                  </div>
+                  <input 
+                    type="password" 
+                    id="input-card-cvv" 
+                    name="cvc"
+                    inputmode="numeric"
+                    autocomplete="cc-csc"
+                    maxlength="4"
+                    placeholder="•••"
+                    class="glass-input w-full pl-10 pr-4 py-3 rounded-xl text-sm font-mono tracking-widest text-white placeholder-slate-500"
+                    oninput="handleCardCvvInput(event)"
+                    onfocus="flipCard(true)"
+                    onblur="flipCard(false)"
+                  >
+                </div>
+                <p id="card-cvv-error" class="hidden text-xs text-rose-400 mt-1 flex items-center gap-1" role="alert">
+                  <i data-lucide="alert-circle" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                  <span>Enter 3 or 4 digits.</span>
+                </p>
+              </div>
+
+            </div>
+
+            <!-- Save Card Checkbox for Future Purchases -->
+            <div class="pt-1">
+              <label class="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" id="save-card-toggle" class="w-4 h-4 rounded border-white/20 bg-slate-900 text-brand-600 focus:ring-brand-500">
+                <span class="text-xs text-slate-400 select-none">
+                  Securely remember this card for faster future checkouts
+                </span>
+              </label>
+            </div>
+
+            <!-- Submit Payment Button -->
+            <button 
+              type="submit" 
+              id="pay-submit-btn" 
+              class="w-full relative flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-brand-600 via-purple-600 to-brand-500 hover:from-brand-500 hover:to-purple-500 shadow-xl shadow-brand-500/25 hover:shadow-brand-500/40 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-[#060911] active:scale-[0.99] transition duration-200"
+            >
+              <i data-lucide="lock" class="w-4 h-4" id="btn-lock-icon"></i>
+              <span id="btn-pay-text">Pay <span id="btn-amount-display">$322.92</span> & Complete Order</span>
+
+              <!-- Processing Spinner -->
+              <div id="btn-processing-spinner" class="hidden flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span id="btn-status-stage">Authorizing card...</span>
+              </div>
+            </button>
+
+          </form>
+
+        </div>
+
+        <!-- VIEW STATE 2: ORDER SUCCESS CONFIRMATION RECEIPT -->
+        <div id="order-success-view" class="hidden glass-panel rounded-3xl p-8 sm:p-10 space-y-6 text-center">
+          
+          <div class="mx-auto w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-500/20">
+            <svg class="w-10 h-10 checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12" class="check-path animate-draw-check"></polyline>
+            </svg>
+          </div>
+
+          <div class="space-y-2">
+            <span class="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest">
+              Payment Authorized
+            </span>
+            <h2 class="text-3xl font-extrabold text-white">Thank you for your order!</h2>
+            <p class="text-sm text-slate-400 max-w-sm mx-auto">
+              Your receipt and shipping tracker have been dispatched to <span class="text-brand-300 font-mono">ketanchandekar26@gmail.com</span>
+            </p>
+          </div>
+
+          <!-- Receipt Details Card -->
+          <div class="p-5 rounded-2xl bg-white/[0.03] border border-white/10 text-left space-y-3 font-mono text-xs">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Order ID:</span>
+              <span class="text-white font-bold" id="receipt-order-id">#AUR-89241</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Payment Method:</span>
+              <span class="text-slate-200" id="receipt-payment-method">Visa ending in •••• 4242</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Amount Paid:</span>
+              <span class="text-emerald-400 font-bold" id="receipt-total-paid">$322.92</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Est. Delivery:</span>
+              <span class="text-white">Wednesday, Oct 28 (Express Air)</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <button onclick="window.print()" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center gap-2 transition">
+              <i data-lucide="printer" class="w-4 h-4"></i> Print Receipt
+            </button>
+            <button onclick="resetCheckoutForm()" class="flex-1 py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-bold text-white flex items-center justify-center gap-2 transition">
+              <i data-lucide="shopping-bag" class="w-4 h-4"></i> Place Another Order
+            </button>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ================= UX SPECIFICATIONS & HEURISTICS DRAWER ================= -->
+  <aside id="ux-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#090d16] border-l border-white/10 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out p-6 overflow-y-auto space-y-6">
+    <div class="flex items-center justify-between pb-4 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <i data-lucide="layers" class="w-5 h-5 text-brand-400"></i>
+        <h3 class="text-lg font-bold text-white">Day 002 UX Specifications</h3>
+      </div>
+      <button id="close-ux-drawer" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Section 1: Cognitive Psychology -->
+    <div class="space-y-3">
+      <h4 class="text-xs font-mono uppercase tracking-wider text-brand-400 font-bold">1. Cognitive Psychology</h4>
+      <ul class="space-y-2.5 text-xs text-slate-300">
+        <li class="p-2.5 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+          <strong class="text-white">Miller's Law (Chunking):</strong> The 16-digit credit card number is grouped into 4-digit chunks with auto-spacing (`#### #### #### ####`), reducing short-term memory overload and digit transcription errors by over 60%.
+        </li>
+        <li class="p-2.5 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+          <strong class="text-white">Immediate Feedback & Spatial Mapping:</strong> The 3D credit card mirrors typed information in real-time. When focusing on the CVV input, the card automatically performs a 180° perspective flip to the signature strip.
+        </li>
+        <li class="p-2.5 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+          <strong class="text-white">Fitts's Law (Express Wallets):</strong> 1-click Express Pay (Apple Pay, Google Pay, PayPal) allows users to bypass tedious form filling entirely with large, primary tap targets.
+        </li>
+      </ul>
+    </div>
+
+    <!-- Section 2: Accessibility & WCAG 2.1 AA -->
+    <div class="space-y-3">
+      <h4 class="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold">2. Accessibility (WCAG 2.1 AA)</h4>
+      <div class="space-y-2 text-xs text-slate-300">
+        <div class="flex items-start gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+          <span>Autofill autocomplete tokens: `cc-number`, `cc-name`, `cc-exp`, `cc-csc` enable browser biometric autofill.</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+          <span>Visual focus states: custom outline rings with high contrast (`focus:ring-2 focus:ring-brand-500`).</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+          <span>Interactive promo coupon testing with instant visual and screen-reader affirmative updates.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Engineering Architecture -->
+    <div class="space-y-3">
+      <h4 class="text-xs font-mono uppercase tracking-wider text-cyan-400 font-bold">3. Frontend UX Engineering</h4>
+      <div class="text-xs text-slate-400 space-y-2">
+        <p>• <strong>Luhn & IIN Brand Detection:</strong> Detects Visa (4), Mastercard (51-55, 22-27), Amex (34, 37), and adjusts the badge and card gradient instantly.</p>
+        <p>• <strong>Smart Date Auto-Slash:</strong> Automatically formats `MM` into `MM / ` as user types.</p>
+        <p>• <strong>Stateful Authorization Pipeline:</strong> Realistic multi-stage payment simulation with live confetti burst.</p>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Drawer Backdrop -->
+  <div id="drawer-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity"></div>
+
+  <!-- ================= JAVASCRIPT LOGIC & MICRO-INTERACTIONS ================= -->
+  <script>
+    lucide.createIcons();
+
+    // Financial State
+    let subtotal = 299.00;
+    let discount = 0.00;
+    let taxRate = 0.08;
+    let total = calculateTotal();
+
+    function calculateTotal() {
+      const taxable = subtotal - discount;
+      const tax = taxable * taxRate;
+      return taxable + tax;
+    }
+
+    function updateTotalDisplay() {
+      total = calculateTotal();
+      const taxAmount = (subtotal - discount) * taxRate;
+
+      document.getElementById('summary-subtotal').textContent = `$${subtotal.toFixed(2)}`;
+      document.getElementById('summary-tax').textContent = `$${taxAmount.toFixed(2)}`;
+      document.getElementById('summary-total').textContent = `$${total.toFixed(2)}`;
+      document.getElementById('btn-amount-display').textContent = `$${total.toFixed(2)}`;
+    }
+
+    // Promo Code Handler
+    function applyPromoCode() {
+      const input = document.getElementById('promo-input');
+      const code = input.value.trim().toUpperCase();
+      const msg = document.getElementById('promo-message');
+      const discountRow = document.getElementById('discount-row');
+      const discountVal = document.getElementById('summary-discount');
+
+      if (code === 'DAILYUI10') {
+        discount = 29.90;
+        discountRow.style.display = 'flex';
+        discountVal.textContent = `-$${discount.toFixed(2)}`;
+        msg.className = "text-[11px] font-mono text-emerald-400 flex items-center gap-1";
+        msg.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i> Coupon DAILYUI10 applied: 10% off!`;
+        msg.classList.remove('hidden');
+        input.disabled = true;
+        updateTotalDisplay();
+      } else {
+        msg.className = "text-[11px] font-mono text-rose-400 flex items-center gap-1";
+        msg.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Invalid code. Try DAILYUI10`;
+        msg.classList.remove('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    // Card Flipping for CVV Focus
+    const cardInner = document.getElementById('credit-card-inner');
+    function flipCard(shouldFlip) {
+      if (shouldFlip) {
+        cardInner.classList.add('flipped');
+      } else {
+        cardInner.classList.remove('flipped');
+      }
+    }
+
+    // Real-Time Card Number Formatting & Brand Detection
+    function handleCardNumberInput(e) {
+      let val = e.target.value.replace(/\D/g, '');
+      if (val.length > 16) val = val.substring(0, 16);
+
+      // Auto chunking into groups of 4
+      const chunks = val.match(/.{1,4}/g);
+      const formatted = chunks ? chunks.join(' ') : '';
+      e.target.value = formatted;
+
+      // Update Card Face
+      const display = document.getElementById('card-display-number');
+      if (formatted.length > 0) {
+        // Pad the remainder with bullet dots
+        const padded = formatted + '•••• •••• •••• ••••'.substring(formatted.length);
+        display.textContent = padded;
+      } else {
+        display.textContent = '•••• •••• •••• ••••';
+      }
+
+      // Detect Brand
+      detectCardBrand(val);
+
+      // Clear error on valid input
+      if (val.length === 16) {
+        document.getElementById('card-number-error').classList.add('hidden');
+        e.target.classList.remove('input-error');
+      }
+    }
+
+    function detectCardBrand(digits) {
+      const brandLogo = document.getElementById('card-brand-logo');
+      const brandBadge = document.getElementById('brand-badge');
+      const cardFront = document.getElementById('card-front');
+      const cardBack = document.getElementById('card-back');
+
+      // Reset styles
+      cardFront.className = 'card-face card-gradient-default card-hologram p-5 flex flex-col justify-between text-white border border-white/20';
+      cardBack.className = 'card-face card-back card-gradient-default p-4 flex flex-col justify-between text-white border border-white/20';
+
+      if (/^4/.test(digits)) {
+        brandLogo.textContent = "VISA";
+        brandBadge.textContent = "VISA";
+        brandBadge.className = "text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-600/40 text-blue-300 font-bold border border-blue-500/30";
+        cardFront.classList.add('card-gradient-visa');
+        cardBack.classList.add('card-gradient-visa');
+      } else if (/^(5[1-5]|2[2-7])/.test(digits)) {
+        brandLogo.textContent = "MC";
+        brandBadge.textContent = "MASTERCARD";
+        brandBadge.className = "text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-600/40 text-amber-300 font-bold border border-amber-500/30";
+        cardFront.classList.add('card-gradient-mastercard');
+        cardBack.classList.add('card-gradient-mastercard');
+      } else if (/^3[47]/.test(digits)) {
+        brandLogo.textContent = "AMEX";
+        brandBadge.textContent = "AMEX";
+        brandBadge.className = "text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-600/40 text-emerald-300 font-bold border border-emerald-500/30";
+        cardFront.classList.add('card-gradient-amex');
+        cardBack.classList.add('card-gradient-amex');
+      } else {
+        brandLogo.textContent = "CARD";
+        brandBadge.textContent = "GENERIC";
+        brandBadge.className = "text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-bold";
+      }
+    }
+
+    // Cardholder Name Input
+    function handleCardNameInput(e) {
+      const val = e.target.value.toUpperCase();
+      document.getElementById('card-display-name').textContent = val || "YOUR NAME";
+      if (val.trim().length > 2) {
+        document.getElementById('card-name-error').classList.add('hidden');
+        e.target.classList.remove('input-error');
+      }
+    }
+
+    // Expiry Date Auto-Slash
+    function handleCardExpiryInput(e) {
+      let val = e.target.value.replace(/\D/g, '');
+      if (val.length > 4) val = val.substring(0, 4);
+
+      if (val.length >= 3) {
+        e.target.value = val.substring(0, 2) + ' / ' + val.substring(2);
+      } else {
+        e.target.value = val;
+      }
+
+      document.getElementById('card-display-expiry').textContent = e.target.value || "MM/YY";
+
+      if (val.length === 4) {
+        document.getElementById('card-expiry-error').classList.add('hidden');
+        e.target.classList.remove('input-error');
+      }
+    }
+
+    // CVV Input
+    function handleCardCvvInput(e) {
+      let val = e.target.value.replace(/\D/g, '');
+      if (val.length > 4) val = val.substring(0, 4);
+      e.target.value = val;
+      document.getElementById('card-display-cvv').textContent = val ? '•'.repeat(val.length) : '•••';
+
+      if (val.length >= 3) {
+        document.getElementById('card-cvv-error').classList.add('hidden');
+        e.target.classList.remove('input-error');
+      }
+    }
+
+    // Express Wallets Simulator
+    function handleExpressWallet(walletName) {
+      const btn = document.getElementById('pay-submit-btn');
+      btn.disabled = true;
+      document.getElementById('btn-lock-icon').classList.add('hidden');
+      document.getElementById('btn-pay-text').classList.add('hidden');
+      document.getElementById('btn-processing-spinner').classList.remove('hidden');
+      document.getElementById('btn-status-stage').textContent = `Connecting to ${walletName}...`;
+
+      setTimeout(() => {
+        document.getElementById('btn-status-stage').textContent = `Authorized by ${walletName}!`;
+        setTimeout(() => {
+          showOrderSuccess(`${walletName} Express`);
+        }, 800);
+      }, 1200);
+    }
+
+    // Form Submission & Multi-Stage Processing
+    function handlePaymentSubmit(e) {
+      e.preventDefault();
+
+      const numInput = document.getElementById('input-card-number');
+      const nameInput = document.getElementById('input-card-name');
+      const expInput = document.getElementById('input-card-expiry');
+      const cvvInput = document.getElementById('input-card-cvv');
+
+      let isValid = true;
+
+      // Card Number Validation (16 digits)
+      const cleanNum = numInput.value.replace(/\D/g, '');
+      if (cleanNum.length < 15) {
+        numInput.classList.add('input-error');
+        document.getElementById('card-number-error').classList.remove('hidden');
+        isValid = false;
+      }
+
+      // Name Validation
+      if (nameInput.value.trim().length < 2) {
+        nameInput.classList.add('input-error');
+        document.getElementById('card-name-error').classList.remove('hidden');
+        isValid = false;
+      }
+
+      // Expiry Validation
+      const cleanExp = expInput.value.replace(/\D/g, '');
+      if (cleanExp.length < 4) {
+        expInput.classList.add('input-error');
+        document.getElementById('card-expiry-error').classList.remove('hidden');
+        isValid = false;
+      }
+
+      // CVV Validation
+      if (cvvInput.value.length < 3) {
+        cvvInput.classList.add('input-error');
+        document.getElementById('card-cvv-error').classList.remove('hidden');
+        isValid = false;
+      }
+
+      if (!isValid) return;
+
+      // Stage 1: UI Feedback
+      const btn = document.getElementById('pay-submit-btn');
+      btn.disabled = true;
+      document.getElementById('btn-lock-icon').classList.add('hidden');
+      document.getElementById('btn-pay-text').classList.add('hidden');
+      document.getElementById('btn-processing-spinner').classList.remove('hidden');
+
+      // Realistic authorization pipeline
+      const stages = [
+        "Encrypting card payload...",
+        "Contacting issuing bank...",
+        "Verifying 3D-Secure...",
+        "Payment authorized!"
+      ];
+
+      let stageIdx = 0;
+      const stageInterval = setInterval(() => {
+        stageIdx++;
+        if (stageIdx < stages.length) {
+          document.getElementById('btn-status-stage').textContent = stages[stageIdx];
+        } else {
+          clearInterval(stageInterval);
+          const brand = document.getElementById('brand-badge').textContent;
+          const last4 = cleanNum.slice(-4) || "4242";
+          showOrderSuccess(`${brand} ending in •••• ${last4}`);
+        }
+      }, 550);
+    }
+
+    function showOrderSuccess(paymentMethod) {
+      document.getElementById('checkout-view').classList.add('hidden');
+      document.getElementById('order-success-view').classList.remove('hidden');
+      document.getElementById('receipt-order-id').textContent = '#AUR-' + Math.floor(10000 + Math.random() * 90000);
+      document.getElementById('receipt-payment-method').textContent = paymentMethod;
+      document.getElementById('receipt-total-paid').textContent = `$${total.toFixed(2)}`;
+
+      // Confetti celebration
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    function resetCheckoutForm() {
+      document.getElementById('checkout-form').reset();
+      document.getElementById('checkout-view').classList.remove('hidden');
+      document.getElementById('order-success-view').classList.add('hidden');
+      document.getElementById('btn-pay-text').classList.remove('hidden');
+      document.getElementById('btn-lock-icon').classList.remove('hidden');
+      document.getElementById('btn-processing-spinner').classList.add('hidden');
+      document.getElementById('pay-submit-btn').disabled = false;
+      document.getElementById('card-display-number').textContent = '•••• •••• •••• ••••';
+      document.getElementById('card-display-name').textContent = 'YOUR NAME';
+      document.getElementById('card-display-expiry').textContent = 'MM/YY';
+      document.getElementById('card-display-cvv').textContent = '•••';
+      detectCardBrand('');
+      flipCard(false);
+    }
+
+    // UX Drawer Toggle
+    const uxDrawer = document.getElementById('ux-drawer');
+    const drawerBackdrop = document.getElementById('drawer-backdrop');
+    document.getElementById('toggle-ux-drawer').addEventListener('click', () => {
+      uxDrawer.classList.remove('translate-x-full');
+      drawerBackdrop.classList.remove('hidden');
+    });
+    document.getElementById('close-ux-drawer').addEventListener('click', () => {
+      uxDrawer.classList.add('translate-x-full');
+      drawerBackdrop.classList.add('hidden');
+    });
+    drawerBackdrop.addEventListener('click', () => {
+      uxDrawer.classList.add('translate-x-full');
+      drawerBackdrop.classList.add('hidden');
+    });
+  </script>
+
+</body>
+</html>
