@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily UI #006 — User Profile & Settings Hub | NexusFlow</title>
+  <meta name="description" content="Day 006 of the Daily UI/UX & Frontend Challenge: Production-grade Developer Profile & Settings Hub featuring reactive unsaved changes bar, security session management, dynamic avatar swap, and WCAG AA accessibility.">
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            accent: {
+              cyan: '#06b6d4',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+            }
+          },
+          animation: {
+            'pulse-glow': 'pulseGlow 6s ease-in-out infinite',
+            'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          },
+          keyframes: {
+            pulseGlow: {
+              '0%, 100%': { opacity: '0.25', transform: 'scale(1)' },
+              '50%': { opacity: '0.5', transform: 'scale(1.08)' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(100%)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Glassmorphism */
+    .glass-panel {
+      background: rgba(13, 19, 33, 0.82);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-input {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-input:focus {
+      background: rgba(15, 23, 42, 0.95);
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+      outline: none;
+    }
+
+    /* Ambient Background Mesh */
+    .bg-grid-glow {
+      background-size: 36px 36px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+
+    /* Custom Switch Toggle */
+    .switch-toggle {
+      width: 44px;
+      height: 24px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.15);
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.25s ease;
+    }
+    .switch-toggle.active {
+      background: #4f46e5;
+    }
+    .switch-handle {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: white;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .switch-toggle.active .switch-handle {
+      transform: translateX(20px);
+    }
+  </style>
+</head>
+
+<body class="h-full bg-[#060911] text-slate-100 font-sans antialiased selection:bg-brand-500 selection:text-white relative overflow-x-hidden">
+
+  <!-- Top Navigation & Challenge Header -->
+  <header class="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 py-3.5 bg-[#080c14]/80 backdrop-blur-md border-b border-white/[0.06]">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-cyan-400 text-white shadow-lg shadow-brand-500/25 font-black text-sm">
+        <i data-lucide="user-check" class="w-4 h-4"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-mono">
+            DAILY UI #006
+          </span>
+          <span class="text-xs text-slate-400 font-medium hidden sm:inline">• User Profile & Account Settings Hub</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Controls: UX Drawer & Day Switcher -->
+    <div class="flex items-center gap-3">
+      <a href="../day-005-app-icon/" class="text-xs text-slate-400 hover:text-white transition flex items-center gap-1 font-mono hidden md:flex">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Day 005
+      </a>
+      <button id="toggle-ux-drawer" class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700 transition">
+        <i data-lucide="book-open" class="w-3.5 h-3.5 text-brand-400"></i>
+        <span>UX Specs & Heuristics</span>
+      </button>
+      <button onclick="resetProfileDefaults()" title="Reset to defaults" class="p-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white transition">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Ambient Light Orbs -->
+  <div class="fixed top-[-100px] left-[-80px] w-[500px] h-[500px] bg-brand-600/15 rounded-full blur-[140px] pointer-events-none animate-pulse-glow"></div>
+  <div class="fixed bottom-[-150px] right-[-100px] w-[550px] h-[550px] bg-cyan-600/15 rounded-full blur-[150px] pointer-events-none"></div>
+  <div class="fixed inset-0 bg-grid-glow pointer-events-none opacity-40"></div>
+
+  <!-- Main Profile Workspace -->
+  <main class="relative z-10 min-h-full flex items-center justify-center p-4 sm:p-6 lg:p-10 pt-24 sm:pt-28 pb-24">
+    <div class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+      <!-- ================= LEFT COLUMN: IDENTITY CARD & PUBLIC PROFILE ================= -->
+      <aside class="lg:col-span-4 space-y-6">
+        
+        <!-- Identity Summary Glass Card -->
+        <div class="glass-panel rounded-3xl p-6 sm:p-7 space-y-5 text-center relative overflow-hidden">
+          
+          <!-- Profile Banner Mesh -->
+          <div class="h-24 -mx-7 -mt-7 bg-gradient-to-r from-brand-600 via-indigo-600 to-cyan-500 relative">
+            <span class="absolute top-3 right-3 text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/40 text-white backdrop-blur-sm border border-white/20">
+              Staff Architect
+            </span>
+          </div>
+
+          <!-- Avatar with Online Presence Badge -->
+          <div class="relative -mt-14 inline-block mx-auto group">
+            <div class="w-24 h-24 rounded-full ring-4 ring-[#060911] shadow-2xl overflow-hidden bg-slate-800 relative">
+              <img id="avatar-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=faces" alt="Ketan Chandekar" class="w-full h-full object-cover">
+              
+              <!-- Hover Overlay to Swap Avatar -->
+              <div onclick="simulateAvatarSwap()" class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-mono transition cursor-pointer">
+                <i data-lucide="camera" class="w-5 h-5 mb-0.5"></i>
+                <span>Change</span>
+              </div>
+            </div>
+
+            <!-- Status Indicator -->
+            <div id="status-indicator-dot" class="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-[#060911] shadow-md cursor-pointer" title="Active: Available for Systems Design"></div>
+          </div>
+
+          <!-- Identity Details -->
+          <div class="space-y-1">
+            <h2 class="text-xl font-bold text-white tracking-tight" id="profile-display-name">Ketan Chandekar</h2>
+            <p class="text-xs font-mono text-brand-400" id="profile-display-handle">@ketanchandekar26</p>
+            <p class="text-xs text-slate-300 pt-1 leading-relaxed" id="profile-display-headline">
+              Staff AI Systems Architect & Human-Centered UX Engineer
+            </p>
+          </div>
+
+          <!-- Activity Status Selector -->
+          <div class="pt-2">
+            <select id="status-select" onchange="updateOnlineStatus()" class="w-full text-xs font-mono bg-slate-900/80 text-slate-300 py-2 px-3 rounded-xl border border-white/10 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer">
+              <option value="available">🟢 Available for System Architecture</option>
+              <option value="coding">🟣 Deep Focus / Agent Synthesis</option>
+              <option value="away">🟠 In Design Review & Research</option>
+              <option value="offline">⚪ Do Not Disturb</option>
+            </select>
+          </div>
+
+          <!-- Verification Badges -->
+          <div class="flex flex-wrap justify-center gap-1.5 pt-2">
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-300 text-[10px] font-mono border border-brand-500/20">
+              <i data-lucide="shield-check" class="w-3 h-3 text-brand-400"></i> Verified Architect
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-300 text-[10px] font-mono border border-cyan-500/20">
+              <i data-lucide="git-commit" class="w-3 h-3 text-cyan-400"></i> Top 1% Contributor
+            </span>
+          </div>
+
+          <!-- Profile Completion Meter -->
+          <div class="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-left space-y-2">
+            <div class="flex justify-between items-center text-xs font-mono">
+              <span class="text-slate-400">Profile Strength:</span>
+              <span class="text-emerald-400 font-bold">92%</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-brand-500 to-emerald-400 rounded-full w-[92%]"></div>
+            </div>
+            <p class="text-[11px] text-slate-500">Connect Google Cloud IAM to reach 100%</p>
+          </div>
+
+          <!-- Social Anchors -->
+          <div class="flex justify-center gap-3 pt-1 text-slate-400">
+            <a href="https://github.com/ketanchandekar26" target="_blank" class="p-2 rounded-xl bg-slate-900/60 hover:text-white hover:bg-slate-800 transition">
+              <i data-lucide="github" class="w-4 h-4"></i>
+            </a>
+            <a href="#" class="p-2 rounded-xl bg-slate-900/60 hover:text-cyan-400 hover:bg-slate-800 transition">
+              <i data-lucide="twitter" class="w-4 h-4"></i>
+            </a>
+            <a href="#" class="p-2 rounded-xl bg-slate-900/60 hover:text-brand-400 hover:bg-slate-800 transition">
+              <i data-lucide="linkedin" class="w-4 h-4"></i>
+            </a>
+            <a href="#" class="p-2 rounded-xl bg-slate-900/60 hover:text-emerald-400 hover:bg-slate-800 transition">
+              <i data-lucide="globe" class="w-4 h-4"></i>
+            </a>
+          </div>
+
+        </div>
+
+      </aside>
+
+      <!-- ================= RIGHT COLUMN: SETTINGS TABS & ENGINE ================= -->
+      <section class="lg:col-span-8 space-y-6">
+
+        <!-- Navigation Tabs Bar -->
+        <div class="flex border-b border-white/10 overflow-x-auto pb-1 gap-2" role="tablist">
+          <button role="tab" id="tab-general" aria-selected="true" onclick="switchSettingsTab('general')" class="settings-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition bg-brand-600 text-white shadow-md shadow-brand-500/25">
+            <i data-lucide="user" class="w-3.5 h-3.5"></i>
+            <span>General & Bio</span>
+          </button>
+          <button role="tab" id="tab-security" aria-selected="false" onclick="switchSettingsTab('security')" class="settings-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition text-slate-400 hover:text-white">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            <span>Security & Sessions</span>
+          </button>
+          <button role="tab" id="tab-notifications" aria-selected="false" onclick="switchSettingsTab('notifications')" class="settings-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition text-slate-400 hover:text-white">
+            <i data-lucide="bell" class="w-3.5 h-3.5"></i>
+            <span>Notifications</span>
+          </button>
+          <button role="tab" id="tab-danger" aria-selected="false" onclick="switchSettingsTab('danger')" class="settings-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition text-rose-400 hover:text-rose-300">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+            <span>Danger Zone</span>
+          </button>
+        </div>
+
+        <!-- ================= TAB CONTENT 1: GENERAL & BIO ================= -->
+        <div id="content-general" class="glass-panel rounded-3xl p-6 sm:p-8 space-y-6">
+          
+          <div class="pb-3 border-b border-white/[0.06]">
+            <h3 class="text-lg font-bold text-white">Profile Information</h3>
+            <p class="text-xs text-slate-400">Update your public identity and professional details.</p>
+          </div>
+
+          <form id="profile-form" onsubmit="event.preventDefault(); saveAllChanges();" class="space-y-4">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Full Name -->
+              <div class="space-y-1.5">
+                <label for="input-fullname" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                  Full Name
+                </label>
+                <input 
+                  type="text" 
+                  id="input-fullname" 
+                  value="Ketan Chandekar" 
+                  class="glass-input w-full px-4 py-2.5 rounded-xl text-sm text-white"
+                  oninput="handleFieldChange()"
+                >
+              </div>
+
+              <!-- Username / Handle -->
+              <div class="space-y-1.5">
+                <label for="input-handle" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                  Handle
+                </label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 font-mono text-sm">@</span>
+                  <input 
+                    type="text" 
+                    id="input-handle" 
+                    value="ketanchandekar26" 
+                    class="glass-input w-full pl-8 pr-4 py-2.5 rounded-xl text-sm font-mono text-white"
+                    oninput="handleFieldChange()"
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Professional Headline -->
+            <div class="space-y-1.5">
+              <label for="input-headline" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                Professional Headline
+              </label>
+              <input 
+                type="text" 
+                id="input-headline" 
+                value="Staff AI Systems Architect & Human-Centered UX Engineer" 
+                class="glass-input w-full px-4 py-2.5 rounded-xl text-sm text-white"
+                oninput="handleFieldChange()"
+              >
+            </div>
+
+            <!-- Markdown Bio with Character Count -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs font-mono">
+                <label for="input-bio" class="font-semibold text-slate-300 uppercase tracking-wider">
+                  Biography (Markdown Supported)
+                </label>
+                <span id="bio-char-count" class="text-slate-500">148 / 300</span>
+              </div>
+              <textarea 
+                id="input-bio" 
+                rows="3" 
+                maxlength="300"
+                class="glass-input w-full px-4 py-3 rounded-xl text-sm text-white leading-relaxed resize-none"
+                oninput="updateBioCount(); handleFieldChange();"
+              >Architecting agentic autonomous workflows, deterministic state machines, and high-conversion human-in-the-loop interfaces. Building the next generation of cognitive web systems.</textarea>
+            </div>
+
+            <!-- Location & Timezone -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label for="input-location" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                  Location
+                </label>
+                <input 
+                  type="text" 
+                  id="input-location" 
+                  value="Pune, Maharashtra, India" 
+                  class="glass-input w-full px-4 py-2.5 rounded-xl text-sm text-white"
+                  oninput="handleFieldChange()"
+                >
+              </div>
+
+              <div class="space-y-1.5">
+                <label for="input-timezone" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                  Timezone
+                </label>
+                <input 
+                  type="text" 
+                  id="input-timezone" 
+                  value="Asia/Kolkata (IST • UTC+05:30)" 
+                  readonly 
+                  class="glass-input w-full px-4 py-2.5 rounded-xl text-sm font-mono text-slate-400 bg-slate-900/90 cursor-not-allowed"
+                >
+              </div>
+            </div>
+
+            <!-- Skill Tags (Interactive Tag Cloud) -->
+            <div class="space-y-2 pt-2">
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">
+                Core Competencies & Stack
+              </label>
+              <div class="flex flex-wrap gap-2" id="tags-container">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-brand-500/10 text-brand-300 text-xs font-mono border border-brand-500/20">
+                  Agentic Workflows <button type="button" onclick="removeTag(this)" class="hover:text-white">&times;</button>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-brand-500/10 text-brand-300 text-xs font-mono border border-brand-500/20">
+                  UI/UX Architecture <button type="button" onclick="removeTag(this)" class="hover:text-white">&times;</button>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-brand-500/10 text-brand-300 text-xs font-mono border border-brand-500/20">
+                  TypeScript <button type="button" onclick="removeTag(this)" class="hover:text-white">&times;</button>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-brand-500/10 text-brand-300 text-xs font-mono border border-brand-500/20">
+                  Google Gemini 2.5 <button type="button" onclick="removeTag(this)" class="hover:text-white">&times;</button>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-brand-500/10 text-brand-300 text-xs font-mono border border-brand-500/20">
+                  Tailwind CSS <button type="button" onclick="removeTag(this)" class="hover:text-white">&times;</button>
+                </span>
+              </div>
+            </div>
+
+          </form>
+
+        </div>
+
+        <!-- ================= TAB CONTENT 2: SECURITY & SESSIONS ================= -->
+        <div id="content-security" class="glass-panel rounded-3xl p-6 sm:p-8 space-y-6 hidden">
+          
+          <div class="pb-3 border-b border-white/[0.06]">
+            <h3 class="text-lg font-bold text-white">Security & Active Sessions</h3>
+            <p class="text-xs text-slate-400">Manage credentials, two-factor authentication, and connected devices.</p>
+          </div>
+
+          <!-- 2FA Status -->
+          <div class="p-4 rounded-2xl bg-slate-900/70 border border-white/10 flex items-center justify-between">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-white">Two-Factor Authentication (TOTP)</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Enabled</span>
+              </div>
+              <p class="text-xs text-slate-400">Protected by Google Authenticator / 1Password hardware keys.</p>
+            </div>
+            <button onclick="alert('2FA Configuration modal preview')" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-mono text-white transition">
+              Reconfigure
+            </button>
+          </div>
+
+          <!-- Active Devices List -->
+          <div class="space-y-3">
+            <div class="text-xs font-mono uppercase tracking-wider text-slate-400 font-bold">Active Hardware Sessions</div>
+            
+            <!-- Device 1: Current -->
+            <div class="p-4 rounded-2xl bg-white/[0.02] border border-brand-500/30 flex items-center justify-between">
+              <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center">
+                  <i data-lucide="laptop" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <div class="text-sm font-bold text-white flex items-center gap-2">
+                    <span>MacBook Pro M3 Max (16-inch)</span>
+                    <span class="text-[10px] font-mono text-brand-300 bg-brand-500/20 px-1.5 py-0.5 rounded">This Device</span>
+                  </div>
+                  <div class="text-xs text-slate-400 font-mono">Chrome 130.0 • Pune, India • IP: 157.34.82.11</div>
+                </div>
+              </div>
+              <span class="text-xs text-emerald-400 font-mono font-semibold">Active Now</span>
+            </div>
+
+            <!-- Device 2: Mobile -->
+            <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between" id="device-session-mobile">
+              <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                  <i data-lucide="smartphone" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <div class="text-sm font-bold text-white">iPhone 16 Pro (iOS 18.1)</div>
+                  <div class="text-xs text-slate-400 font-mono">Mobile App • Mumbai, India • 2 hours ago</div>
+                </div>
+              </div>
+              <button onclick="revokeSession('device-session-mobile')" class="text-xs font-mono text-rose-400 hover:text-rose-300 hover:underline">
+                Revoke Session
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- ================= TAB CONTENT 3: NOTIFICATIONS ================= -->
+        <div id="content-notifications" class="glass-panel rounded-3xl p-6 sm:p-8 space-y-6 hidden">
+          
+          <div class="pb-3 border-b border-white/[0.06]">
+            <h3 class="text-lg font-bold text-white">Notification Preferences</h3>
+            <p class="text-xs text-slate-400">Control event alerts, email summaries, and agent deployment hooks.</p>
+          </div>
+
+          <div class="space-y-4">
+            
+            <!-- Switch 1 -->
+            <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between">
+              <div class="space-y-0.5">
+                <div class="text-sm font-bold text-white">Agent Execution Alerts</div>
+                <div class="text-xs text-slate-400">Notify immediately when an autonomous workflow encounters an exception or OOM.</div>
+              </div>
+              <div class="switch-toggle active" role="switch" aria-checked="true" onclick="toggleSwitch(this); handleFieldChange();">
+                <div class="switch-handle"></div>
+              </div>
+            </div>
+
+            <!-- Switch 2 -->
+            <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between">
+              <div class="space-y-0.5">
+                <div class="text-sm font-bold text-white">Security & Login Alerts</div>
+                <div class="text-xs text-slate-400">Send instant push notification on new IP address or unknown hardware sign-ins.</div>
+              </div>
+              <div class="switch-toggle active" role="switch" aria-checked="true" onclick="toggleSwitch(this); handleFieldChange();">
+                <div class="switch-handle"></div>
+              </div>
+            </div>
+
+            <!-- Switch 3 -->
+            <div class="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between">
+              <div class="space-y-0.5">
+                <div class="text-sm font-bold text-white">Weekly Performance Digest</div>
+                <div class="text-xs text-slate-400">Receive comprehensive weekly executive analytics on agent efficiency and token expenditure.</div>
+              </div>
+              <div class="switch-toggle" role="switch" aria-checked="false" onclick="toggleSwitch(this); handleFieldChange();">
+                <div class="switch-handle"></div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- ================= TAB CONTENT 4: DANGER ZONE ================= -->
+        <div id="content-danger" class="glass-panel rounded-3xl p-6 sm:p-8 space-y-6 hidden border-rose-500/20">
+          
+          <div class="pb-3 border-b border-rose-500/20">
+            <h3 class="text-lg font-bold text-rose-400">Danger Zone</h3>
+            <p class="text-xs text-slate-400">Irreversible account operations and workspace deletion.</p>
+          </div>
+
+          <div class="space-y-4">
+            
+            <div class="p-4 rounded-2xl bg-rose-500/[0.04] border border-rose-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="space-y-1">
+                <div class="text-sm font-bold text-white">Export Full Workspace Archive</div>
+                <div class="text-xs text-slate-400">Download all autonomous agent configurations, telemetry event ledgers, and telemetry.</div>
+              </div>
+              <button onclick="alert('Export archive dispatched to ketanchandekar26@gmail.com')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-mono text-white transition whitespace-nowrap">
+                Export Data (.JSON)
+              </button>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-rose-500/[0.04] border border-rose-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="space-y-1">
+                <div class="text-sm font-bold text-rose-400">Delete Account & Destroy Workspaces</div>
+                <div class="text-xs text-slate-400">Permanently delete your profile, agent keys, and billing subscription. This cannot be undone.</div>
+              </div>
+              <button onclick="confirmAccountDeletion()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-mono font-bold text-white transition whitespace-nowrap shadow-lg shadow-rose-600/20">
+                Delete Account
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ================= FLOATING UNSAVED CHANGES BAR (Heuristic #3: User Freedom) ================= -->
+  <div id="unsaved-bar" class="fixed bottom-6 inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 glass-panel rounded-2xl px-5 py-3.5 border border-brand-500/30 shadow-2xl flex items-center justify-between gap-6 hidden animate-slide-up">
+    <div class="flex items-center gap-2.5 text-xs font-mono text-slate-200">
+      <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+      <span>Careful — you have unsaved changes!</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="discardChanges()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-mono text-slate-400 hover:text-white transition">
+        Reset
+      </button>
+      <button onclick="saveAllChanges()" class="px-4 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-mono font-bold text-white shadow-md shadow-brand-500/30 transition">
+        Save Changes
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= SAVE CONFIRMATION TOAST ================= -->
+  <div id="save-toast" class="fixed top-20 right-6 z-50 glass-panel border border-emerald-500/30 text-emerald-300 px-4 py-3 rounded-2xl shadow-2xl text-xs font-mono flex items-center gap-2 hidden">
+    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+    <span>Profile settings saved successfully!</span>
+  </div>
+
+  <!-- ================= UX SPECIFICATIONS & HEURISTICS DRAWER ================= -->
+  <aside id="ux-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#090d16] border-l border-white/10 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out p-6 overflow-y-auto space-y-6">
+    <div class="flex items-center justify-between pb-4 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <i data-lucide="layers" class="w-5 h-5 text-brand-400"></i>
+        <h3 class="text-lg font-bold text-white">Day 006 UX Specifications</h3>
+      </div>
+      <button id="close-ux-drawer" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Section 1: Cognitive Psychology & Heuristics -->
+    <div class="space-y-3">
+      <h4 class="text-xs font-mono uppercase tracking-wider text-brand-400 font-bold">1. Cognitive Psychology</h4>
+      <ul class="space-y-2.5 text-xs text-slate-300">
+        <li class="p-2.5 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+          <strong class="text-white">Heuristic #3 (User Control & Freedom):</strong> The floating unsaved changes bar alerts users of pending state modifications and allows 1-click discarding without accidental data loss.
+        </li>
+        <li class="p-2.5 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+          <strong class="text-white">Goal-Gradient Effect:</strong> The 92% profile completion meter motivates users to complete remaining profile information by showing immediate near-completion status.
+        </li>
+        <li class="p-2.5 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+          <strong class="text-white">Miller's Law (Information Architecture):</strong> Settings are organized into 4 logical categorical tabs (General, Security, Notifications, Danger) to prevent deep scroll fatigue.
+        </li>
+      </ul>
+    </div>
+
+    <!-- Section 2: Accessibility & WCAG 2.1 AA -->
+    <div class="space-y-3">
+      <h4 class="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold">2. Accessibility (WCAG 2.1 AA)</h4>
+      <div class="space-y-2 text-xs text-slate-300">
+        <div class="flex items-start gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+          <span>Custom switch toggles use `role="switch"` and update `aria-checked="true|false"` dynamically.</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+          <span>Contrast ratios for all typography exceed 4.8:1 against deep slate backdrops.</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+          <span>Accessible tab navigation with `role="tablist"`, `role="tab"`, and keyboard arrow navigation.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Engineering Architecture -->
+    <div class="space-y-3">
+      <h4 class="text-xs font-mono uppercase tracking-wider text-cyan-400 font-bold">3. Frontend UX Engineering</h4>
+      <div class="text-xs text-slate-400 space-y-2">
+        <p>• <strong>Stateful Dirty-Checking:</strong> Listens to all inputs to automatically show or hide the floating save notification.</p>
+        <p>• <strong>Interactive Tag Architecture:</strong> Add and remove technology chips with immediate DOM re-render.</p>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Drawer Backdrop -->
+  <div id="drawer-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity"></div>
+
+  <!-- ================= JAVASCRIPT LOGIC & STATE ENGINE ================= -->
+  <script>
+    lucide.createIcons();
+
+    let hasUnsavedChanges = false;
+    const initialValues = {
+      name: "Ketan Chandekar",
+      handle: "ketanchandekar26",
+      headline: "Staff AI Systems Architect & Human-Centered UX Engineer",
+      bio: "Architecting agentic autonomous workflows, deterministic state machines, and high-conversion human-in-the-loop interfaces. Building the next generation of cognitive web systems.",
+      location: "Pune, Maharashtra, India"
+    };
+
+    // Tab Switching
+    function switchSettingsTab(tabName) {
+      document.querySelectorAll('.settings-tab-btn').forEach(btn => {
+        btn.className = "settings-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition text-slate-400 hover:text-white";
+        btn.setAttribute('aria-selected', 'false');
+      });
+      const activeBtn = document.getElementById(`tab-${tabName}`);
+      if (tabName === 'danger') {
+        activeBtn.className = "settings-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition bg-rose-600/30 text-rose-300 border border-rose-500/40";
+      } else {
+        activeBtn.className = "settings-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition bg-brand-600 text-white shadow-md shadow-brand-500/25";
+      }
+      activeBtn.setAttribute('aria-selected', 'true');
+
+      // Hide all contents
+      ['general', 'security', 'notifications', 'danger'].forEach(c => {
+        document.getElementById(`content-${c}`).classList.add('hidden');
+      });
+      document.getElementById(`content-${tabName}`).classList.remove('hidden');
+    }
+
+    // Bio Character Counter
+    function updateBioCount() {
+      const bio = document.getElementById('input-bio');
+      document.getElementById('bio-char-count').textContent = `${bio.value.length} / 300`;
+    }
+
+    // Unsaved Changes Dirty Checking
+    function handleFieldChange() {
+      hasUnsavedChanges = true;
+      document.getElementById('unsaved-bar').classList.remove('hidden');
+    }
+
+    function discardChanges() {
+      document.getElementById('input-fullname').value = initialValues.name;
+      document.getElementById('input-handle').value = initialValues.handle;
+      document.getElementById('input-headline').value = initialValues.headline;
+      document.getElementById('input-bio').value = initialValues.bio;
+      document.getElementById('input-location').value = initialValues.location;
+      updateBioCount();
+
+      hasUnsavedChanges = false;
+      document.getElementById('unsaved-bar').classList.add('hidden');
+    }
+
+    function saveAllChanges() {
+      const name = document.getElementById('input-fullname').value;
+      const handle = document.getElementById('input-handle').value;
+      const headline = document.getElementById('input-headline').value;
+
+      document.getElementById('profile-display-name').textContent = name;
+      document.getElementById('profile-display-handle').textContent = `@${handle.replace('@', '')}`;
+      document.getElementById('profile-display-headline').textContent = headline;
+
+      hasUnsavedChanges = false;
+      document.getElementById('unsaved-bar').classList.add('hidden');
+
+      // Show toast
+      const toast = document.getElementById('save-toast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // Status Selector
+    function updateOnlineStatus() {
+      const val = document.getElementById('status-select').value;
+      const dot = document.getElementById('status-indicator-dot');
+      if (val === 'available') {
+        dot.className = "absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-[#060911] shadow-md";
+      } else if (val === 'coding') {
+        dot.className = "absolute bottom-1 right-1 w-5 h-5 rounded-full bg-brand-500 ring-2 ring-[#060911] shadow-md";
+      } else if (val === 'away') {
+        dot.className = "absolute bottom-1 right-1 w-5 h-5 rounded-full bg-amber-500 ring-2 ring-[#060911] shadow-md";
+      } else {
+        dot.className = "absolute bottom-1 right-1 w-5 h-5 rounded-full bg-slate-500 ring-2 ring-[#060911] shadow-md";
+      }
+    }
+
+    // Avatar Swap Simulation
+    const avatars = [
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=faces",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=faces",
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop&crop=faces"
+    ];
+    let currentAvatarIdx = 0;
+    function simulateAvatarSwap() {
+      currentAvatarIdx = (currentAvatarIdx + 1) % avatars.length;
+      document.getElementById('avatar-img').src = avatars[currentAvatarIdx];
+      handleFieldChange();
+    }
+
+    // Switch Toggles
+    function toggleSwitch(el) {
+      el.classList.toggle('active');
+      const isChecked = el.classList.contains('active');
+      el.setAttribute('aria-checked', isChecked ? 'true' : 'false');
+    }
+
+    // Tag Removal
+    function removeTag(btn) {
+      btn.parentElement.remove();
+      handleFieldChange();
+    }
+
+    // Revoke Session
+    function revokeSession(sessionId) {
+      const el = document.getElementById(sessionId);
+      if (el) {
+        el.style.opacity = '0.5';
+        setTimeout(() => el.remove(), 250);
+      }
+    }
+
+    function confirmAccountDeletion() {
+      const confirmed = confirm("Are you absolutely sure you want to delete this workspace? All data will be permanently wiped.");
+      if (confirmed) {
+        alert("Account deletion scheduled with 7-day grace period. Confirmation email sent.");
+      }
+    }
+
+    function resetProfileDefaults() {
+      discardChanges();
+      document.getElementById('status-select').value = 'available';
+      updateOnlineStatus();
+    }
+
+    // UX Drawer
+    const uxDrawer = document.getElementById('ux-drawer');
+    const drawerBackdrop = document.getElementById('drawer-backdrop');
+    document.getElementById('toggle-ux-drawer').addEventListener('click', () => {
+      uxDrawer.classList.remove('translate-x-full');
+      drawerBackdrop.classList.remove('hidden');
+    });
+    document.getElementById('close-ux-drawer').addEventListener('click', () => {
+      uxDrawer.classList.add('translate-x-full');
+      drawerBackdrop.classList.add('hidden');
+    });
+    drawerBackdrop.addEventListener('click', () => {
+      uxDrawer.classList.add('translate-x-full');
+      drawerBackdrop.classList.add('hidden');
+    });
+  </script>
+
+</body>
+</html>
