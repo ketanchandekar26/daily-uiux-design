@@ -25,7 +25,7 @@ Every daily challenge is executed under four core engineering pillars:
 | **004** | **Financial Calculator & FX Suite** | Utility / Fintech | [Day 004 Prototype](./day-004-calculator/index.html) | ✅ Completed |
 | **005** | **App Icon & Brand Identity Studio** | Visual Design / Systems | [Day 005 Prototype](./day-005-app-icon/index.html) | ✅ Completed |
 | **006** | **User Profile & Settings Hub** | Account Management | [Day 006 Prototype](./day-006-user-profile/index.html) | ✅ Completed |
-| **007** | Settings & Permissions Modal | System Architecture | *Upcoming* | ⏳ Queued |
+| **007** | **Settings & Permissions Modal** | System Architecture | [Day 007 Prototype](./day-007-settings-modal/index.html) | ✅ Completed |
 | **008** | 404 Error Page & Recovery | Error Handling / Delight | *Upcoming* | ⏳ Queued |
 | **009** | Music / Media Player | Entertainment | *Upcoming* | ⏳ Queued |
 | **010** | Social Share Widget | Engagement / Growth | *Upcoming* | ⏳ Queued |
