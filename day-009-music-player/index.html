@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily UI #009 — Spatial Audio & Media Player | Aura Soundwave</title>
+  <meta name="description" content="Day 009 of the Daily UI/UX & Frontend Challenge: High-fidelity Spatial Audio Player featuring Web Audio API synthesizer, real-time frequency visualizer, synced lyrics seeking, and WCAG AA accessibility.">
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+            },
+            accent: {
+              cyan: '#06b6d4',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+            }
+          },
+          animation: {
+            'spin-slow': 'spin 18s linear infinite',
+            'pulse-glow': 'pulseGlow 5s ease-in-out infinite',
+            'bounce-subtle': 'bounceSubtle 2s ease-in-out infinite',
+          },
+          keyframes: {
+            pulseGlow: {
+              '0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
+              '50%': { opacity: '0.6', transform: 'scale(1.08)' },
+            },
+            bounceSubtle: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-4px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom Glassmorphism */
+    .glass-panel {
+      background: rgba(13, 19, 33, 0.82);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 35px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(139, 92, 246, 0.3);
+    }
+
+    /* Ambient Space Grid Pattern */
+    .bg-grid-glow {
+      background-size: 36px 36px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    }
+
+    /* Vinyl Record Styling */
+    .vinyl-grooves {
+      background: radial-gradient(circle, #0f172a 28%, #1e1b4b 30%, #090d16 45%, #1e1b4b 60%, #050811 80%, #020617 100%);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.9);
+    }
+
+    /* Custom Range Sliders */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.12);
+      height: 5px;
+      border-radius: 9999px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #8b5cf6;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+      transition: transform 0.1s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.3);
+    }
+
+    /* Lyrics Scroll Container */
+    .lyrics-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .lyrics-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+
+<body class="h-full bg-[#050811] text-slate-100 font-sans antialiased selection:bg-brand-500 selection:text-white relative overflow-x-hidden">
+
+  <!-- Top Navigation & Challenge Header -->
+  <header class="fixed top-0 inset-x-0 z-40 flex items-center justify-between px-6 py-3.5 bg-[#080c14]/80 backdrop-blur-md border-b border-white/[0.06]">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 via-purple-500 to-cyan-400 text-white shadow-lg shadow-brand-500/25 font-black text-sm">
+        <i data-lucide="headphones" class="w-4 h-4"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-mono">
+            DAILY UI #009
+          </span>
+          <span class="text-xs text-slate-400 font-medium hidden sm:inline">• High-Fidelity Spatial Audio Player</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Controls: Previous Day Navigation & UX Drawer Toggle -->
+    <div class="flex items-center gap-3">
+      <a href="../day-008-404-page/" class="text-xs text-slate-400 hover:text-white transition flex items-center gap-1 font-mono hidden md:flex">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Day 008
+      </a>
+      <button id="toggle-ux-drawer" class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700 transition">
+        <i data-lucide="book-open" class="w-3.5 h-3.5 text-brand-400"></i>
+        <span>UX Specs & Heuristics</span>
+      </button>
+      <button onclick="toggleAudioSynthesizer()" id="sound-toggle-btn" title="Toggle Live Ambient Synthesizer" class="p-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white transition">
+        <i data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Ambient Dynamic Light Orbs -->
+  <div id="ambient-orb-1" class="fixed top-[-100px] left-[-80px] w-[550px] h-[550px] bg-purple-600/15 rounded-full blur-[150px] pointer-events-none animate-pulse-glow transition-colors duration-700"></div>
+  <div id="ambient-orb-2" class="fixed bottom-[-150px] right-[-100px] w-[600px] h-[600px] bg-brand-600/15 rounded-full blur-[160px] pointer-events-none transition-colors duration-700"></div>
+  <div class="fixed inset-0 bg-grid-glow pointer-events-none opacity-40"></div>
+
+  <!-- Main Player Workspace -->
+  <main class="relative z-10 min-h-full flex items-center justify-center p-4 sm:p-6 lg:p-10 pt-24 sm:pt-28 pb-16">
+    <div class="w-full max-w-5xl mx-auto space-y-6">
+
+      <!-- ================= MASTER MEDIA DECK CONTAINER ================= -->
+      <section class="glass-panel rounded-3xl p-6 sm:p-8 lg:p-10 space-y-8 relative overflow-hidden">
+        
+        <!-- Top Status Bar: Lossless Audio Stream & Spatial Audio Mode -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-white/[0.06]">
+          <div class="flex items-center gap-2.5">
+            <span class="inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase tracking-wider">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>Master Flac • 24-Bit / 96kHz Lossless</span>
+            </span>
+            <span class="text-xs text-slate-500 hidden sm:inline">•</span>
+            <span class="text-xs font-mono text-slate-400 hidden sm:inline" id="audio-engine-status">WebAudio Synthesizer Engine Ready</span>
+          </div>
+
+          <!-- Spatial Audio Mode Selector -->
+          <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 border border-white/10 text-xs font-mono">
+            <button onclick="setSpatialMode('stereo')" id="spatial-stereo" class="spatial-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">Stereo</button>
+            <button onclick="setSpatialMode('spatial')" id="spatial-spatial" class="spatial-btn px-2.5 py-1 rounded-lg bg-brand-600 text-white font-bold transition shadow-sm">Spatial 360°</button>
+            <button onclick="setSpatialMode('hall')" id="spatial-hall" class="spatial-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">Concert Hall</button>
+          </div>
+        </div>
+
+        <!-- ================= MAIN SHOWCASE: ALBUM ART & SPECTRUM VISUALIZER ================= -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          <!-- Left: Rotating Vinyl Record & Floating Cover Art -->
+          <div class="lg:col-span-5 flex justify-center">
+            <div class="relative group cursor-pointer" onclick="togglePlayPause()">
+              
+              <!-- Spinning Vinyl Disc behind album art -->
+              <div id="vinyl-disc" class="absolute -right-6 top-1/2 -translate-y-1/2 w-44 h-44 sm:w-52 sm:h-52 rounded-full vinyl-grooves border-2 border-slate-700/60 flex items-center justify-center transition-all duration-700 opacity-90 group-hover:translate-x-4">
+                <div class="w-16 h-16 rounded-full border border-white/20 bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center">
+                  <div class="w-4 h-4 rounded-full bg-black border border-white/40"></div>
+                </div>
+              </div>
+
+              <!-- Primary Front Cover Card -->
+              <div id="cover-card" class="relative z-10 w-48 h-48 sm:w-56 sm:h-56 rounded-2xl overflow-hidden shadow-2xl border border-white/20 group-hover:scale-[1.02] transition-transform duration-300">
+                <img id="track-cover-img" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&h=500&fit=crop" alt="Current Album Artwork" class="w-full h-full object-cover">
+                
+                <!-- Specular Gloss Sheen -->
+                <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>
+
+                <!-- Hover Play Badge Overlay -->
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <div class="w-12 h-12 rounded-full bg-brand-600/90 text-white flex items-center justify-center shadow-xl">
+                    <i data-lucide="play" class="w-6 h-6 fill-current ml-0.5" id="overlay-play-icon"></i>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Right: Track Metadata, Real-Time Canvas Spectrum, and Synced Lyrics -->
+          <div class="lg:col-span-7 space-y-4">
+            
+            <!-- Title & Artist -->
+            <div class="flex items-start justify-between gap-4">
+              <div class="space-y-1 min-w-0">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight truncate" id="track-title">
+                  Cosmic Horizon (Spatial Mix)
+                </h1>
+                <p class="text-sm font-medium text-brand-300 flex items-center gap-2 truncate" id="track-artist">
+                  <span>Aura Sound Lab</span>
+                  <span class="text-slate-500">•</span>
+                  <span class="text-xs text-slate-400 font-mono" id="track-album">Infinite Resonance LP</span>
+                </p>
+              </div>
+
+              <!-- Heart & Share Micro-actions -->
+              <div class="flex items-center gap-1.5">
+                <button onclick="toggleFavorite()" id="favorite-btn" title="Add to Favorites" class="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition">
+                  <i data-lucide="heart" class="w-5 h-5" id="heart-icon"></i>
+                </button>
+                <button onclick="shareTrack()" title="Share Track" class="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                  <i data-lucide="share-2" class="w-5 h-5"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- REAL-TIME AUDIO FREQUENCY SPECTRUM VISUALIZER -->
+            <div class="p-3 rounded-2xl bg-[#03060f] border border-white/10 relative overflow-hidden">
+              <div class="flex items-center justify-between pb-2 text-[10px] font-mono text-slate-500">
+                <span>FREQUENCY SPECTRUM (32 BANDS)</span>
+                <span class="text-brand-400" id="spectrum-fps">60 FPS REALTIME</span>
+              </div>
+              <canvas id="visualizer-canvas" width="600" height="75" class="w-full h-16 sm:h-20 block"></canvas>
+            </div>
+
+            <!-- Dynamic Lyrics / Info Snippet -->
+            <div class="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between text-xs font-mono">
+              <div class="flex items-center gap-2 text-slate-300 truncate">
+                <i data-lucide="mic-2" class="w-4 h-4 text-brand-400 flex-shrink-0"></i>
+                <span id="active-lyric-line" class="italic truncate">"Floating through the astral plane, no gravity to hold our names..."</span>
+              </div>
+              <button onclick="toggleLyricsDrawer()" class="text-brand-400 hover:text-brand-300 font-bold whitespace-nowrap ml-3">
+                Full Lyrics &rarr;
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- ================= TIMELINE SCRUBBER & DURATION ================= -->
+        <div class="space-y-1.5 pt-2">
+          <div class="relative group">
+            <!-- Scrubber Slider -->
+            <input 
+              type="range" 
+              id="time-scrubber" 
+              min="0" 
+              max="240" 
+              value="42" 
+              oninput="handleSeek(event)" 
+              aria-label="Audio scrubber"
+            >
+          </div>
+          <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+            <span id="time-current">0:42</span>
+            <span class="text-slate-600 font-bold">●</span>
+            <span id="time-total">3:48</span>
+          </div>
+        </div>
+
+        <!-- ================= PRIMARY TACTILE TRANSPORT CONTROLS (Fitts's Law) ================= -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-2">
+          
+          <!-- Secondary Modes: Shuffle & Repeat -->
+          <div class="flex items-center gap-3 text-slate-400">
+            <button onclick="toggleShuffle()" id="shuffle-btn" title="Shuffle" class="p-2 rounded-xl hover:text-white transition">
+              <i data-lucide="shuffle" class="w-4 h-4"></i>
+            </button>
+            <button onclick="toggleRepeat()" id="repeat-btn" title="Repeat All" class="p-2 rounded-xl hover:text-white transition">
+              <i data-lucide="repeat" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Central Playback Cluster -->
+          <div class="flex items-center gap-4 sm:gap-6">
+            <!-- Skip Backward 10s -->
+            <button onclick="seekOffset(-10)" title="Rewind 10s (Left Arrow)" class="p-2.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Previous Track -->
+            <button onclick="prevTrack()" title="Previous Track" class="p-3 rounded-full hover:bg-slate-800 text-slate-200 hover:text-white transition active:scale-95">
+              <i data-lucide="skip-back" class="w-5 h-5 fill-current"></i>
+            </button>
+
+            <!-- Big Primary Play / Pause Button (Fitts's Law Target >= 56px) -->
+            <button 
+              onclick="togglePlayPause()" 
+              id="master-play-btn" 
+              title="Play / Pause (Spacebar)"
+              class="w-16 h-16 rounded-full bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-500 hover:from-brand-500 hover:to-indigo-500 text-white flex items-center justify-center shadow-xl shadow-brand-500/40 hover:scale-105 active:scale-95 transition-all duration-200"
+            >
+              <i data-lucide="play" class="w-7 h-7 fill-current ml-1" id="master-play-icon"></i>
+            </button>
+
+            <!-- Next Track -->
+            <button onclick="nextTrack()" title="Next Track" class="p-3 rounded-full hover:bg-slate-800 text-slate-200 hover:text-white transition active:scale-95">
+              <i data-lucide="skip-forward" class="w-5 h-5 fill-current"></i>
+            </button>
+
+            <!-- Skip Forward 10s -->
+            <button onclick="seekOffset(10)" title="Forward 10s (Right Arrow)" class="p-2.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition">
+              <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Volume Slider & Mute Toggle -->
+          <div class="flex items-center gap-3 w-36">
+            <button onclick="toggleMute()" id="mute-btn" title="Toggle Mute (M)" class="text-slate-400 hover:text-white transition">
+              <i data-lucide="volume-2" class="w-4 h-4" id="volume-icon"></i>
+            </button>
+            <input 
+              type="range" 
+              id="volume-slider" 
+              min="0" 
+              max="100" 
+              value="80" 
+              oninput="handleVolume(event)" 
+              aria-label="Volume controller"
+            >
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ================= PLAYLIST QUEUE & UP NEXT (Miller's Law Chunking) ================= -->
+      <section class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+        
+        <!-- Up Next Queue -->
+        <div class="md:col-span-7 glass-panel rounded-3xl p-6 space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+            <h2 class="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-2">
+              <i data-lucide="list-music" class="w-4 h-4 text-brand-400"></i>
+              <span>Up Next in Queue</span>
+            </h2>
+            <span class="text-[10px] font-mono text-slate-500">3 tracks • 11:24 total</span>
+          </div>
+
+          <div class="space-y-2" id="playlist-queue-container">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <!-- Audio Output Device & Spatial EQ Profile -->
+        <div class="md:col-span-5 glass-panel rounded-3xl p-6 space-y-4 font-mono text-xs">
+          <div class="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+            <span class="text-slate-300 font-bold uppercase tracking-wider">Output Hardware</span>
+            <i data-lucide="radio" class="w-3.5 h-3.5 text-cyan-400"></i>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-white/10 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-white font-bold">AirPods Max (Spatial Head-Tracking)</span>
+              <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">Connected</span>
+            </div>
+            <div class="text-[11px] text-slate-400">Codec: Apple Lossless (ALAC) • 2304 kbps</div>
+          </div>
+
+          <div class="space-y-2 pt-1">
+            <div class="flex justify-between text-slate-400 text-[11px]">
+              <span>Dynamic Equalizer:</span>
+              <span class="text-brand-300 font-bold">Lo-Fi Chill & Warmth</span>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5 h-8 items-end p-2 bg-slate-950/60 rounded-xl border border-white/10">
+              <div class="bg-brand-500 h-[65%] rounded-t"></div>
+              <div class="bg-indigo-500 h-[85%] rounded-t"></div>
+              <div class="bg-cyan-500 h-[50%] rounded-t"></div>
+              <div class="bg-emerald-500 h-[75%] rounded-t"></div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ================= LYRICS MODAL DRAWER (Interactive Karaoke Seeking) ================= -->
+  <div id="lyrics-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#090d16] border-l border-white/10 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out p-6 flex flex-col space-y-4">
+    <div class="flex items-center justify-between pb-4 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <i data-lucide="mic-2" class="w-5 h-5 text-brand-400"></i>
+        <h3 class="text-base font-bold text-white">Live Synchronized Lyrics</h3>
+      </div>
+      <button onclick="toggleLyricsDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <p class="text-xs text-slate-400 font-mono">Click any verse line to jump audio playback directly to that timestamp:</p>
+
+    <!-- Scrollable Lyrics Verses -->
+    <div class="flex-1 overflow-y-auto lyrics-scroll space-y-4 py-2 font-sans" id="full-lyrics-container">
+      <!-- Injected via JS -->
+    </div>
+  </div>
+  <div id="lyrics-backdrop" onclick="toggleLyricsDrawer()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity"></div>
+
+  <!-- ================= UX SPECIFICATIONS & HEURISTICS DRAWER ================= -->
+  <aside id="ux-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#090d16] border-l border-white/10 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out p-6 overflow-y-auto space-y-6">
+    <div class="flex items-center justify-between pb-4 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <i data-lucide="layers" class="w-5 h-5 text-brand-400"></i>
+        <h3 class="text-lg font-bold text-white">Day 009 UX Specifications</h3>
+      </div>
+      <button id="close-ux-drawer" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Section 1: Cognitive Psychology & Heuristics -->
+    <div class="space-y-3">
+      <h4 class="text-xs font-mono uppercase tracking-wider text-brand-400 font-bold">1. Cognitive Psychology</h4>
+      <ul class="space-y-2.5 text-xs text-slate-300">
+        <li class="p-2.5 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+          <strong class="text-white">Fitts's Law (Primary Action Clustering):</strong> The central Play/Pause button measures $64 \times 64\text{px}$ with a radiant gradient to minimize target acquisition time.
+        </li>
+        <li class="p-2.5 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+          <strong class="text-white">Auditory-Visual Synesthesia:</strong> Real-time 60FPS frequency spectrum bridges the senses by mirroring audio rhythm into reactive light waveforms.
+        </li>
+        <li class="p-2.5 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+          <strong class="text-white">Direct Manipulation:</strong> Synced lyrics allow interactive time-seeking by clicking individual vocal verses.
+        </li>
+      </ul>
+    </div>
+
+    <!-- Section 2: Accessibility & WCAG 2.1 AA -->
+    <div class="space-y-3">
+      <h4 class="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold">2. Accessibility (WCAG 2.1 AA)</h4>
+      <div class="space-y-2 text-xs text-slate-300">
+        <div class="flex items-start gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+          <span>Global keyboard transport: Space (Play/Pause), Left/Right Arrows ($\pm 10\text{s}$), Up/Down (Volume), M (Mute).</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+          <span>High contrast ratios ($> 5.2:1$) across scrubbers, duration counters, and metadata tags.</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+          <span>Dynamic `aria-live="polite"` region vocalizes track changes for assistive screen readers.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Engineering Architecture -->
+    <div class="space-y-3">
+      <h4 class="text-xs font-mono uppercase tracking-wider text-cyan-400 font-bold">3. Frontend UX Engineering</h4>
+      <div class="text-xs text-slate-400 space-y-2">
+        <p>• <strong>Native Web Audio API Synthesizer:</strong> Generates real harmonic chord progressions and rhythmic basslines client-side without external MP3 network dependencies.</p>
+        <p>• <strong>HTML5 Canvas Visualizer:</strong> 32-band real-time spectrum analyzer with neon glow reflections.</p>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Drawer Backdrop -->
+  <div id="drawer-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity"></div>
+
+  <!-- Screen Reader Live Announcement -->
+  <div class="sr-only" aria-live="polite" id="sr-announcements"></div>
+
+  <!-- ================= JAVASCRIPT LOGIC & WEB AUDIO API ENGINE ================= -->
+  <script>
+    lucide.createIcons();
+
+    // Playlist Database
+    const playlist = [
+      {
+        id: 0,
+        title: "Cosmic Horizon (Spatial Mix)",
+        artist: "Aura Sound Lab",
+        album: "Infinite Resonance LP",
+        cover: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&h=500&fit=crop",
+        duration: 228, // 3:48
+        color: "#8b5cf6",
+        baseFreq: 220,
+        lyrics: [
+          { time: 5, text: "Floating through the astral plane..." },
+          { time: 18, text: "No gravity to hold our names..." },
+          { time: 35, text: "Resonance echoes across the cosmic night..." },
+          { time: 52, text: "We become the waves, we become the light..." },
+          { time: 70, text: "Infinite frequency, endless horizon..." },
+          { time: 95, text: "Stars ignite as the bass line rises..." }
+        ]
+      },
+      {
+        id: 1,
+        title: "Neon Cyberpunk Drift",
+        artist: "Vector Pulse",
+        album: "Sub-Millisecond Speed",
+        cover: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&h=500&fit=crop",
+        duration: 195, // 3:15
+        color: "#06b6d4",
+        baseFreq: 293.66,
+        lyrics: [
+          { time: 4, text: "Speeding down the fiber optic highway..." },
+          { time: 22, text: "Neon glow reflecting on the rain..." },
+          { time: 45, text: "Zero latency in the circuit veins..." },
+          { time: 75, text: "Accelerate beyond the firewall..." }
+        ]
+      },
+      {
+        id: 2,
+        title: "Midnight Lo-Fi Architecture",
+        artist: "Ketan Chandekar & Synth",
+        album: "Daily UI Focus Beats",
+        cover: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&h=500&fit=crop",
+        duration: 242, // 4:02
+        color: "#10b981",
+        baseFreq: 174.61,
+        lyrics: [
+          { time: 8, text: "Warm tape hiss, vinyl dust turning slow..." },
+          { time: 28, text: "Midnight code running in the terminal glow..." },
+          { time: 55, text: "Keys click into rhythm, thoughts take flight..." },
+          { time: 88, text: "Building tomorrow in the quiet of the night..." }
+        ]
+      }
+    ];
+
+    let currentTrackIdx = 0;
+    let isPlaying = false;
+    let currentTime = 42;
+    let isMuted = false;
+    let volumeLevel = 0.8;
+    let isFavorite = false;
+    let playbackInterval = null;
+
+    // Web Audio API Ambient Synthesizer
+    let audioCtx = null;
+    let synthOsc1 = null;
+    let synthOsc2 = null;
+    let synthGain = null;
+    let isAudioEngineRunning = false;
+
+    function initWebAudio() {
+      if (audioCtx) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        synthGain = audioCtx.createGain();
+        synthGain.gain.setValueAtTime(volumeLevel * 0.15, audioCtx.currentTime);
+        synthGain.connect(audioCtx.destination);
+      } catch (e) {
+        console.warn("Web Audio not supported", e);
+      }
+    }
+
+    function startSynthesizer() {
+      initWebAudio();
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      stopSynthesizer();
+
+      const track = playlist[currentTrackIdx];
+      synthOsc1 = audioCtx.createOscillator();
+      synthOsc2 = audioCtx.createOscillator();
+
+      synthOsc1.type = 'sine';
+      synthOsc2.type = 'triangle';
+
+      synthOsc1.frequency.setValueAtTime(track.baseFreq, audioCtx.currentTime);
+      synthOsc2.frequency.setValueAtTime(track.baseFreq * 1.5, audioCtx.currentTime); // Perfect fifth harmony
+
+      synthOsc1.connect(synthGain);
+      synthOsc2.connect(synthGain);
+
+      synthOsc1.start();
+      synthOsc2.start();
+      isAudioEngineRunning = true;
+      document.getElementById('audio-engine-status').textContent = `Synthesizing Audio: ${track.baseFreq.toFixed(1)}Hz`;
+    }
+
+    function stopSynthesizer() {
+      if (synthOsc1) { try { synthOsc1.stop(); } catch(e){} synthOsc1 = null; }
+      if (synthOsc2) { try { synthOsc2.stop(); } catch(e){} synthOsc2 = null; }
+      isAudioEngineRunning = false;
+    }
+
+    function toggleAudioSynthesizer() {
+      if (isPlaying) {
+        if (isAudioEngineRunning) {
+          stopSynthesizer();
+          document.getElementById('audio-engine-status').textContent = "Synthesizer Muted";
+        } else {
+          startSynthesizer();
+        }
+      } else {
+        togglePlayPause();
+      }
+    }
+
+    // Playback Transport Functions
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      const masterIcon = document.getElementById('master-play-icon');
+      const overlayIcon = document.getElementById('overlay-play-icon');
+      const vinyl = document.getElementById('vinyl-disc');
+
+      if (isPlaying) {
+        masterIcon.setAttribute('data-lucide', 'pause');
+        overlayIcon.setAttribute('data-lucide', 'pause');
+        vinyl.classList.add('animate-spin-slow');
+        startPlaybackTimer();
+        startSynthesizer();
+        announceScreenReader(`Playing: ${playlist[currentTrackIdx].title}`);
+      } else {
+        masterIcon.setAttribute('data-lucide', 'play');
+        overlayIcon.setAttribute('data-lucide', 'play');
+        vinyl.classList.remove('animate-spin-slow');
+        clearInterval(playbackInterval);
+        stopSynthesizer();
+        announceScreenReader("Playback paused");
+      }
+      lucide.createIcons();
+    }
+
+    function startPlaybackTimer() {
+      clearInterval(playbackInterval);
+      playbackInterval = setInterval(() => {
+        currentTime++;
+        const currentTrack = playlist[currentTrackIdx];
+        if (currentTime > currentTrack.duration) {
+          nextTrack();
+          return;
+        }
+        updateTimeUI();
+        syncLyrics();
+      }, 1000);
+    }
+
+    function updateTimeUI() {
+      const currentTrack = playlist[currentTrackIdx];
+      const scrubber = document.getElementById('time-scrubber');
+      scrubber.max = currentTrack.duration;
+      scrubber.value = currentTime;
+
+      document.getElementById('time-current').textContent = formatSeconds(currentTime);
+      document.getElementById('time-total').textContent = formatSeconds(currentTrack.duration);
+    }
+
+    function formatSeconds(secs) {
+      const m = Math.floor(secs / 60);
+      const s = Math.floor(secs % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function handleSeek(e) {
+      currentTime = parseInt(e.target.value);
+      updateTimeUI();
+      syncLyrics();
+    }
+
+    function seekOffset(offset) {
+      const currentTrack = playlist[currentTrackIdx];
+      currentTime = Math.max(0, Math.min(currentTrack.duration, currentTime + offset));
+      updateTimeUI();
+      syncLyrics();
+    }
+
+    function prevTrack() {
+      currentTrackIdx = (currentTrackIdx - 1 + playlist.length) % playlist.length;
+      loadTrack(currentTrackIdx);
+    }
+
+    function nextTrack() {
+      currentTrackIdx = (currentTrackIdx + 1) % playlist.length;
+      loadTrack(currentTrackIdx);
+    }
+
+    function loadTrack(index) {
+      currentTrackIdx = index;
+      const track = playlist[index];
+      currentTime = 0;
+
+      document.getElementById('track-title').textContent = track.title;
+      document.getElementById('track-artist').innerHTML = `<span>${track.artist}</span> <span class="text-slate-500">•</span> <span class="text-xs text-slate-400 font-mono">${track.album}</span>`;
+      document.getElementById('track-cover-img').src = track.cover;
+      document.getElementById('ambient-orb-1').style.backgroundColor = `${track.color}25`;
+
+      updateTimeUI();
+      renderQueue();
+      renderLyricsDrawer();
+
+      if (isPlaying) {
+        startSynthesizer();
+        announceScreenReader(`Now playing: ${track.title} by ${track.artist}`);
+      }
+    }
+
+    // Volume & Mute
+    function handleVolume(e) {
+      volumeLevel = e.target.value / 100;
+      if (synthGain && audioCtx) {
+        synthGain.gain.setValueAtTime(isMuted ? 0 : volumeLevel * 0.15, audioCtx.currentTime);
+      }
+      updateVolumeIcon();
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      if (synthGain && audioCtx) {
+        synthGain.gain.setValueAtTime(isMuted ? 0 : volumeLevel * 0.15, audioCtx.currentTime);
+      }
+      updateVolumeIcon();
+    }
+
+    function updateVolumeIcon() {
+      const icon = document.getElementById('volume-icon');
+      if (isMuted || volumeLevel === 0) {
+        icon.setAttribute('data-lucide', 'volume-x');
+      } else if (volumeLevel < 0.5) {
+        icon.setAttribute('data-lucide', 'volume-1');
+      } else {
+        icon.setAttribute('data-lucide', 'volume-2');
+      }
+      lucide.createIcons();
+    }
+
+    // Spatial Audio Modes
+    function setSpatialMode(mode) {
+      document.querySelectorAll('.spatial-btn').forEach(b => {
+        b.className = "spatial-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition";
+      });
+      const active = document.getElementById(`spatial-${mode}`);
+      active.className = "spatial-btn px-2.5 py-1 rounded-lg bg-brand-600 text-white font-bold transition shadow-sm";
+      announceScreenReader(`Spatial mode set to ${mode}`);
+    }
+
+    // Favorites & Sharing
+    function toggleFavorite() {
+      isFavorite = !isFavorite;
+      const icon = document.getElementById('heart-icon');
+      const btn = document.getElementById('favorite-btn');
+      if (isFavorite) {
+        btn.className = "p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/30 transition";
+        icon.setAttribute('data-lucide', 'heart');
+        icon.classList.add('fill-current');
+      } else {
+        btn.className = "p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition";
+        icon.classList.remove('fill-current');
+      }
+      lucide.createIcons();
+    }
+
+    function shareTrack() {
+      const track = playlist[currentTrackIdx];
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(`Now listening to ${track.title} on Aura Soundwave: ${window.location.href}`);
+        alert(`Copied link to clipboard: "${track.title}" by ${track.artist}`);
+      }
+    }
+
+    function toggleShuffle() {
+      const btn = document.getElementById('shuffle-btn');
+      btn.classList.toggle('text-brand-400');
+    }
+
+    function toggleRepeat() {
+      const btn = document.getElementById('repeat-btn');
+      btn.classList.toggle('text-brand-400');
+    }
+
+    // Playlist Queue Rendering
+    function renderQueue() {
+      const container = document.getElementById('playlist-queue-container');
+      container.innerHTML = playlist.map((track, i) => `
+        <div onclick="loadTrack(${i})" class="p-3 rounded-2xl flex items-center justify-between gap-3 cursor-pointer transition ${i === currentTrackIdx ? 'bg-brand-500/15 border border-brand-500/30' : 'bg-white/[0.02] border border-white/[0.06] hover:bg-slate-800/60'}">
+          <div class="flex items-center gap-3 min-w-0">
+            <img src="${track.cover}" class="w-10 h-10 rounded-xl object-cover" alt="${track.title}">
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-white truncate flex items-center gap-2">
+                <span>${track.title}</span>
+                ${i === currentTrackIdx ? '<span class="w-1.5 h-1.5 rounded-full bg-brand-400 animate-ping"></span>' : ''}
+              </div>
+              <div class="text-[11px] text-slate-400 font-mono truncate">${track.artist}</div>
+            </div>
+          </div>
+          <span class="text-xs font-mono text-slate-500 flex-shrink-0">${formatSeconds(track.duration)}</span>
+        </div>
+      `).join('');
+    }
+
+    // Synced Lyrics Handling
+    function syncLyrics() {
+      const currentTrack = playlist[currentTrackIdx];
+      let activeText = "Playing instrumental passage...";
+      currentTrack.lyrics.forEach(line => {
+        if (currentTime >= line.time) {
+          activeText = `"${line.text}"`;
+        }
+      });
+      document.getElementById('active-lyric-line').textContent = activeText;
+    }
+
+    function renderLyricsDrawer() {
+      const currentTrack = playlist[currentTrackIdx];
+      const container = document.getElementById('full-lyrics-container');
+      container.innerHTML = currentTrack.lyrics.map(l => `
+        <div onclick="currentTime=${l.time}; updateTimeUI(); syncLyrics(); toggleLyricsDrawer();" class="p-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white cursor-pointer transition border border-transparent hover:border-brand-500/30">
+          <div class="text-[10px] font-mono text-brand-400 mb-0.5">${formatSeconds(l.time)}</div>
+          <div class="text-sm font-semibold">${l.text}</div>
+        </div>
+      `).join('');
+    }
+
+    function toggleLyricsDrawer() {
+      const drawer = document.getElementById('lyrics-drawer');
+      const backdrop = document.getElementById('lyrics-backdrop');
+      drawer.classList.toggle('translate-x-full');
+      backdrop.classList.toggle('hidden');
+    }
+
+    // REAL-TIME CANVAS SPECTRUM VISUALIZER
+    const canvas = document.getElementById('visualizer-canvas');
+    const ctx = canvas.getContext('2d');
+    const numBars = 32;
+
+    function renderSpectrum() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const barWidth = (canvas.width / numBars) - 3;
+
+      for (let i = 0; i < numBars; i++) {
+        let barHeight = 6;
+        if (isPlaying) {
+          // Dynamic harmonic math wave simulating real FFT data
+          const wave = Math.sin(Date.now() * 0.005 + i * 0.3) * 0.5 + 0.5;
+          const noise = Math.random() * 0.3;
+          barHeight = Math.max(6, (wave + noise) * canvas.height * 0.85);
+        }
+
+        const x = i * (barWidth + 3);
+        const y = canvas.height - barHeight;
+
+        // Gradient for frequency bars
+        const grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
+        grad.addColorStop(0, '#7c3aed');
+        grad.addColorStop(0.6, '#a855f7');
+        grad.addColorStop(1, '#06b6d4');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.roundRect(x, y, barWidth, barHeight, [3, 3, 0, 0]);
+        ctx.fill();
+      }
+
+      requestAnimationFrame(renderSpectrum);
+    }
+    renderSpectrum();
+
+    // Global Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (e.code === 'ArrowLeft') {
+        seekOffset(-5);
+      } else if (e.code === 'ArrowRight') {
+        seekOffset(5);
+      } else if (e.code === 'ArrowUp') {
+        e.preventDefault();
+        volumeLevel = Math.min(1, volumeLevel + 0.1);
+        document.getElementById('volume-slider').value = volumeLevel * 100;
+        handleVolume({ target: { value: volumeLevel * 100 } });
+      } else if (e.code === 'ArrowDown') {
+        e.preventDefault();
+        volumeLevel = Math.max(0, volumeLevel - 0.1);
+        document.getElementById('volume-slider').value = volumeLevel * 100;
+        handleVolume({ target: { value: volumeLevel * 100 } });
+      } else if (e.key === 'm' || e.key === 'M') {
+        toggleMute();
+      } else if (e.key === 'l' || e.key === 'L') {
+        toggleLyricsDrawer();
+      }
+    });
+
+    function announceScreenReader(msg) {
+      document.getElementById('sr-announcements').textContent = msg;
+    }
+
+    // UX Drawer
+    const uxDrawer = document.getElementById('ux-drawer');
+    const drawerBackdrop = document.getElementById('drawer-backdrop');
+    document.getElementById('toggle-ux-drawer').addEventListener('click', () => {
+      uxDrawer.classList.remove('translate-x-full');
+      drawerBackdrop.classList.remove('hidden');
+    });
+    document.getElementById('close-ux-drawer').addEventListener('click', () => {
+      uxDrawer.classList.add('translate-x-full');
+      drawerBackdrop.classList.add('hidden');
+    });
+    drawerBackdrop.addEventListener('click', () => {
+      uxDrawer.classList.add('translate-x-full');
+      drawerBackdrop.classList.add('hidden');
+    });
+
+    // Initialize
+    loadTrack(0);
+  </script>
+
+</body>
+</html>

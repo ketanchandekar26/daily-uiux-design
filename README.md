@@ -27,7 +27,7 @@ Every daily challenge is executed under four core engineering pillars:
 | **006** | **User Profile & Settings Hub** | Account Management | [Day 006 Prototype](./day-006-user-profile/index.html) | ✅ Completed |
 | **007** | **Settings & Permissions Modal** | System Architecture | [Day 007 Prototype](./day-007-settings-modal/index.html) | ✅ Completed |
 | **008** | **404 Error Page & Recovery Flow** | Error Handling / Delight | [Day 008 Prototype](./day-008-404-page/index.html) | ✅ Completed |
-| **009** | Music / Media Player | Entertainment | *Upcoming* | ⏳ Queued |
+| **009** | **Spatial Audio & Media Player** | Entertainment | [Day 009 Prototype](./day-009-music-player/index.html) | ✅ Completed |
 | **010** | Social Share Widget | Engagement / Growth | *Upcoming* | ⏳ Queued |
 
 ---
