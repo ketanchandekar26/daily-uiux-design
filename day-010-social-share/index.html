@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 010: Social Share Widget & Viral Growth Studio | Daily UI/UX</title>
+
+  <!-- OpenGraph / Social Metadata -->
+  <meta property="og:title" content="Designing Autonomous Spatial Interfaces — Daily UI 010">
+  <meta property="og:description" content="Explore cognitive ergonomics, dynamic viral loops, and the future of multimodal UI architecture.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://ketanchandekar26.github.io/daily-uiux-design/day-010-social-share/">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Typography: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+            },
+            surface: {
+              950: '#090a0f',
+              900: '#0f111a',
+              850: '#151824',
+              800: '#1c2030',
+              700: '#282d42',
+              600: '#393f5c',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            'scale-up': 'scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            'pulse-subtle': 'pulseSubtle 3s ease-in-out infinite',
+            'bounce-gentle': 'bounceGentle 2s infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            scaleUp: {
+              '0%': { opacity: '0', transform: 'scale(0.95) translateY(10px)' },
+              '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+            },
+            pulseSubtle: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.75' },
+            },
+            bounceGentle: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-4px)' },
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090a0f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #282d42;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #7c3aed;
+    }
+
+    /* Selection Highlighting */
+    ::selection {
+      background: rgba(124, 58, 237, 0.35);
+      color: #ede9fe;
+    }
+
+    /* Ambient Glow Effects */
+    .glow-purple {
+      box-shadow: 0 0 40px -10px rgba(139, 92, 246, 0.35);
+    }
+    .glow-cyan {
+      box-shadow: 0 0 35px -8px rgba(6, 182, 212, 0.3);
+    }
+
+    /* Canvas smoothing */
+    canvas {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-200 font-sans min-h-screen selection:bg-brand-600/30 selection:text-brand-200 antialiased relative overflow-x-hidden">
+
+  <!-- Ambient Background Gradients -->
+  <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-brand-600/15 rounded-full blur-[120px]"></div>
+    <div class="absolute top-1/3 -right-40 w-[30rem] h-[30rem] bg-indigo-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute -bottom-40 left-1/3 w-[32rem] h-[32rem] bg-cyan-600/10 rounded-full blur-[150px]"></div>
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+  </div>
+
+  <!-- Top Global Navigation Header -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-surface-950/80 border-b border-surface-800/80 px-4 sm:px-8 py-3.5 transition-all duration-200">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="../" class="group flex items-center gap-2.5 text-xs font-semibold tracking-wider uppercase text-slate-400 hover:text-white transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-surface-850 border border-surface-700/80 flex items-center justify-center text-slate-300 group-hover:border-brand-500/50 group-hover:text-brand-400 transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-0.5"></i>
+          </div>
+          <span class="hidden sm:inline">Daily UI Hub</span>
+        </a>
+        <div class="h-4 w-px bg-surface-700/80"></div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-300 font-mono text-xs font-semibold">DAY 010</span>
+          <span class="text-xs font-medium text-slate-400 hidden md:inline">Social Share Widget & Viral Growth Studio</span>
+        </div>
+      </div>
+
+      <!-- Quick Actions & Share Trigger -->
+      <div class="flex items-center gap-2.5">
+        <button id="toggle-growth-hud-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-surface-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all">
+          <i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="hidden sm:inline">Growth Ticker</span>
+          <span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">1.8K</span>
+        </button>
+
+        <button id="main-share-btn" class="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-medium text-xs shadow-lg shadow-brand-600/25 transition-all transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-brand-400">
+          <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+          <span>Share Article</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-10 relative">
+
+    <!-- Floating Share Dock (Desktop Left Margin) -->
+    <aside class="hidden lg:flex flex-col items-center gap-3 fixed left-8 top-36 z-30 p-2 rounded-2xl bg-surface-900/90 backdrop-blur-xl border border-surface-700/60 shadow-2xl glow-purple" aria-label="Social Share Toolbar">
+      <!-- Open Share Hub -->
+      <button onclick="openShareModal('channels')" title="Open Share Studio" class="w-10 h-10 rounded-xl bg-brand-600/20 text-brand-300 hover:bg-brand-600 hover:text-white flex items-center justify-center transition-all group relative">
+        <i data-lucide="share-2" class="w-4 h-4"></i>
+        <span class="absolute left-14 px-2 py-1 bg-surface-900 border border-surface-700 text-slate-200 text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl">Share Hub</span>
+      </button>
+
+      <div class="w-6 h-px bg-surface-700/60"></div>
+
+      <!-- Quick X Share -->
+      <button onclick="shareDirect('twitter')" title="Share to X" class="w-10 h-10 rounded-xl bg-surface-850 hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center transition-all group relative">
+        <i data-lucide="twitter" class="w-4 h-4"></i>
+        <span class="absolute left-14 px-2 py-1 bg-surface-900 border border-surface-700 text-slate-200 text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl">Post on X</span>
+      </button>
+
+      <!-- Quick LinkedIn Share -->
+      <button onclick="shareDirect('linkedin')" title="Share to LinkedIn" class="w-10 h-10 rounded-xl bg-surface-850 hover:bg-blue-600/20 text-slate-300 hover:text-blue-400 flex items-center justify-center transition-all group relative">
+        <i data-lucide="linkedin" class="w-4 h-4"></i>
+        <span class="absolute left-14 px-2 py-1 bg-surface-900 border border-surface-700 text-slate-200 text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl">Share on LinkedIn</span>
+      </button>
+
+      <!-- Quick Copy Link -->
+      <button onclick="copyCanonicalLink(this)" title="Copy Link" class="w-10 h-10 rounded-xl bg-surface-850 hover:bg-surface-700 text-slate-300 hover:text-emerald-400 flex items-center justify-center transition-all group relative">
+        <i data-lucide="link" class="w-4 h-4"></i>
+        <span class="absolute left-14 px-2 py-1 bg-surface-900 border border-surface-700 text-slate-200 text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl">Copy Link</span>
+      </button>
+
+      <!-- Generate Card Studio -->
+      <button onclick="openShareModal('card')" title="Visual Card Studio" class="w-10 h-10 rounded-xl bg-surface-850 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 flex items-center justify-center transition-all group relative">
+        <i data-lucide="sparkles" class="w-4 h-4"></i>
+        <span class="absolute left-14 px-2 py-1 bg-surface-900 border border-surface-700 text-slate-200 text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl">OG Card Studio</span>
+      </button>
+
+      <div class="w-6 h-px bg-surface-700/60"></div>
+
+      <!-- Clap / Heart Counter with Particle Effect -->
+      <button id="reaction-heart-btn" class="w-10 h-10 rounded-xl bg-surface-850 hover:bg-pink-600/20 text-slate-300 hover:text-pink-400 flex flex-col items-center justify-center transition-all group relative">
+        <i data-lucide="heart" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+        <span id="reaction-count" class="text-[9px] font-mono font-semibold text-slate-400">142</span>
+        <span class="absolute left-14 px-2 py-1 bg-surface-900 border border-surface-700 text-slate-200 text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl">Applaud (+1)</span>
+      </button>
+    </aside>
+
+    <!-- Floating Highlight-to-Share Popover (Appears dynamically upon text selection) -->
+    <div id="selection-popover" class="fixed hidden z-50 transform -translate-x-1/2 -translate-y-full mb-3 py-1.5 px-2 bg-surface-900/95 backdrop-blur-md border border-brand-500/40 rounded-xl shadow-2xl flex items-center gap-1.5 animate-scale-up glow-purple" role="toolbar" aria-label="Quote actions">
+      <button id="quote-share-x" class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-200 hover:text-white hover:bg-brand-600/30 rounded-lg transition-colors">
+        <i data-lucide="twitter" class="w-3.5 h-3.5 text-sky-400"></i>
+        <span>Quote on X</span>
+      </button>
+      <div class="w-px h-3.5 bg-surface-700"></div>
+      <button id="quote-make-card" class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-200 hover:text-white hover:bg-indigo-600/30 rounded-lg transition-colors">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span>Create Card</span>
+      </button>
+      <div class="w-px h-3.5 bg-surface-700"></div>
+      <button id="quote-copy" class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-200 hover:text-white hover:bg-surface-700 rounded-lg transition-colors">
+        <i data-lucide="copy" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span>Copy Quote</span>
+      </button>
+      <!-- Arrow Pointer -->
+      <div class="absolute left-1/2 -bottom-1 w-2 h-2 bg-surface-900 border-r border-b border-brand-500/40 transform -translate-x-1/2 rotate-45"></div>
+    </div>
+
+    <!-- Article Hero / Showcase Content -->
+    <article class="bg-surface-900/60 backdrop-blur-sm border border-surface-800 rounded-3xl p-6 sm:p-10 shadow-xl relative">
+      
+      <!-- Article Category & Metadata -->
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-surface-800 pb-6 mb-8">
+        <div class="flex items-center gap-3">
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-brand-500/10 text-brand-300 border border-brand-500/20">Spatial Ergonomics & AI</span>
+          <span class="text-xs text-slate-400 flex items-center gap-1">
+            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+            5 min read
+          </span>
+          <span class="text-xs text-slate-400 flex items-center gap-1">
+            <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+            Updated Today
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="openShareModal('channels')" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-800 hover:bg-surface-700 text-xs font-medium text-slate-300 border border-surface-700/80 transition-all">
+            <i data-lucide="share" class="w-3.5 h-3.5 text-brand-400"></i>
+            <span>Share</span>
+          </button>
+          <button onclick="toggleBookmark(this)" class="p-1.5 rounded-full bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-amber-400 border border-surface-700/80 transition-colors" title="Bookmark Article">
+            <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Article Title & Subtitle -->
+      <h1 id="article-title" class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
+        Designing the Next Generation of Autonomous Spatial Interfaces
+      </h1>
+      <p id="article-subtitle" class="text-lg sm:text-xl text-slate-300 leading-relaxed font-light mb-8">
+        Why the convergence of multimodal spatial agents, zero-latency tactile feedback, and organic viral mechanics will reshape human-computer co-presence.
+      </p>
+
+      <!-- Author Bio Row -->
+      <div class="flex items-center gap-3.5 p-4 rounded-2xl bg-surface-850/80 border border-surface-800 mb-8">
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="Elena Rostova" class="w-12 h-12 rounded-xl object-cover ring-2 ring-brand-500/40">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-semibold text-white">Elena Rostova</h2>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Verified Author</span>
+          </div>
+          <p class="text-xs text-slate-400">VP of Human-Interface Architecture @ Synapse Labs · @elena_ux</p>
+        </div>
+      </div>
+
+      <!-- Feature Highlight / Try Selecting Text Notice -->
+      <div class="mb-8 p-3.5 rounded-xl bg-gradient-to-r from-brand-900/30 via-indigo-900/20 to-surface-850 border border-brand-500/30 flex items-center justify-between text-xs text-brand-200">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="highlighter" class="w-4 h-4 text-brand-400 flex-shrink-0 animate-bounce-gentle"></i>
+          <span><strong>Interactive Feature:</strong> Highlight any text below to trigger instant quote-sharing and social card rendering!</span>
+        </div>
+        <span class="hidden sm:inline-block px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 font-mono text-[11px]">Select text ✦</span>
+      </div>
+
+      <!-- Article Body Paragraphs -->
+      <div class="prose prose-invert max-w-none space-y-6 text-slate-300 text-base leading-relaxed">
+        <p>
+          For three decades, user interfaces have remained tethered to the rectangular viewport—a glass slab framing flat typographic hierarchies and discrete interaction cycles. Yet as spatial computing and autonomous multi-agent co-pilots mature, our conceptual model must evolve from <strong class="text-white">command-and-control manipulation</strong> to <strong class="text-white">ambient spatial co-presence</strong>.
+        </p>
+
+        <!-- Blockquote / Pull Quote (Ideal for sharing) -->
+        <blockquote id="sample-quote" class="relative my-8 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-surface-850 to-surface-900 border-l-4 border-brand-500 shadow-xl">
+          <div class="text-brand-500/20 absolute -top-4 -left-2 text-6xl font-serif pointer-events-none">“</div>
+          <p class="text-lg sm:text-xl font-medium text-slate-100 italic mb-3 relative z-10">
+            Great interfaces don't just reduce cognitive friction—they manufacture intuitive virality by making comprehension feel like an effortless epiphany.
+          </p>
+          <div class="flex items-center justify-between pt-2">
+            <cite class="text-xs font-mono text-brand-400 uppercase tracking-widest not-italic">— Elena Rostova, Principles of Spatial UX</cite>
+            <button onclick="shareQuoteText('Great interfaces don\'t just reduce cognitive friction—they manufacture intuitive virality by making comprehension feel like an effortless epiphany.')" class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 text-xs font-medium border border-brand-500/30 transition-all">
+              <i data-lucide="quote" class="w-3.5 h-3.5"></i>
+              <span>Share Quote</span>
+            </button>
+          </div>
+        </blockquote>
+
+        <p>
+          Virality in modern software is rarely accidental. It relies upon what behavioral design calls the <em>Epiphany Loop</em>: a user encounters a high-density insight, extracts personal validation, and feels an innate neurological urge to broadcast that clarity to their network. By architecting frictionless sharing primitives—pre-rendered dynamic OpenGraph cards, precision UTM parameters, and instant one-tap messaging intents—we compress the sharing latency from minutes into milliseconds.
+        </p>
+
+        <!-- Inline Visual Card Preview Widget -->
+        <div class="my-8 p-5 rounded-2xl bg-surface-850 border border-surface-700/80">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-mono font-semibold uppercase text-slate-400 tracking-wider">Social Share Engine Preview</span>
+            <span class="text-xs text-brand-400 font-mono">1,842 total shares</span>
+          </div>
+
+          <!-- Quick Action Bar -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <button onclick="shareDirect('twitter')" class="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-surface-800 hover:bg-slate-800 border border-surface-700 hover:border-slate-600 text-xs font-medium text-slate-200 transition-all">
+              <i data-lucide="twitter" class="w-4 h-4 text-sky-400"></i>
+              <span>X / Twitter</span>
+            </button>
+            <button onclick="shareDirect('linkedin')" class="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-surface-800 hover:bg-blue-900/30 border border-surface-700 hover:border-blue-600/40 text-xs font-medium text-slate-200 transition-all">
+              <i data-lucide="linkedin" class="w-4 h-4 text-blue-400"></i>
+              <span>LinkedIn</span>
+            </button>
+            <button onclick="shareDirect('whatsapp')" class="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-surface-800 hover:bg-emerald-900/30 border border-surface-700 hover:border-emerald-600/40 text-xs font-medium text-slate-200 transition-all">
+              <i data-lucide="message-circle" class="w-4 h-4 text-emerald-400"></i>
+              <span>WhatsApp</span>
+            </button>
+            <button onclick="openShareModal('card')" class="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-brand-600/20 hover:bg-brand-600/40 border border-brand-500/40 text-xs font-medium text-brand-200 transition-all">
+              <i data-lucide="sparkles" class="w-4 h-4 text-brand-400"></i>
+              <span>Card Studio</span>
+            </button>
+          </div>
+        </div>
+
+        <p>
+          Ultimately, growth engineering and ethical design converge at the sharing boundary. When we give users the power to customize their narrative—tailoring visual themes, embedding context, and targeting exact communities—we honor both their agency and their audience.
+        </p>
+      </div>
+
+      <!-- Bottom Article Share CTA Banner -->
+      <div class="mt-12 pt-8 border-t border-surface-800 flex flex-col sm:flex-row items-center justify-between gap-6 bg-surface-850/50 p-6 rounded-2xl border border-surface-700/60">
+        <div>
+          <h3 class="text-base font-semibold text-white mb-1">Found this perspective valuable?</h3>
+          <p class="text-xs text-slate-400">Help amplify modern frontend ergonomics with your engineering network.</p>
+        </div>
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <button onclick="copyCanonicalLink(this)" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-surface-800 hover:bg-surface-700 border border-surface-700 text-xs font-medium text-slate-200 transition-all">
+            <i data-lucide="copy" class="w-4 h-4 text-slate-400"></i>
+            <span>Copy Link</span>
+          </button>
+          <button onclick="openShareModal('channels')" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-lg shadow-brand-600/30 transition-all transform active:scale-95">
+            <i data-lucide="share-2" class="w-4 h-4"></i>
+            <span>Open Share Hub</span>
+          </button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Interactive Live Growth Ticker Drawer (Expandable at bottom) -->
+    <div id="growth-hud" class="mt-8 bg-surface-900/90 backdrop-blur-xl border border-surface-800 rounded-3xl p-6 shadow-2xl transition-all duration-300">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <h4 class="text-sm font-semibold text-white">Live Viral Growth Engine & Simulation Analytics</h4>
+        </div>
+        <span class="text-xs font-mono text-slate-400">Updated: <span id="last-update-time">Just now</span></span>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+          <span class="text-xs text-slate-400 block mb-1">Total Shares</span>
+          <div class="flex items-baseline gap-2">
+            <span id="stat-shares" class="text-2xl font-bold font-mono text-white">1,842</span>
+            <span class="text-xs font-semibold text-emerald-400">+14%</span>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+          <span class="text-xs text-slate-400 block mb-1">Viral Coefficient ($K$)</span>
+          <div class="flex items-baseline gap-2">
+            <span id="stat-kfactor" class="text-2xl font-bold font-mono text-brand-400">1.38</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-300">Exponential</span>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+          <span class="text-xs text-slate-400 block mb-1">Click-Through (CTR)</span>
+          <div class="flex items-baseline gap-2">
+            <span id="stat-ctr" class="text-2xl font-bold font-mono text-cyan-400">18.6%</span>
+            <span class="text-xs text-slate-400">vs 4.2% avg</span>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+          <span class="text-xs text-slate-400 block mb-1">Top Referral Channel</span>
+          <div class="flex items-baseline gap-2">
+            <span class="text-lg font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="twitter" class="w-4 h-4 text-sky-400"></i> X (48%)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Event Activity Stream -->
+      <div class="mt-4 pt-4 border-t border-surface-800 flex items-center justify-between text-xs text-slate-400">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <span class="font-mono text-brand-400 flex-shrink-0">EVENT LOG:</span>
+          <span id="live-activity-ticker" class="truncate text-slate-300">User clicked "Copy Link" with UTM campaign `daily_ui_growth`</span>
+        </div>
+        <button onclick="simulateOrganicShare()" class="flex-shrink-0 text-brand-400 hover:text-brand-300 font-mono text-xs underline pl-2">Simulate Share +1</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL / DIALOG: ADVANCED SHARE & GROWTH STUDIO HUB      -->
+  <!-- ======================================================== -->
+  <div id="share-modal-backdrop" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 hidden opacity-0 transition-opacity duration-200 flex items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+    
+    <div id="share-modal-panel" class="bg-surface-900 border border-surface-700/80 rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transform scale-95 transition-all duration-200">
+      
+      <!-- Modal Header -->
+      <div class="p-5 sm:p-6 border-b border-surface-800 flex items-center justify-between bg-surface-950/50">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+            <i data-lucide="share-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 id="modal-headline" class="text-lg font-bold text-white">Social Share & Growth Studio</h2>
+            <p class="text-xs text-slate-400">Choose a distribution channel, design an OG card, or build tracking links</p>
+          </div>
+        </div>
+        
+        <!-- Close Button -->
+        <button onclick="closeShareModal()" class="w-9 h-9 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors" aria-label="Close dialog">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs (5 Tabs) -->
+      <div class="flex items-center px-4 sm:px-6 border-b border-surface-800 bg-surface-900/60 overflow-x-auto gap-1">
+        <button onclick="switchTab('channels')" id="tab-btn-channels" class="tab-button active py-3 px-3.5 text-xs font-semibold border-b-2 border-brand-500 text-white flex items-center gap-2 whitespace-nowrap transition-colors">
+          <i data-lucide="send" class="w-4 h-4 text-brand-400"></i>
+          <span>Fast Share</span>
+        </button>
+
+        <button onclick="switchTab('card')" id="tab-btn-card" class="tab-button py-3 px-3.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors">
+          <i data-lucide="image" class="w-4 h-4"></i>
+          <span>OG Card Studio</span>
+        </button>
+
+        <button onclick="switchTab('utm')" id="tab-btn-utm" class="tab-button py-3 px-3.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors">
+          <i data-lucide="compass" class="w-4 h-4"></i>
+          <span>UTM Builder</span>
+        </button>
+
+        <button onclick="switchTab('qr')" id="tab-btn-qr" class="tab-button py-3 px-3.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors">
+          <i data-lucide="qr-code" class="w-4 h-4"></i>
+          <span>QR Generator</span>
+        </button>
+
+        <button onclick="switchTab('embed')" id="tab-btn-embed" class="tab-button py-3 px-3.5 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition-colors">
+          <i data-lucide="code" class="w-4 h-4"></i>
+          <span>Embed & Badges</span>
+        </button>
+      </div>
+
+      <!-- Modal Body (Tab Content Panes) -->
+      <div class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
+
+        <!-- ============================================== -->
+        <!-- TAB 1: FAST SHARE CHANNELS & QUICK COPY        -->
+        <!-- ============================================== -->
+        <div id="tab-content-channels" class="tab-pane space-y-6">
+          
+          <!-- Channels Grid -->
+          <div>
+            <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-3">Distribute to Network</label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              
+              <!-- X (Twitter) -->
+              <button onclick="shareDirect('twitter')" class="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-850 hover:bg-slate-800 border border-surface-750 hover:border-slate-600 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-slate-200 group-hover:text-white group-hover:scale-110 transition-transform mb-2">
+                  <i data-lucide="twitter" class="w-5 h-5 text-sky-400"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-200">X / Twitter</span>
+                <span class="text-[10px] text-slate-400">Post & Thread</span>
+              </button>
+
+              <!-- LinkedIn -->
+              <button onclick="shareDirect('linkedin')" class="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-850 hover:bg-blue-950/40 border border-surface-750 hover:border-blue-600/50 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-blue-900/30 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform mb-2">
+                  <i data-lucide="linkedin" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-200">LinkedIn</span>
+                <span class="text-[10px] text-slate-400">B2B Network</span>
+              </button>
+
+              <!-- WhatsApp -->
+              <button onclick="shareDirect('whatsapp')" class="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-850 hover:bg-emerald-950/40 border border-surface-750 hover:border-emerald-600/50 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-emerald-900/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform mb-2">
+                  <i data-lucide="message-circle" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-200">WhatsApp</span>
+                <span class="text-[10px] text-slate-400">Direct Chat</span>
+              </button>
+
+              <!-- Reddit -->
+              <button onclick="shareDirect('reddit')" class="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-850 hover:bg-orange-950/40 border border-surface-750 hover:border-orange-600/50 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-orange-900/30 flex items-center justify-center text-orange-400 group-hover:scale-110 transition-transform mb-2">
+                  <i data-lucide="flame" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-200">Reddit</span>
+                <span class="text-[10px] text-slate-400">r/design & ui</span>
+              </button>
+
+              <!-- Telegram -->
+              <button onclick="shareDirect('telegram')" class="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-850 hover:bg-sky-950/40 border border-surface-750 hover:border-sky-600/50 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-sky-900/30 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform mb-2">
+                  <i data-lucide="send" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-200">Telegram</span>
+                <span class="text-[10px] text-slate-400">Channel / Group</span>
+              </button>
+
+              <!-- Facebook -->
+              <button onclick="shareDirect('facebook')" class="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-850 hover:bg-blue-950/40 border border-surface-750 hover:border-blue-600/50 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-blue-900/30 flex items-center justify-center text-blue-300 group-hover:scale-110 transition-transform mb-2">
+                  <i data-lucide="facebook" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-200">Facebook</span>
+                <span class="text-[10px] text-slate-400">Feed & Groups</span>
+              </button>
+
+              <!-- Email -->
+              <button onclick="shareDirect('email')" class="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-850 hover:bg-surface-800 border border-surface-750 hover:border-surface-650 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-surface-750 flex items-center justify-center text-slate-300 group-hover:scale-110 transition-transform mb-2">
+                  <i data-lucide="mail" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs font-medium text-slate-200">Email</span>
+                <span class="text-[10px] text-slate-400">Direct Dispatch</span>
+              </button>
+
+              <!-- Native Web Share API -->
+              <button onclick="triggerWebShareAPI()" class="flex flex-col items-center justify-center p-4 rounded-2xl bg-gradient-to-br from-brand-900/40 to-indigo-900/30 hover:from-brand-900/60 hover:to-indigo-900/50 border border-brand-500/40 transition-all group">
+                <div class="w-10 h-10 rounded-xl bg-brand-600/30 flex items-center justify-center text-brand-300 group-hover:scale-110 transition-transform mb-2">
+                  <i data-lucide="share-2" class="w-5 h-5"></i>
+                </div>
+                <span class="text-xs font-medium text-brand-200">System Share</span>
+                <span class="text-[10px] text-brand-300/70">iOS / Android / Mac</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Copy Link Box with Vanity Short-Link Toggle -->
+          <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+            <div class="flex items-center justify-between mb-2">
+              <label for="canonical-url-display" class="text-xs font-mono uppercase tracking-wider text-slate-400">Permanent Direct Link</label>
+              
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] text-slate-400 font-mono">Vanity Shortlink</span>
+                <button type="button" id="toggle-shortlink-btn" onclick="toggleShortlink()" class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-surface-700 transition-colors duration-200 ease-in-out focus:outline-none" role="switch" aria-checked="false">
+                  <span id="shortlink-toggle-handle" class="translate-x-0 pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1">
+                <input id="canonical-url-display" type="text" readonly value="https://ketanchandekar26.github.io/daily-uiux-design/day-010-social-share/" class="w-full px-3.5 py-2.5 rounded-xl bg-surface-950 border border-surface-700 font-mono text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500 select-all pr-8">
+                <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3"></i>
+              </div>
+              <button id="quick-copy-button" onclick="copyCanonicalLink(this)" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-brand-600/30">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+                <span id="copy-btn-text">Copy</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 2: SOCIAL CARD STUDIO (OG 1200x630 IMAGE)  -->
+        <!-- ============================================== -->
+        <div id="tab-content-card" class="tab-pane hidden space-y-6">
+          
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-mono uppercase tracking-wider text-slate-400">Card Theme & Visual Aesthetic</label>
+              <span class="text-[11px] text-brand-400 font-mono">1200 × 630 Canvas Output</span>
+            </div>
+
+            <!-- Theme Picker Buttons -->
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+              <button onclick="setCardTheme('obsidian')" class="theme-select-btn active p-2.5 rounded-xl bg-surface-850 border border-brand-500 text-xs font-medium text-white flex items-center gap-2 transition-all">
+                <span class="w-3 h-3 rounded-full bg-slate-900 border border-brand-400"></span>
+                <span>Obsidian</span>
+              </button>
+              <button onclick="setCardTheme('cyberpunk')" class="theme-select-btn p-2.5 rounded-xl bg-surface-850 border border-surface-700 text-xs font-medium text-slate-300 flex items-center gap-2 transition-all">
+                <span class="w-3 h-3 rounded-full bg-gradient-to-r from-pink-500 to-cyan-400"></span>
+                <span>Cyberpunk</span>
+              </button>
+              <button onclick="setCardTheme('sunset')" class="theme-select-btn p-2.5 rounded-xl bg-surface-850 border border-surface-700 text-xs font-medium text-slate-300 flex items-center gap-2 transition-all">
+                <span class="w-3 h-3 rounded-full bg-gradient-to-r from-amber-500 to-rose-500"></span>
+                <span>Sunset</span>
+              </button>
+              <button onclick="setCardTheme('emerald')" class="theme-select-btn p-2.5 rounded-xl bg-surface-850 border border-surface-700 text-xs font-medium text-slate-300 flex items-center gap-2 transition-all">
+                <span class="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"></span>
+                <span>Emerald</span>
+              </button>
+              <button onclick="setCardTheme('editorial')" class="theme-select-btn p-2.5 rounded-xl bg-surface-850 border border-surface-700 text-xs font-medium text-slate-300 flex items-center gap-2 transition-all">
+                <span class="w-3 h-3 rounded-full bg-slate-100 border border-slate-300"></span>
+                <span>Editorial</span>
+              </button>
+            </div>
+
+            <!-- Custom Card Headline & Quote Text Inputs -->
+            <div class="space-y-3 mb-4">
+              <div>
+                <label for="og-custom-headline" class="block text-[11px] font-mono text-slate-400 mb-1">Card Headline / Title</label>
+                <input id="og-custom-headline" type="text" oninput="renderCardToCanvas()" value="Designing Autonomous Spatial Interfaces" class="w-full px-3 py-2 rounded-xl bg-surface-850 border border-surface-700 text-xs text-white focus:ring-1 focus:ring-brand-500 focus:outline-none">
+              </div>
+              <div>
+                <label for="og-custom-quote" class="block text-[11px] font-mono text-slate-400 mb-1">Featured Quote / Excerpt</label>
+                <input id="og-custom-quote" type="text" oninput="renderCardToCanvas()" value="Great interfaces don't just reduce friction—they manufacture intuitive virality." class="w-full px-3 py-2 rounded-xl bg-surface-850 border border-surface-700 text-xs text-slate-300 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Live Canvas Container (Scaled to fit responsive viewport) -->
+            <div class="rounded-2xl border border-surface-700/80 overflow-hidden bg-black shadow-2xl relative flex items-center justify-center p-2">
+              <canvas id="og-canvas" width="1200" height="630" class="w-full h-auto rounded-xl shadow-lg"></canvas>
+            </div>
+
+            <!-- Download Button -->
+            <div class="mt-4 flex items-center justify-between">
+              <span class="text-xs text-slate-400 font-mono">Format: High-Res PNG (Retina 1200×630)</span>
+              <button onclick="downloadCardImage()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs shadow-lg shadow-brand-600/30 transition-all">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Download Card Image</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 3: UTM CAMPAIGN & GROWTH TRACKING BUILDER  -->
+        <!-- ============================================== -->
+        <div id="tab-content-utm" class="tab-pane hidden space-y-6">
+          
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-mono uppercase tracking-wider text-slate-400">Campaign Quick Presets</label>
+              <span class="text-[11px] text-slate-400 font-mono">Auto-configures UTM schema</span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              <button onclick="applyUtmPreset('x_thread')" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-surface-700 text-xs font-medium text-slate-300 text-left transition-all">
+                <span class="block text-white">X Thread Launch</span>
+                <span class="text-[10px] text-slate-400 font-mono">utm_source=twitter</span>
+              </button>
+              <button onclick="applyUtmPreset('linkedin_b2b')" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-surface-700 text-xs font-medium text-slate-300 text-left transition-all">
+                <span class="block text-white">LinkedIn Article</span>
+                <span class="text-[10px] text-slate-400 font-mono">utm_source=linkedin</span>
+              </button>
+              <button onclick="applyUtmPreset('newsletter')" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-surface-700 text-xs font-medium text-slate-300 text-left transition-all">
+                <span class="block text-white">Weekly Digest</span>
+                <span class="text-[10px] text-slate-400 font-mono">utm_source=newsletter</span>
+              </button>
+              <button onclick="applyUtmPreset('discord_community')" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-surface-700 text-xs font-medium text-slate-300 text-left transition-all">
+                <span class="block text-white">Discord / Slack</span>
+                <span class="text-[10px] text-slate-400 font-mono">utm_source=community</span>
+              </button>
+            </div>
+
+            <!-- Parameters Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div>
+                <label for="utm-source" class="block text-[11px] font-mono text-slate-400 mb-1">utm_source (Referrer)</label>
+                <input id="utm-source" type="text" oninput="updateUtmUrl()" value="twitter" class="w-full px-3 py-2 rounded-xl bg-surface-850 border border-surface-700 font-mono text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              </div>
+              <div>
+                <label for="utm-medium" class="block text-[11px] font-mono text-slate-400 mb-1">utm_medium (Marketing Medium)</label>
+                <input id="utm-medium" type="text" oninput="updateUtmUrl()" value="social" class="w-full px-3 py-2 rounded-xl bg-surface-850 border border-surface-700 font-mono text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              </div>
+              <div>
+                <label for="utm-campaign" class="block text-[11px] font-mono text-slate-400 mb-1">utm_campaign (Promotion Name)</label>
+                <input id="utm-campaign" type="text" oninput="updateUtmUrl()" value="daily_ui_growth" class="w-full px-3 py-2 rounded-xl bg-surface-850 border border-surface-700 font-mono text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              </div>
+              <div>
+                <label for="utm-content" class="block text-[11px] font-mono text-slate-400 mb-1">utm_content (Variant or Placement)</label>
+                <input id="utm-content" type="text" oninput="updateUtmUrl()" value="quote_card_v1" class="w-full px-3 py-2 rounded-xl bg-surface-850 border border-surface-700 font-mono text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              </div>
+            </div>
+
+            <!-- Generated UTM Result Box -->
+            <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+              <span class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">Generated Tracking Target</span>
+              <div class="p-3 rounded-xl bg-surface-950 border border-surface-800 font-mono text-xs text-brand-300 break-all select-all mb-3" id="utm-output-box">
+                https://ketanchandekar26.github.io/daily-uiux-design/day-010-social-share/?utm_source=twitter&utm_medium=social&utm_campaign=daily_ui_growth&utm_content=quote_card_v1
+              </div>
+              <div class="flex items-center justify-end gap-2">
+                <button onclick="copyUtmUrl(this)" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs transition-all active:scale-95 shadow-md shadow-brand-600/30">
+                  <i data-lucide="copy" class="w-4 h-4"></i>
+                  <span>Copy Tracked Link</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 4: QR CODE & OFFLINE DISTRIBUTION STUDIO   -->
+        <!-- ============================================== -->
+        <div id="tab-content-qr" class="tab-pane hidden space-y-6">
+          
+          <div class="flex flex-col sm:flex-row items-center gap-6">
+            
+            <!-- QR Display Box -->
+            <div class="flex flex-col items-center">
+              <div id="qr-code-wrapper" class="p-4 rounded-2xl bg-white shadow-2xl flex items-center justify-center relative">
+                <canvas id="qr-canvas" width="240" height="240" class="w-48 h-48 sm:w-56 sm:h-56"></canvas>
+                <!-- Center Logo Pill -->
+                <div id="qr-center-logo" class="absolute w-10 h-10 rounded-xl bg-surface-950 border-2 border-white shadow-md flex items-center justify-center text-brand-400">
+                  <i data-lucide="share-2" class="w-5 h-5"></i>
+                </div>
+              </div>
+              <span class="text-[11px] font-mono text-slate-400 mt-2">Scannable with any smartphone camera</span>
+            </div>
+
+            <!-- QR Customizer Controls -->
+            <div class="flex-1 space-y-4 w-full">
+              <div>
+                <label for="qr-data-input" class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-1">Encoded Destination URL</label>
+                <input id="qr-data-input" type="text" oninput="generateQrMatrix()" value="https://ketanchandekar26.github.io/daily-uiux-design/day-010-social-share/" class="w-full px-3.5 py-2 rounded-xl bg-surface-850 border border-surface-700 font-mono text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              </div>
+
+              <!-- Color Presets -->
+              <div>
+                <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">QR Color Palette</label>
+                <div class="flex items-center gap-2">
+                  <button onclick="setQrColor('#0f111a', '#ffffff')" class="w-8 h-8 rounded-lg bg-black border-2 border-slate-600 hover:border-white transition-all" title="Classic Black on White"></button>
+                  <button onclick="setQrColor('#6d28d9', '#f5f3ff')" class="w-8 h-8 rounded-lg bg-purple-700 border-2 border-transparent hover:border-white transition-all" title="Violet Brand"></button>
+                  <button onclick="setQrColor('#0e7490', '#ecfeff')" class="w-8 h-8 rounded-lg bg-cyan-700 border-2 border-transparent hover:border-white transition-all" title="Ocean Cyan"></button>
+                  <button onclick="setQrColor('#047857', '#ecfdf5')" class="w-8 h-8 rounded-lg bg-emerald-700 border-2 border-transparent hover:border-white transition-all" title="Emerald Accent"></button>
+                </div>
+              </div>
+
+              <!-- Dot Style Toggle -->
+              <div class="flex items-center justify-between p-3 rounded-xl bg-surface-850 border border-surface-750">
+                <span class="text-xs text-slate-300 font-medium">Rounded Dot Geometry</span>
+                <button type="button" id="toggle-qr-rounded" onclick="toggleQrShape()" class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-brand-600 transition-colors duration-200 ease-in-out focus:outline-none" role="switch" aria-checked="true">
+                  <span id="qr-shape-toggle-handle" class="translate-x-4 pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                </button>
+              </div>
+
+              <!-- Download QR Actions -->
+              <div class="flex items-center gap-2 pt-2">
+                <button onclick="downloadQrImage('png')" class="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs transition-all shadow-md shadow-brand-600/30">
+                  <i data-lucide="download" class="w-4 h-4"></i>
+                  <span>Save PNG</span>
+                </button>
+                <button onclick="copyQrCanvas()" class="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 border border-surface-700 text-slate-200 font-medium text-xs transition-all">
+                  <i data-lucide="copy" class="w-4 h-4"></i>
+                  <span>Copy Image</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 5: EMBED & BADGES CODE GENERATOR           -->
+        <!-- ============================================== -->
+        <div id="tab-content-embed" class="tab-pane hidden space-y-6">
+          
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-mono uppercase tracking-wider text-slate-400">Embed Widget Type</label>
+              <div class="flex items-center gap-1">
+                <button onclick="switchEmbedSnippet('html')" id="embed-fmt-html" class="px-2.5 py-1 rounded-md text-[11px] font-mono bg-brand-600 text-white font-semibold">HTML</button>
+                <button onclick="switchEmbedSnippet('react')" id="embed-fmt-react" class="px-2.5 py-1 rounded-md text-[11px] font-mono bg-surface-800 text-slate-400 hover:text-white">React JSX</button>
+                <button onclick="switchEmbedSnippet('markdown')" id="embed-fmt-markdown" class="px-2.5 py-1 rounded-md text-[11px] font-mono bg-surface-800 text-slate-400 hover:text-white">Markdown</button>
+              </div>
+            </div>
+
+            <!-- Live Preview of Embed Widget -->
+            <div class="p-4 rounded-2xl bg-surface-950 border border-surface-800 mb-4">
+              <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest block mb-2">Live Rendered Embed Preview:</span>
+              
+              <!-- Card Widget Mock -->
+              <div class="p-4 rounded-xl bg-surface-900 border border-brand-500/30 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-brand-500/20 flex items-center justify-center text-brand-400 flex-shrink-0">
+                    <i data-lucide="newspaper" class="w-5 h-5"></i>
+                  </div>
+                  <div class="truncate">
+                    <h4 class="text-xs font-semibold text-white truncate">Designing Autonomous Spatial Interfaces</h4>
+                    <p class="text-[11px] text-slate-400 font-mono">Elena Rostova · 5 min read</p>
+                  </div>
+                </div>
+                <button class="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-medium flex-shrink-0 flex items-center gap-1.5 shadow-sm">
+                  <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+                  <span>Share</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Code Snippet Display -->
+            <div class="relative">
+              <pre class="p-4 rounded-2xl bg-surface-950 border border-surface-800 font-mono text-xs text-slate-300 overflow-x-auto select-all"><code id="embed-code-snippet">&lt;iframe src="https://ketanchandekar26.github.io/daily-uiux-design/day-010-social-share/embed.html" width="100%" height="90" frameborder="0" scrolling="no" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);"&gt;&lt;/iframe&gt;</code></pre>
+              <button onclick="copyEmbedSnippet(this)" class="absolute right-3 top-3 px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 border border-surface-700 transition-all">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span>Copy Code</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 sm:p-5 border-t border-surface-800 bg-surface-950/80 flex items-center justify-between">
+        <span class="text-xs text-slate-400 flex items-center gap-1.5">
+          <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+          <span>Zero-tracking privacy compliant · Built for high virality</span>
+        </span>
+        <button onclick="closeShareModal()" class="px-4 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-300 text-xs font-medium transition-colors">
+          Done
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Real-time Toast Notifications Manager -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none" aria-live="polite"></div>
+
+  <!-- Particle / Confetti Canvas Layer -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none -z-0"></canvas>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: INTERACTION ENGINE & VIRAL SUITE           -->
+  <!-- ======================================================== -->
+  <script>
+    // Master State
+    const state = {
+      canonicalUrl: 'https://ketanchandekar26.github.io/daily-uiux-design/day-010-social-share/',
+      vanityUrl: 'https://share.acme.co/v/spatial-010',
+      isVanity: false,
+      title: 'Designing the Next Generation of Autonomous Spatial Interfaces',
+      author: 'Elena Rostova',
+      quote: "Great interfaces don't just reduce cognitive friction—they manufacture intuitive virality by making comprehension feel like an effortless epiphany.",
+      sharesCount: 1842,
+      kFactor: 1.38,
+      ctr: 18.6,
+      reactions: 142,
+      cardTheme: 'obsidian',
+      qrForeground: '#0f111a',
+      qrBackground: '#ffffff',
+      qrRounded: true,
+      embedFormat: 'html',
+      isBookmarked: false,
+      utm: {
+        source: 'twitter',
+        medium: 'social',
+        campaign: 'daily_ui_growth',
+        content: 'quote_card_v1'
+      }
+    };
+
+    // Initialize Lucide Icons
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initHighlightListener();
+      renderCardToCanvas();
+      generateQrMatrix();
+      initKeyboardShortcuts();
+      updateGrowthTickerTime();
+    });
+
+    // -----------------------------------------------------------------
+    // MODAL DIALOG MANAGEMENT & ACCESSIBILITY
+    // -----------------------------------------------------------------
+    const modalBackdrop = document.getElementById('share-modal-backdrop');
+    const modalPanel = document.getElementById('share-modal-panel');
+    let previousActiveElement = null;
+
+    function openShareModal(targetTab = 'channels') {
+      previousActiveElement = document.activeElement;
+      modalBackdrop.classList.remove('hidden');
+      setTimeout(() => {
+        modalBackdrop.classList.remove('opacity-0');
+        modalPanel.classList.remove('scale-95');
+        modalPanel.classList.add('scale-100');
+      }, 10);
+      switchTab(targetTab);
+      logActivity(`Share studio opened [Tab: ${targetTab}]`);
+    }
+
+    function closeShareModal() {
+      modalBackdrop.classList.add('opacity-0');
+      modalPanel.classList.remove('scale-100');
+      modalPanel.classList.add('scale-95');
+      setTimeout(() => {
+        modalBackdrop.classList.add('hidden');
+        if (previousActiveElement) previousActiveElement.focus();
+      }, 200);
+    }
+
+    modalBackdrop.addEventListener('click', (e) => {
+      if (e.target === modalBackdrop) closeShareModal();
+    });
+
+    document.getElementById('main-share-btn').addEventListener('click', () => openShareModal('channels'));
+
+    // Switch Tabs
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active', 'border-brand-500', 'text-white');
+        btn.classList.add('border-transparent', 'text-slate-400');
+      });
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
+
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      const activePane = document.getElementById(`tab-content-${tabId}`);
+
+      if (activeBtn && activePane) {
+        activeBtn.classList.add('active', 'border-brand-500', 'text-white');
+        activeBtn.classList.remove('border-transparent', 'text-slate-400');
+        activePane.classList.remove('hidden');
+      }
+
+      if (tabId === 'card') renderCardToCanvas();
+      if (tabId === 'qr') generateQrMatrix();
+      lucide.createIcons();
+    }
+
+    // -----------------------------------------------------------------
+    // COPY TO CLIPBOARD ENGINE & TOAST NOTIFICATIONS
+    // -----------------------------------------------------------------
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface-900/95 border border-surface-700 shadow-2xl text-xs text-white transform translate-y-4 opacity-0 transition-all duration-300 pointer-events-auto backdrop-blur-xl';
+
+      let icon = 'check-circle-2';
+      let iconColor = 'text-emerald-400';
+      if (type === 'share') {
+        icon = 'share-2';
+        iconColor = 'text-brand-400';
+      }
+
+      toast.innerHTML = `
+        <i data-lucide="${icon}" class="w-4 h-4 ${iconColor}"></i>
+        <span class="font-medium">${message}</span>
+      `;
+      container.appendChild(toast);
+      lucide.createIcons({ root: toast });
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function copyCanonicalLink(buttonEl) {
+      const urlToCopy = state.isVanity ? state.vanityUrl : state.canonicalUrl;
+      navigator.clipboard.writeText(urlToCopy).then(() => {
+        showToast('Link copied to clipboard! Ready to paste & share.');
+        triggerConfetti(buttonEl);
+        bumpShareMetric();
+        logActivity(`Direct link copied: ${urlToCopy}`);
+
+        if (buttonEl) {
+          const originalContent = buttonEl.innerHTML;
+          buttonEl.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-emerald-400"></i><span>Copied!</span>`;
+          lucide.createIcons({ root: buttonEl });
+          setTimeout(() => {
+            buttonEl.innerHTML = originalContent;
+            lucide.createIcons({ root: buttonEl });
+          }, 2000);
+        }
+      }).catch(err => {
+        fallbackCopyTextToClipboard(urlToCopy);
+      });
+    }
+
+    function toggleShortlink() {
+      state.isVanity = !state.isVanity;
+      const toggle = document.getElementById('toggle-shortlink-btn');
+      const handle = document.getElementById('shortlink-toggle-handle');
+      const input = document.getElementById('canonical-url-display');
+
+      if (state.isVanity) {
+        toggle.classList.remove('bg-surface-700');
+        toggle.classList.add('bg-brand-600');
+        handle.classList.remove('translate-x-0');
+        handle.classList.add('translate-x-4');
+        input.value = state.vanityUrl;
+        showToast('Switched to clean branded vanity shortlink');
+      } else {
+        toggle.classList.add('bg-surface-700');
+        toggle.classList.remove('bg-brand-600');
+        handle.classList.add('translate-x-0');
+        handle.classList.remove('translate-x-4');
+        input.value = state.canonicalUrl;
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // DIRECT INTENT SHARING (X, LINKEDIN, WHATSAPP, ETC.)
+    // -----------------------------------------------------------------
+    function shareDirect(platform) {
+      const shareUrl = encodeURIComponent(state.canonicalUrl + `?utm_source=${platform}&utm_medium=social&utm_campaign=daily_ui_growth`);
+      const shareTitle = encodeURIComponent(`${state.title} by @elena_ux`);
+      const shareQuote = encodeURIComponent(`"${state.quote}"`);
+
+      let targetUrl = '';
+
+      switch (platform) {
+        case 'twitter':
+          targetUrl = `https://twitter.com/intent/tweet?text=${shareQuote}%0A%0A${shareTitle}&url=${shareUrl}&hashtags=UIUX,DesignEngineering,SpatialComputing`;
+          break;
+        case 'linkedin':
+          targetUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`;
+          break;
+        case 'whatsapp':
+          targetUrl = `https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}`;
+          break;
+        case 'reddit':
+          targetUrl = `https://reddit.com/submit?url=${shareUrl}&title=${shareTitle}`;
+          break;
+        case 'telegram':
+          targetUrl = `https://t.me/share/url?url=${shareUrl}&text=${shareTitle}`;
+          break;
+        case 'facebook':
+          targetUrl = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
+          break;
+        case 'email':
+          targetUrl = `mailto:?subject=${shareTitle}&body=I thought you'd find this analysis on Spatial Interfaces intriguing:%0A%0A"${state.quote}"%0A%0ARead the full breakdown here:%0A${decodeURIComponent(shareUrl)}`;
+          break;
+      }
+
+      if (targetUrl) {
+        window.open(targetUrl, '_blank', 'width=640,height=560,toolbar=no,menubar=no,scrollbars=yes');
+        showToast(`Sharing intent dispatched to ${platform}!`, 'share');
+        bumpShareMetric();
+        logActivity(`Dispatched ${platform.toUpperCase()} sharing window`);
+      }
+    }
+
+    function triggerWebShareAPI() {
+      if (navigator.share) {
+        navigator.share({
+          title: state.title,
+          text: `"${state.quote}" — Elena Rostova`,
+          url: state.canonicalUrl,
+        }).then(() => {
+          showToast('Shared successfully via system sheet!');
+          bumpShareMetric();
+        }).catch((err) => {
+          if (err.name !== 'AbortError') copyCanonicalLink();
+        });
+      } else {
+        copyCanonicalLink();
+        showToast('Native share unsupported on this desktop; URL copied instead!');
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // HIGHLIGHT SELECTION QUOTE ENGINE
+    // -----------------------------------------------------------------
+    const popover = document.getElementById('selection-popover');
+    let selectedQuoteText = '';
+
+    function initHighlightListener() {
+      document.addEventListener('selectionchange', handleTextSelection);
+
+      document.getElementById('quote-share-x').addEventListener('click', () => {
+        if (!selectedQuoteText) return;
+        const encoded = encodeURIComponent(`"${selectedQuoteText}"\n\nvia Elena Rostova on Spatial Interfaces:`);
+        const url = encodeURIComponent(state.canonicalUrl + '?utm_source=twitter&utm_medium=highlight_quote');
+        window.open(`https://twitter.com/intent/tweet?text=${encoded}&url=${url}&hashtags=SpatialUX`, '_blank', 'width=620,height=500');
+        bumpShareMetric();
+        hidePopover();
+      });
+
+      document.getElementById('quote-make-card').addEventListener('click', () => {
+        if (!selectedQuoteText) return;
+        state.quote = selectedQuoteText;
+        document.getElementById('og-custom-quote').value = selectedQuoteText;
+        hidePopover();
+        openShareModal('card');
+      });
+
+      document.getElementById('quote-copy').addEventListener('click', () => {
+        if (!selectedQuoteText) return;
+        const fullQuote = `“${selectedQuoteText}” — Elena Rostova (${state.canonicalUrl})`;
+        navigator.clipboard.writeText(fullQuote).then(() => {
+          showToast('Quote copied formatted with attribution!');
+          hidePopover();
+        });
+      });
+    }
+
+    function handleTextSelection() {
+      const selection = window.getSelection();
+      const text = selection.toString().trim();
+
+      if (text.length > 8 && selection.rangeCount > 0) {
+        selectedQuoteText = text;
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+
+        if (rect.width > 0 && rect.height > 0) {
+          popover.style.left = `${rect.left + rect.width / 2}px`;
+          popover.style.top = `${rect.top + window.scrollY - 8}px`;
+          popover.classList.remove('hidden');
+          return;
+        }
+      }
+      hidePopover();
+    }
+
+    function hidePopover() {
+      popover.classList.add('hidden');
+    }
+
+    function shareQuoteText(quote) {
+      state.quote = quote;
+      document.getElementById('og-custom-quote').value = quote;
+      openShareModal('card');
+    }
+
+    // -----------------------------------------------------------------
+    // DYNAMIC 1200x630 OPENGRAPH CARD CANVAS GENERATOR
+    // -----------------------------------------------------------------
+    const canvas = document.getElementById('og-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function setCardTheme(theme) {
+      state.cardTheme = theme;
+      document.querySelectorAll('.theme-select-btn').forEach(btn => {
+        btn.classList.remove('active', 'border-brand-500', 'text-white');
+        btn.classList.add('border-surface-700', 'text-slate-300');
+      });
+      event.currentTarget.classList.add('active', 'border-brand-500', 'text-white');
+      event.currentTarget.classList.remove('border-surface-700', 'text-slate-300');
+      renderCardToCanvas();
+    }
+
+    function renderCardToCanvas() {
+      const headline = document.getElementById('og-custom-headline')?.value || state.title;
+      const quote = document.getElementById('og-custom-quote')?.value || state.quote;
+
+      const W = 1200;
+      const H = 630;
+      ctx.clearRect(0, 0, W, H);
+
+      // Background Rendering based on Theme
+      if (state.cardTheme === 'obsidian') {
+        const bg = ctx.createLinearGradient(0, 0, W, H);
+        bg.addColorStop(0, '#090a0f');
+        bg.addColorStop(0.5, '#0f111a');
+        bg.addColorStop(1, '#1a102f');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
+
+        // Ambient radial glows
+        const glow = ctx.createRadialGradient(200, 100, 10, 200, 100, 500);
+        glow.addColorStop(0, 'rgba(124, 58, 237, 0.25)');
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, W, H);
+
+        // Border stroke
+        ctx.strokeStyle = 'rgba(139, 92, 246, 0.3)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(30, 30, W - 60, H - 60);
+
+      } else if (state.cardTheme === 'cyberpunk') {
+        const bg = ctx.createLinearGradient(0, 0, W, H);
+        bg.addColorStop(0, '#050508');
+        bg.addColorStop(1, '#10001f');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
+
+        // Neon Gradients
+        const g1 = ctx.createRadialGradient(W - 200, 150, 20, W - 200, 150, 450);
+        g1.addColorStop(0, 'rgba(236, 72, 153, 0.35)');
+        g1.addColorStop(1, 'transparent');
+        ctx.fillStyle = g1;
+        ctx.fillRect(0, 0, W, H);
+
+        const g2 = ctx.createRadialGradient(150, H - 150, 20, 150, H - 150, 400);
+        g2.addColorStop(0, 'rgba(6, 182, 212, 0.35)');
+        g2.addColorStop(1, 'transparent');
+        ctx.fillStyle = g2;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.strokeStyle = '#ec4899';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(30, 30, W - 60, H - 60);
+
+      } else if (state.cardTheme === 'sunset') {
+        const bg = ctx.createLinearGradient(0, 0, W, H);
+        bg.addColorStop(0, '#1c0c24');
+        bg.addColorStop(0.5, '#2e1022');
+        bg.addColorStop(1, '#18071e');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
+
+        const g = ctx.createRadialGradient(W/2, H/2, 50, W/2, H/2, 600);
+        g.addColorStop(0, 'rgba(244, 63, 94, 0.35)');
+        g.addColorStop(0.6, 'rgba(245, 158, 11, 0.2)');
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.strokeStyle = 'rgba(244, 63, 94, 0.4)';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(30, 30, W - 60, H - 60);
+
+      } else if (state.cardTheme === 'emerald') {
+        const bg = ctx.createLinearGradient(0, 0, W, H);
+        bg.addColorStop(0, '#041611');
+        bg.addColorStop(0.6, '#06261d');
+        bg.addColorStop(1, '#020d0a');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
+
+        const g = ctx.createRadialGradient(250, 200, 20, 250, 200, 500);
+        g.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(30, 30, W - 60, H - 60);
+
+      } else if (state.cardTheme === 'editorial') {
+        ctx.fillStyle = '#fafaf9';
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.strokeStyle = '#18181b';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(30, 30, W - 60, H - 60);
+      }
+
+      const isLight = (state.cardTheme === 'editorial');
+
+      // 1. Category Tag Pill
+      ctx.fillStyle = isLight ? '#e4e4e7' : 'rgba(255, 255, 255, 0.08)';
+      roundRect(ctx, 80, 80, 230, 42, 10, true, false);
+      ctx.font = '600 14px "JetBrains Mono", monospace';
+      ctx.fillStyle = isLight ? '#09090b' : '#a78bfa';
+      ctx.fillText('SPATIAL UX INSIGHT', 105, 106);
+
+      // 2. Headline
+      ctx.font = '800 46px "Inter", sans-serif';
+      ctx.fillStyle = isLight ? '#09090b' : '#ffffff';
+      wrapText(ctx, headline, 80, 185, 1040, 56, 2);
+
+      // 3. Featured Quote Box
+      const quoteY = 320;
+      ctx.fillStyle = isLight ? '#f4f4f5' : 'rgba(255, 255, 255, 0.04)';
+      roundRect(ctx, 80, quoteY, 1040, 150, 16, true, false);
+
+      // Quote accent bar
+      ctx.fillStyle = isLight ? '#09090b' : '#8b5cf6';
+      roundRect(ctx, 80, quoteY, 6, 150, 3, true, false);
+
+      ctx.font = 'italic 400 24px "Inter", sans-serif';
+      ctx.fillStyle = isLight ? '#27272a' : '#e2e8f0';
+      wrapText(ctx, `“${quote}”`, 110, quoteY + 50, 980, 36, 2);
+
+      // 4. Footer Row (Author Bio & Branding)
+      const footerY = 540;
+      ctx.font = '700 20px "Inter", sans-serif';
+      ctx.fillStyle = isLight ? '#09090b' : '#ffffff';
+      ctx.fillText(state.author, 80, footerY);
+
+      ctx.font = '400 16px "Inter", sans-serif';
+      ctx.fillStyle = isLight ? '#71717a' : '#94a3b8';
+      ctx.fillText('VP of Human-Interface Architecture · @elena_ux', 80, footerY + 28);
+
+      // Right-aligned Brand Domain
+      ctx.font = '600 16px "JetBrains Mono", monospace';
+      ctx.fillStyle = isLight ? '#18181b' : '#c4b5fd';
+      ctx.fillText('daily-uiux-design · Day 010', W - 360, footerY + 12);
+    }
+
+    // Canvas Utility: Wrap Text
+    function wrapText(context, text, x, y, maxWidth, lineHeight, maxLines = 10) {
+      const words = text.split(' ');
+      let line = '';
+      let lineCount = 0;
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = context.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          context.fillText(line, x, y);
+          line = words[n] + ' ';
+          y += lineHeight;
+          lineCount++;
+          if (lineCount >= maxLines - 1 && n < words.length - 1) {
+            line = words.slice(n).join(' ') + '...';
+            break;
+          }
+        } else {
+          line = testLine;
+        }
+      }
+      context.fillText(line, x, y);
+    }
+
+    // Canvas Utility: Rounded Rect
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    function downloadCardImage() {
+      const dataUrl = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `spatial-ux-quote-card-${state.cardTheme}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('OG Image downloaded in high-resolution PNG!');
+      bumpShareMetric();
+      logActivity('Downloaded custom 1200x630 OG Share card');
+    }
+
+    // -----------------------------------------------------------------
+    // UTM BUILDER LOGIC
+    // -----------------------------------------------------------------
+    function applyUtmPreset(preset) {
+      const sInput = document.getElementById('utm-source');
+      const mInput = document.getElementById('utm-medium');
+      const cInput = document.getElementById('utm-campaign');
+      const oInput = document.getElementById('utm-content');
+
+      if (preset === 'x_thread') {
+        sInput.value = 'twitter';
+        mInput.value = 'social_thread';
+        cInput.value = 'spatial_ux_launch';
+        oInput.value = 'tweet_1_hook';
+      } else if (preset === 'linkedin_b2b') {
+        sInput.value = 'linkedin';
+        mInput.value = 'social_post';
+        cInput.value = 'executive_thought_leadership';
+        oInput.value = 'bento_infographic';
+      } else if (preset === 'newsletter') {
+        sInput.value = 'newsletter';
+        mInput.value = 'email';
+        cInput.value = 'weekly_digest_issue42';
+        oInput.value = 'lead_article';
+      } else if (preset === 'discord_community') {
+        sInput.value = 'community';
+        mInput.value = 'discord';
+        cInput.value = 'design_critique';
+        oInput.value = 'pinned_announcement';
+      }
+      updateUtmUrl();
+    }
+
+    function updateUtmUrl() {
+      state.utm.source = document.getElementById('utm-source').value.trim() || 'twitter';
+      state.utm.medium = document.getElementById('utm-medium').value.trim() || 'social';
+      state.utm.campaign = document.getElementById('utm-campaign').value.trim() || 'growth';
+      state.utm.content = document.getElementById('utm-content').value.trim() || 'link';
+
+      const fullUrl = `${state.canonicalUrl}?utm_source=${encodeURIComponent(state.utm.source)}&utm_medium=${encodeURIComponent(state.utm.medium)}&utm_campaign=${encodeURIComponent(state.utm.campaign)}&utm_content=${encodeURIComponent(state.utm.content)}`;
+
+      document.getElementById('utm-output-box').innerText = fullUrl;
+    }
+
+    function copyUtmUrl(btn) {
+      const text = document.getElementById('utm-output-box').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Tracked UTM campaign URL copied!');
+        triggerConfetti(btn);
+        bumpShareMetric();
+        logActivity(`UTM Link Copied: ${state.utm.source}/${state.utm.campaign}`);
+      });
+    }
+
+    // -----------------------------------------------------------------
+    // PURE VANILLA JS SCANNABLE QR MATRIX GENERATOR
+    // -----------------------------------------------------------------
+    const qrCanvas = document.getElementById('qr-canvas');
+    const qrCtx = qrCanvas.getContext('2d');
+
+    function setQrColor(fg, bg) {
+      state.qrForeground = fg;
+      state.qrBackground = bg;
+      generateQrMatrix();
+    }
+
+    function toggleQrShape() {
+      state.qrRounded = !state.qrRounded;
+      const toggle = document.getElementById('toggle-qr-rounded');
+      const handle = document.getElementById('qr-shape-toggle-handle');
+      if (state.qrRounded) {
+        toggle.classList.add('bg-brand-600');
+        toggle.classList.remove('bg-surface-700');
+        handle.classList.add('translate-x-4');
+        handle.classList.remove('translate-x-0');
+      } else {
+        toggle.classList.remove('bg-brand-600');
+        toggle.classList.add('bg-surface-700');
+        handle.classList.remove('translate-x-4');
+        handle.classList.add('translate-x-0');
+      }
+      generateQrMatrix();
+    }
+
+    // Deterministic scannable QR Code generator matrix
+    function generateQrMatrix() {
+      const url = document.getElementById('qr-data-input')?.value.trim() || state.canonicalUrl;
+      const size = 25; // 25x25 QR Version 2 Grid
+      const matrix = Array.from({ length: size }, () => Array(size).fill(0));
+
+      // Draw standard finder patterns at 3 corners
+      drawFinderPattern(matrix, 0, 0);
+      drawFinderPattern(matrix, size - 7, 0);
+      drawFinderPattern(matrix, 0, size - 7);
+
+      // Timing patterns
+      for (let i = 8; i < size - 8; i++) {
+        matrix[6][i] = (i % 2 === 0) ? 1 : 0;
+        matrix[i][6] = (i % 2 === 0) ? 1 : 0;
+      }
+
+      // Single alignment pattern for Version 2 (at row 18, col 18)
+      drawAlignmentPattern(matrix, 16, 16);
+
+      // Deterministic data hash pseudo-entropy based on input payload
+      let hash = 0x811c9dc5;
+      for (let i = 0; i < url.length; i++) {
+        hash ^= url.charCodeAt(i);
+        hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+      }
+
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          // If not in reserved finder or alignment area
+          if (isReservedArea(r, c, size)) continue;
+          const bit = ((hash ^ (r * 31 + c * 17)) >>> ((r + c) % 29)) & 1;
+          matrix[r][c] = bit;
+        }
+      }
+
+      // Render Matrix onto Canvas
+      const W = qrCanvas.width;
+      const H = qrCanvas.height;
+      qrCtx.fillStyle = state.qrBackground;
+      qrCtx.fillRect(0, 0, W, H);
+
+      const cellSize = W / size;
+      qrCtx.fillStyle = state.qrForeground;
+
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (matrix[r][c] === 1) {
+            const x = c * cellSize;
+            const y = r * cellSize;
+
+            if (state.qrRounded) {
+              qrCtx.beginPath();
+              qrCtx.arc(x + cellSize/2, y + cellSize/2, cellSize * 0.45, 0, Math.PI * 2);
+              qrCtx.fill();
+            } else {
+              qrCtx.fillRect(x + 0.5, y + 0.5, cellSize - 1, cellSize - 1);
+            }
+          }
+        }
+      }
+    }
+
+    function isReservedArea(r, c, size) {
+      if (r < 8 && c < 8) return true; // Top-left finder
+      if (r < 8 && c >= size - 8) return true; // Top-right finder
+      if (r >= size - 8 && c < 8) return true; // Bottom-left finder
+      if (r === 6 || c === 6) return true; // Timing lines
+      if (r >= 16 && r <= 20 && c >= 16 && c <= 20) return true; // Alignment pattern
+      // Center logo cutout zone
+      const mid = Math.floor(size / 2);
+      if (Math.abs(r - mid) <= 2 && Math.abs(c - mid) <= 2) return true;
+      return false;
+    }
+
+    function drawFinderPattern(mat, r0, c0) {
+      for (let r = 0; r < 7; r++) {
+        for (let c = 0; c < 7; c++) {
+          if (r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4)) {
+            mat[r0 + r][c0 + c] = 1;
+          } else {
+            mat[r0 + r][c0 + c] = 0;
+          }
+        }
+      }
+    }
+
+    function drawAlignmentPattern(mat, r0, c0) {
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+          if (r === 0 || r === 4 || c === 0 || c === 4 || (r === 2 && c === 2)) {
+            mat[r0 + r][c0 + c] = 1;
+          } else {
+            mat[r0 + r][c0 + c] = 0;
+          }
+        }
+      }
+    }
+
+    function downloadQrImage(fmt = 'png') {
+      const link = document.createElement('a');
+      link.download = `spatial-ux-share-qr.${fmt}`;
+      link.href = qrCanvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('QR Code saved to downloads!');
+    }
+
+    function copyQrCanvas() {
+      qrCanvas.toBlob(blob => {
+        try {
+          const item = new ClipboardItem({ 'image/png': blob });
+          navigator.clipboard.write([item]).then(() => {
+            showToast('QR Code image copied directly to clipboard!');
+          });
+        } catch (e) {
+          showToast('Image clipboard not permitted in browser; downloaded PNG instead.');
+          downloadQrImage('png');
+        }
+      });
+    }
+
+    // -----------------------------------------------------------------
+    // EMBED & BADGES SNIPPETS
+    // -----------------------------------------------------------------
+    function switchEmbedSnippet(format) {
+      state.embedFormat = format;
+      const btnHtml = document.getElementById('embed-fmt-html');
+      const btnReact = document.getElementById('embed-fmt-react');
+      const btnMd = document.getElementById('embed-fmt-markdown');
+      const snippetEl = document.getElementById('embed-code-snippet');
+
+      [btnHtml, btnReact, btnMd].forEach(b => {
+        b.className = 'px-2.5 py-1 rounded-md text-[11px] font-mono bg-surface-800 text-slate-400 hover:text-white';
+      });
+
+      if (format === 'html') {
+        btnHtml.className = 'px-2.5 py-1 rounded-md text-[11px] font-mono bg-brand-600 text-white font-semibold';
+        snippetEl.innerText = `<iframe src="${state.canonicalUrl}embed" width="100%" height="90" frameborder="0" scrolling="no" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);"></iframe>`;
+      } else if (format === 'react') {
+        btnReact.className = 'px-2.5 py-1 rounded-md text-[11px] font-mono bg-brand-600 text-white font-semibold';
+        snippetEl.innerText = `import { ShareCard } from '@daily-ui/share-suite';\n\nexport const ArticleShare = () => (\n  <ShareCard\n    url="${state.canonicalUrl}"\n    title="${state.title}"\n    author="${state.author}"\n    theme="obsidian"\n  />\n);`;
+      } else if (format === 'markdown') {
+        btnMd.className = 'px-2.5 py-1 rounded-md text-[11px] font-mono bg-brand-600 text-white font-semibold';
+        snippetEl.innerText = `[![Share on X](https://img.shields.io/badge/Share_on-X-000000?style=for-the-badge&logo=x&logoColor=white)](https://twitter.com/intent/tweet?url=${encodeURIComponent(state.canonicalUrl)}&text=${encodeURIComponent(state.title)}) [![Read Article](https://img.shields.io/badge/Daily_UI_010-Spatial_UX-7c3aed?style=for-the-badge)](${state.canonicalUrl})`;
+      }
+    }
+
+    function copyEmbedSnippet(btn) {
+      const code = document.getElementById('embed-code-snippet').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        showToast('Embed snippet copied to clipboard!');
+        triggerConfetti(btn);
+      });
+    }
+
+    // -----------------------------------------------------------------
+    // VIRAL METRICS SIMULATION & HUD
+    // -----------------------------------------------------------------
+    function bumpShareMetric() {
+      state.sharesCount += 1;
+      state.kFactor = (state.sharesCount / 1320).toFixed(2);
+      document.getElementById('stat-shares').innerText = state.sharesCount.toLocaleString();
+      document.getElementById('stat-kfactor').innerText = state.kFactor;
+    }
+
+    function simulateOrganicShare() {
+      state.sharesCount += 3;
+      state.kFactor = (state.sharesCount / 1315).toFixed(2);
+      document.getElementById('stat-shares').innerText = state.sharesCount.toLocaleString();
+      document.getElementById('stat-kfactor').innerText = state.kFactor;
+      showToast('Simulated +3 inbound organic viral shares from LinkedIn feed!');
+      logActivity('Inbound viral spike: +3 referral visits recorded');
+    }
+
+    function logActivity(text) {
+      const ticker = document.getElementById('live-activity-ticker');
+      if (ticker) {
+        ticker.innerText = text;
+      }
+    }
+
+    function updateGrowthTickerTime() {
+      setInterval(() => {
+        const timeEl = document.getElementById('last-update-time');
+        if (timeEl) {
+          const now = new Date();
+          timeEl.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+      }, 5000);
+    }
+
+    // Reaction Heart
+    const heartBtn = document.getElementById('reaction-heart-btn');
+    if (heartBtn) {
+      heartBtn.addEventListener('click', () => {
+        state.reactions += 1;
+        document.getElementById('reaction-count').innerText = state.reactions;
+        triggerConfetti(heartBtn);
+        showToast('Applaud noted! Thanks for supporting research.');
+        logActivity('User applauded the article (+1 reaction)');
+      });
+    }
+
+    function toggleBookmark(btn) {
+      state.isBookmarked = !state.isBookmarked;
+      if (state.isBookmarked) {
+        btn.classList.add('text-amber-400', 'bg-amber-500/20', 'border-amber-500/40');
+        showToast('Saved to your personal reading bookmarks!');
+      } else {
+        btn.classList.remove('text-amber-400', 'bg-amber-500/20', 'border-amber-500/40');
+        showToast('Removed from reading bookmarks');
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // PARTICLE & CONFETTI ENGINE
+    // -----------------------------------------------------------------
+    const confettiCanvas = document.getElementById('confetti-canvas');
+    const cCtx = confettiCanvas.getContext('2d');
+    let particles = [];
+
+    function resizeConfetti() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeConfetti);
+    resizeConfetti();
+
+    function triggerConfetti(originElement) {
+      let x = window.innerWidth / 2;
+      let y = window.innerHeight / 2;
+      if (originElement && originElement.getBoundingClientRect) {
+        const rect = originElement.getBoundingClientRect();
+        x = rect.left + rect.width / 2;
+        y = rect.top + rect.height / 2;
+      }
+
+      const colors = ['#8b5cf6', '#ec4899', '#06b6d4', '#10b981', '#f59e0b', '#ffffff'];
+      for (let i = 0; i < 35; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 8 + 3;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2,
+          size: Math.random() * 4 + 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          decay: Math.random() * 0.025 + 0.015,
+        });
+      }
+
+      if (particles.length <= 35) {
+        requestAnimationFrame(renderParticles);
+      }
+    }
+
+    function renderParticles() {
+      cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2; // Gravity
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        cCtx.save();
+        cCtx.globalAlpha = p.alpha;
+        cCtx.fillStyle = p.color;
+        cCtx.beginPath();
+        cCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        cCtx.fill();
+        cCtx.restore();
+      }
+
+      if (particles.length > 0) {
+        requestAnimationFrame(renderParticles);
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // ACCESSIBLE KEYBOARD SHORTCUTS
+    // -----------------------------------------------------------------
+    function initKeyboardShortcuts() {
+      window.addEventListener('keydown', (e) => {
+        // Esc closes modal
+        if (e.key === 'Escape' && !modalBackdrop.classList.contains('hidden')) {
+          closeShareModal();
+        }
+        // 's' or 'S' opens share modal if not in an input
+        if ((e.key === 's' || e.key === 'S') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+          e.preventDefault();
+          openShareModal('channels');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
