@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 011: Flash Message & Toast Notification Architecture | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              950: '#07090e',
+              900: '#0d111a',
+              850: '#131826',
+              800: '#1a2033',
+              750: '#232b42',
+              700: '#2e3754',
+              600: '#414d73',
+            },
+            brand: {
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+            }
+          },
+          animation: {
+            'slide-in-right': 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            'slide-out-right': 'slideOutRight 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            'banner-down': 'bannerDown 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+          },
+          keyframes: {
+            slideInRight: {
+              '0%': { transform: 'translateX(100%) scale(0.9)', opacity: '0' },
+              '100%': { transform: 'translateX(0) scale(1)', opacity: '1' },
+            },
+            slideOutRight: {
+              '0%': { transform: 'translateX(0) scale(1)', opacity: '1' },
+              '100%': { transform: 'translateX(110%) scale(0.95)', opacity: '0' },
+            },
+            bannerDown: {
+              '0%': { transform: 'translateY(-100%)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #07090e; }
+    ::-webkit-scrollbar-thumb { background: #1a2033; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+
+    /* Toast Stack 3D Depth Transitions */
+    .toast-item {
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.25s ease,
+                  box-shadow 0.3s ease,
+                  height 0.3s ease;
+      touch-action: pan-y;
+      user-select: none;
+    }
+
+    /* Stack Cascade Effect: Non-hovered state */
+    .toast-container.stacked .toast-item:nth-last-child(1) {
+      transform: translateY(0) scale(1);
+      z-index: 50;
+      opacity: 1;
+    }
+    .toast-container.stacked .toast-item:nth-last-child(2) {
+      transform: translateY(-12px) scale(0.95);
+      z-index: 40;
+      opacity: 0.9;
+    }
+    .toast-container.stacked .toast-item:nth-last-child(3) {
+      transform: translateY(-24px) scale(0.90);
+      z-index: 30;
+      opacity: 0.75;
+    }
+    .toast-container.stacked .toast-item:nth-last-child(n+4) {
+      transform: translateY(-34px) scale(0.85);
+      z-index: 20;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Top positioning adjustments */
+    .toast-container.stacked.pos-top .toast-item:nth-last-child(1) { transform: translateY(0) scale(1); }
+    .toast-container.stacked.pos-top .toast-item:nth-last-child(2) { transform: translateY(12px) scale(0.95); }
+    .toast-container.stacked.pos-top .toast-item:nth-last-child(3) { transform: translateY(24px) scale(0.90); }
+    .toast-container.stacked.pos-top .toast-item:nth-last-child(n+4) { transform: translateY(34px) scale(0.85); }
+
+    /* Expanded Hover State */
+    .toast-container.stacked:hover .toast-item,
+    .toast-container.expanded .toast-item {
+      transform: translateY(0) scale(1) !important;
+      opacity: 1 !important;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Dragging / Swiping */
+    .toast-item.swiping {
+      transition: none !important;
+      cursor: grabbing;
+    }
+
+    /* Ambient Lighting */
+    .ambient-glow {
+      box-shadow: 0 10px 40px -10px rgba(124, 58, 237, 0.25);
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-200 font-sans min-h-screen antialiased relative overflow-x-hidden selection:bg-brand-600/30 selection:text-purple-200">
+
+  <!-- Ambient Light Orbs -->
+  <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+    <div class="absolute -top-32 left-1/4 w-96 h-96 bg-brand-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute top-1/2 -right-32 w-80 h-80 bg-cyan-600/10 rounded-full blur-[120px]"></div>
+    <div class="absolute -bottom-32 left-10 w-96 h-96 bg-emerald-600/10 rounded-full blur-[150px]"></div>
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+  </div>
+
+  <!-- Persistent Flash Message / System Alert Banner (Top Sticky) -->
+  <aside id="system-flash-banner" class="w-full bg-gradient-to-r from-amber-950/80 via-surface-900 to-amber-950/80 border-b border-amber-500/30 px-4 py-2.5 sm:py-3 transition-all duration-300 relative z-50 animate-banner-down" role="region" aria-label="System Announcement">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-4 text-xs">
+      <div class="flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase">Scheduled Maintenance</span>
+          <span class="text-slate-200 hidden sm:inline">Database migration window begins in <strong>42 minutes</strong>. Real-time sync will transition to read-only mode.</span>
+          <span class="text-slate-200 sm:hidden">System migration window in 42m. Read-only mode will engage.</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="#system-status" onclick="toast.info('Status Page: All core clusters operating at 99.98% uptime.')" class="font-mono text-amber-400 hover:text-amber-300 underline underline-offset-2">Inspect Status</a>
+        <button onclick="dismissBanner()" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-surface-800 transition-colors" aria-label="Dismiss system notification">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-surface-950/80 border-b border-surface-800/80 px-4 sm:px-8 py-3.5 transition-all">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="../" class="group flex items-center gap-2.5 text-xs font-semibold tracking-wider uppercase text-slate-400 hover:text-white transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-surface-850 border border-surface-700/80 flex items-center justify-center text-slate-300 group-hover:border-brand-500/50 group-hover:text-brand-400 transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-0.5"></i>
+          </div>
+          <span class="hidden sm:inline">Daily UI Hub</span>
+        </a>
+        <div class="h-4 w-px bg-surface-700/80"></div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-300 font-mono text-xs font-semibold">DAY 011</span>
+          <span class="text-xs font-medium text-slate-400 hidden md:inline">Flash Message & Toast Notification Architecture</span>
+        </div>
+      </div>
+
+      <!-- Header Audio & Stack Controls -->
+      <div class="flex items-center gap-2.5">
+        <!-- Sound Toggle -->
+        <button id="sound-toggle-btn" onclick="toggleSound()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-surface-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all" title="Toggle Synthesized Sound Chimes">
+          <i id="sound-icon" data-lucide="volume-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="hidden sm:inline" id="sound-label">Audio On</span>
+        </button>
+
+        <!-- Clear All Active Toasts -->
+        <button onclick="toast.clearAll()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-rose-950/40 border border-surface-700/80 hover:border-rose-500/40 text-xs font-medium text-slate-300 hover:text-rose-300 transition-all" title="Dismiss all toasts">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5 text-slate-400"></i>
+          <span class="hidden sm:inline">Clear (<span id="active-toast-count">0</span>)</span>
+        </button>
+
+        <!-- Quick Trigger Dropdown/CTA -->
+        <button onclick="toast.success('System configuration saved!', { description: 'All node parameters were synced to local cluster storage.' })" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-medium text-xs shadow-lg shadow-brand-600/20 transition-all active:scale-95">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          <span>Fire Quick Toast</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    
+    <!-- Hero Introduction -->
+    <div class="mb-10 text-center max-w-2xl mx-auto">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 font-mono text-xs mb-4">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        <span>Radix & Sonner Grade Notification System</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight mb-3">
+        Engineered for Signal, Not Noise
+      </h1>
+      <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
+        A resilient, non-blocking toast notification orchestration engine with physics-based 3D stacking, promise lifecycles, swipe dismissal, and synthesized audio chimes.
+      </p>
+    </div>
+
+    <!-- Main Grid: Control Playground (Left) + Architectural Insights & Telemetry (Right) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT COLUMN: Notification Launcher & Playground (7 Cols) -->
+      <section class="lg:col-span-7 space-y-6" aria-label="Toast Playground">
+        
+        <!-- 1. Quick Flavor Launchpad -->
+        <div class="p-6 rounded-3xl bg-surface-900/80 border border-surface-800 shadow-xl backdrop-blur-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+              <i data-lucide="layout-grid" class="w-4 h-4 text-brand-400"></i>
+              <span>Notification Flavors & Behavioral Archetypes</span>
+            </h2>
+            <span class="text-[11px] font-mono text-slate-400">Interactive Triggers</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            
+            <!-- Success Toast -->
+            <button onclick="triggerFlavor('success')" class="group flex flex-col p-4 rounded-2xl bg-surface-850 hover:bg-emerald-950/20 border border-surface-750 hover:border-emerald-500/40 transition-all text-left">
+              <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-2.5 group-hover:scale-105 transition-transform">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-semibold text-white">Success Toast</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Confirmation & state sync</span>
+            </button>
+
+            <!-- Error / Destructive Toast with Stacktrace -->
+            <button onclick="triggerFlavor('error')" class="group flex flex-col p-4 rounded-2xl bg-surface-850 hover:bg-rose-950/20 border border-surface-750 hover:border-rose-500/40 transition-all text-left">
+              <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 mb-2.5 group-hover:scale-105 transition-transform">
+                <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-semibold text-white">Error & Retry</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Assertive alert with details</span>
+            </button>
+
+            <!-- Warning Toast -->
+            <button onclick="triggerFlavor('warning')" class="group flex flex-col p-4 rounded-2xl bg-surface-850 hover:bg-amber-950/20 border border-surface-750 hover:border-amber-500/40 transition-all text-left">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-2.5 group-hover:scale-105 transition-transform">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-semibold text-white">Caution / Warning</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Threshold / rate limit alerts</span>
+            </button>
+
+            <!-- Info Toast -->
+            <button onclick="triggerFlavor('info')" class="group flex flex-col p-4 rounded-2xl bg-surface-850 hover:bg-sky-950/20 border border-surface-750 hover:border-sky-500/40 transition-all text-left">
+              <div class="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mb-2.5 group-hover:scale-105 transition-transform">
+                <i data-lucide="info" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-semibold text-white">Informational</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Ambient updates & tips</span>
+            </button>
+
+            <!-- Async Promise Lifecycle -->
+            <button onclick="triggerFlavor('promise')" class="group flex flex-col p-4 rounded-2xl bg-surface-850 hover:bg-brand-950/20 border border-surface-750 hover:border-brand-500/40 transition-all text-left">
+              <div class="w-9 h-9 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-300 mb-2.5 group-hover:scale-105 transition-transform">
+                <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-brand-400"></i>
+              </div>
+              <span class="text-xs font-semibold text-white">Promise Lifecycle</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Pending &rarr; Resolved sync</span>
+            </button>
+
+            <!-- Action / Undo Toast -->
+            <button onclick="triggerFlavor('undo')" class="group flex flex-col p-4 rounded-2xl bg-surface-850 hover:bg-indigo-950/20 border border-surface-750 hover:border-indigo-500/40 transition-all text-left">
+              <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-2.5 group-hover:scale-105 transition-transform">
+                <i data-lucide="undo-2" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-semibold text-white">Undo Action</span>
+              <span class="text-[11px] text-slate-400 mt-0.5">Reversible destructive act</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- 2. Interactive Toast Customizer & Generator -->
+        <div class="p-6 rounded-3xl bg-surface-900/80 border border-surface-800 shadow-xl backdrop-blur-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+              <i data-lucide="sliders" class="w-4 h-4 text-brand-400"></i>
+              <span>Custom Toast Laboratory</span>
+            </h2>
+            <button onclick="resetCustomForm()" class="text-xs font-mono text-brand-400 hover:text-brand-300">Reset</button>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Title & Description Input -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="custom-title" class="block text-[11px] font-mono text-slate-400 mb-1">Toast Title</label>
+                <input id="custom-title" type="text" value="Cluster Deployment Initiated" class="w-full px-3.5 py-2 rounded-xl bg-surface-850 border border-surface-700 font-sans text-xs text-white focus:outline-none focus:ring-1 focus:ring-brand-500">
+              </div>
+              <div>
+                <label for="custom-desc" class="block text-[11px] font-mono text-slate-400 mb-1">Description / Subtext</label>
+                <input id="custom-desc" type="text" value="3 pods provisioning in us-east-1 region." class="w-full px-3.5 py-2 rounded-xl bg-surface-850 border border-surface-700 font-sans text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              </div>
+            </div>
+
+            <!-- Toast Type + Duration Controls -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="custom-type" class="block text-[11px] font-mono text-slate-400 mb-1">Severity / Flavor</label>
+                <select id="custom-type" class="w-full px-3.5 py-2 rounded-xl bg-surface-850 border border-surface-700 font-sans text-xs text-white focus:outline-none focus:ring-1 focus:ring-brand-500">
+                  <option value="success">Success (Emerald)</option>
+                  <option value="error">Error (Rose)</option>
+                  <option value="warning">Warning (Amber)</option>
+                  <option value="info" selected>Info (Sky)</option>
+                </select>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="custom-duration" class="text-[11px] font-mono text-slate-400">Duration (<span id="duration-val">4500</span>ms)</label>
+                  <span class="text-[10px] text-slate-500">0 = Infinite</span>
+                </div>
+                <input id="custom-duration" type="range" min="1500" max="10000" step="500" value="4500" oninput="document.getElementById('duration-val').innerText = this.value" class="w-full accent-brand-500 cursor-pointer">
+              </div>
+            </div>
+
+            <!-- Toggles: Action Button, Progress Bar, Expandable -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+              <label class="flex items-center gap-2 p-2.5 rounded-xl bg-surface-850 border border-surface-750 cursor-pointer hover:border-surface-650">
+                <input id="toggle-has-action" type="checkbox" checked class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-surface-950 border-surface-700">
+                <span class="text-xs text-slate-300">Action Button</span>
+              </label>
+
+              <label class="flex items-center gap-2 p-2.5 rounded-xl bg-surface-850 border border-surface-750 cursor-pointer hover:border-surface-650">
+                <input id="toggle-progress-bar" type="checkbox" checked class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-surface-950 border-surface-700">
+                <span class="text-xs text-slate-300">Progress Bar</span>
+              </label>
+
+              <label class="flex items-center gap-2 p-2.5 rounded-xl bg-surface-850 border border-surface-750 cursor-pointer hover:border-surface-650 col-span-2 sm:col-span-1">
+                <input id="toggle-dismissible" type="checkbox" checked class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 bg-surface-950 border-surface-700">
+                <span class="text-xs text-slate-300">Close Button</span>
+              </label>
+            </div>
+
+            <!-- Fire Custom Toast Button -->
+            <div class="pt-2 flex items-center justify-between">
+              <span class="text-xs text-slate-400 font-mono">Synthesizes chime automatically</span>
+              <button onclick="fireCustomToast()" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs shadow-lg shadow-brand-600/30 transition-all active:scale-95">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                <span>Dispatch Toast</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: Positioning, Stack Physics & Telemetry (5 Cols) -->
+      <section class="lg:col-span-5 space-y-6" aria-label="System Settings & Heuristics">
+        
+        <!-- 1. Positioning Anchors (6 Placements) -->
+        <div class="p-6 rounded-3xl bg-surface-900/80 border border-surface-800 shadow-xl backdrop-blur-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+              <i data-lucide="compass" class="w-4 h-4 text-cyan-400"></i>
+              <span>Viewport Screen Placement</span>
+            </h2>
+            <span class="text-[11px] font-mono text-cyan-400" id="current-pos-label">bottom-right</span>
+          </div>
+
+          <!-- 6-Quadrant Interactive Grid -->
+          <div class="grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-surface-950 border border-surface-800">
+            <button onclick="setToastPosition('top-left')" class="pos-btn p-3 rounded-xl border border-surface-750 hover:bg-surface-850 text-xs font-mono text-slate-400 hover:text-white transition-all flex flex-col items-center gap-1" data-pos="top-left">
+              <i data-lucide="arrow-up-left" class="w-4 h-4"></i>
+              <span class="text-[10px]">Top Left</span>
+            </button>
+            <button onclick="setToastPosition('top-center')" class="pos-btn p-3 rounded-xl border border-surface-750 hover:bg-surface-850 text-xs font-mono text-slate-400 hover:text-white transition-all flex flex-col items-center gap-1" data-pos="top-center">
+              <i data-lucide="arrow-up" class="w-4 h-4"></i>
+              <span class="text-[10px]">Top Center</span>
+            </button>
+            <button onclick="setToastPosition('top-right')" class="pos-btn p-3 rounded-xl border border-surface-750 hover:bg-surface-850 text-xs font-mono text-slate-400 hover:text-white transition-all flex flex-col items-center gap-1" data-pos="top-right">
+              <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              <span class="text-[10px]">Top Right</span>
+            </button>
+            <button onclick="setToastPosition('bottom-left')" class="pos-btn p-3 rounded-xl border border-surface-750 hover:bg-surface-850 text-xs font-mono text-slate-400 hover:text-white transition-all flex flex-col items-center gap-1" data-pos="bottom-left">
+              <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+              <span class="text-[10px]">Btm Left</span>
+            </button>
+            <button onclick="setToastPosition('bottom-center')" class="pos-btn p-3 rounded-xl border border-surface-750 hover:bg-surface-850 text-xs font-mono text-slate-400 hover:text-white transition-all flex flex-col items-center gap-1" data-pos="bottom-center">
+              <i data-lucide="arrow-down" class="w-4 h-4"></i>
+              <span class="text-[10px]">Btm Center</span>
+            </button>
+            <button onclick="setToastPosition('bottom-right')" class="pos-btn active p-3 rounded-xl border border-brand-500 bg-brand-600/20 text-xs font-mono text-white transition-all flex flex-col items-center gap-1" data-pos="bottom-right">
+              <i data-lucide="arrow-down-right" class="w-4 h-4 text-brand-400"></i>
+              <span class="text-[10px]">Btm Right</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Stacking Mechanics & Gestures -->
+        <div class="p-6 rounded-3xl bg-surface-900/80 border border-surface-800 shadow-xl backdrop-blur-sm">
+          <h2 class="text-sm font-semibold text-white flex items-center gap-2 mb-3">
+            <i data-lucide="layers" class="w-4 h-4 text-brand-400"></i>
+            <span>Physics & Stacking Behaviors</span>
+          </h2>
+
+          <div class="space-y-3">
+            <!-- Mode Switch: 3D Cascade Stack vs Flat List -->
+            <div class="flex items-center justify-between p-3.5 rounded-2xl bg-surface-850 border border-surface-750">
+              <div>
+                <span class="block text-xs font-semibold text-white">3D Depth Stacking (Sonner Mode)</span>
+                <span class="text-[11px] text-slate-400">Toasts collapse into depth stack; hover expands</span>
+              </div>
+              <button id="toggle-stack-mode" onclick="toggleStackMode()" class="px-3 py-1.5 rounded-lg bg-brand-600 text-white font-mono text-xs font-semibold">Stacked</button>
+            </div>
+
+            <!-- Pause on Hover Info -->
+            <div class="p-3.5 rounded-2xl bg-surface-850 border border-surface-750 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <i data-lucide="pause-circle" class="w-4 h-4 text-emerald-400"></i>
+                <span class="text-slate-300">Pause Countdown on Hover</span>
+              </div>
+              <span class="font-mono text-emerald-400 text-[11px]">Enabled</span>
+            </div>
+
+            <!-- Swipe to Dismiss Info -->
+            <div class="p-3.5 rounded-2xl bg-surface-850 border border-surface-750 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <i data-lucide="hand" class="w-4 h-4 text-brand-400"></i>
+                <span class="text-slate-300">Horizontal Swipe-to-Dismiss</span>
+              </div>
+              <span class="font-mono text-brand-300 text-[11px]">Touch / Drag</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Keyboard Shortcuts HUD -->
+        <div class="p-5 rounded-2xl bg-surface-900/50 border border-surface-800 text-xs text-slate-400">
+          <span class="block font-mono text-slate-300 uppercase tracking-wider mb-2 font-semibold">Accessibility & Shortcuts:</span>
+          <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+            <div class="flex items-center gap-1.5">
+              <kbd class="px-1.5 py-0.5 rounded bg-surface-800 border border-surface-700 text-white">1</kbd> Success
+            </div>
+            <div class="flex items-center gap-1.5">
+              <kbd class="px-1.5 py-0.5 rounded bg-surface-800 border border-surface-700 text-white">2</kbd> Error
+            </div>
+            <div class="flex items-center gap-1.5">
+              <kbd class="px-1.5 py-0.5 rounded bg-surface-800 border border-surface-700 text-white">3</kbd> Warning
+            </div>
+            <div class="flex items-center gap-1.5">
+              <kbd class="px-1.5 py-0.5 rounded bg-surface-800 border border-surface-700 text-white">4</kbd> Promise
+            </div>
+            <div class="flex items-center gap-1.5">
+              <kbd class="px-1.5 py-0.5 rounded bg-surface-800 border border-surface-700 text-white">5</kbd> Undo
+            </div>
+            <div class="flex items-center gap-1.5">
+              <kbd class="px-1.5 py-0.5 rounded bg-surface-800 border border-surface-700 text-white">Esc</kbd> Dismiss
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- Architectural Deep Dive & Cognitive Heuristics Section -->
+    <section class="mt-16 p-8 rounded-3xl bg-surface-900/60 border border-surface-800 space-y-8" aria-label="UX Heuristics Documentation">
+      <div>
+        <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">Cognitive Ergonomics & Heuristic Design</h2>
+        <p class="text-sm text-slate-400 leading-relaxed">
+          Toast notifications are the most abused primitive in modern web development. When implemented improperly, they induce alert fatigue, obscure critical interactive components, and fail screen reader accessibility guidelines.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="p-5 rounded-2xl bg-surface-850/80 border border-surface-750">
+          <div class="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-400 mb-3">
+            <i data-lucide="eye" class="w-4 h-4"></i>
+          </div>
+          <h3 class="text-sm font-semibold text-white mb-1.5">Peripheral Vision & Saccades</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            By pinning non-destructive toasts to the bottom-right quadrant, notifications respect the primary reading axis while ensuring high glanceability without breaking cognitive immersion.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-surface-850/80 border border-surface-750">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-3">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </div>
+          <h3 class="text-sm font-semibold text-white mb-1.5">Reversibility (Undo Pattern)</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Shneiderman’s 6th Heuristic: “Permit easy reversal of actions.” Replacing blocking confirmation modals with a 5-second asynchronous Undo toast reduces workflow friction by over 70%.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-surface-850/80 border border-surface-750">
+          <div class="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 mb-3">
+            <i data-lucide="shield-alert" class="w-4 h-4"></i>
+          </div>
+          <h3 class="text-sm font-semibold text-white mb-1.5">Assertive vs Polite ARIA</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Standard status updates utilize <code class="text-brand-300">aria-live="polite"</code> so screen readers wait for pauses. Destructive system errors escalate to <code class="text-rose-400">role="alert"</code> for immediate announcement.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- TOAST ORCHESTRATION CONTAINER (DYNAMICALLY ANCHORED)   -->
+  <!-- ======================================================== -->
+  <div id="toast-root" class="toast-container stacked fixed z-50 flex flex-col p-4 pointer-events-none transition-all duration-300 bottom-4 right-4" aria-live="polite" aria-atomic="true">
+    <!-- Toasts append here dynamically -->
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: NATIVE TOAST ENGINE & AUDIO SYNTHESIZER     -->
+  <!-- ======================================================== -->
+  <script>
+    // State
+    const toastConfig = {
+      position: 'bottom-right',
+      isStacked: true,
+      soundEnabled: true,
+      maxVisible: 3,
+      toasts: [],
+    };
+
+    // Initialize Lucide Icons
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initKeyboardListeners();
+      
+      // Fire welcome toast on initial load
+      setTimeout(() => {
+        toast.info('Welcome to Toast Architecture 2.0', {
+          description: 'Try dragging to dismiss, pressing 1-5 keys, or inspecting the 3D stack.',
+          duration: 5000,
+        });
+      }, 400);
+    });
+
+    // -------------------------------------------------------------
+    // WEB AUDIO API NATIVE SOUND SYNTHESIZER (ZERO ASSETS)
+    // -------------------------------------------------------------
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function toggleSound() {
+      toastConfig.soundEnabled = !toastConfig.soundEnabled;
+      const icon = document.getElementById('sound-icon');
+      const label = document.getElementById('sound-label');
+
+      if (toastConfig.soundEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.className = 'w-3.5 h-3.5 text-emerald-400';
+        label.innerText = 'Audio On';
+        playNotificationTone('success');
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.className = 'w-3.5 h-3.5 text-slate-500';
+        label.innerText = 'Muted';
+      }
+      lucide.createIcons();
+    }
+
+    function playNotificationTone(type) {
+      if (!toastConfig.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        const now = ctx.currentTime;
+        if (type === 'success') {
+          // Cheerful chime: two ascending sine notes (587.33Hz -> 880Hz)
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'error') {
+          // Low alert buzz (220Hz -> 160Hz)
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(260, now);
+          osc.frequency.exponentialRampToValueAtTime(160, now + 0.2);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'warning') {
+          // Double tap warm tone
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else {
+          // Info / neutral pop
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523.25, now);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        }
+      } catch (e) {
+        // AudioContext not yet permitted by user gesture
+      }
+    }
+
+    // -------------------------------------------------------------
+    // TOAST ORCHESTRATION ENGINE (CORE API)
+    // -------------------------------------------------------------
+    class ToastOrchestrator {
+      constructor() {
+        this.container = document.getElementById('toast-root');
+      }
+
+      show(options) {
+        const id = 'toast_' + Math.random().toString(36).substr(2, 9);
+        const {
+          type = 'info',
+          title = 'Notification',
+          description = '',
+          duration = 4500,
+          action = null,
+          undo = null,
+          showProgress = true,
+          dismissible = true,
+          details = null,
+        } = options;
+
+        playNotificationTone(type);
+
+        const toastEl = document.createElement('div');
+        toastEl.id = id;
+        toastEl.className = 'toast-item pointer-events-auto relative w-full sm:w-[380px] p-4 rounded-2xl bg-surface-900/95 border shadow-2xl backdrop-blur-xl animate-slide-in-right overflow-hidden flex flex-col gap-2.5';
+        
+        // Severity-based borders and glows
+        let iconMarkup = '';
+        if (type === 'success') {
+          toastEl.classList.add('border-emerald-500/40', 'glow-emerald');
+          iconMarkup = `<div class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0"><i data-lucide="check" class="w-4 h-4"></i></div>`;
+          toastEl.setAttribute('role', 'status');
+        } else if (type === 'error') {
+          toastEl.classList.add('border-rose-500/40', 'glow-rose');
+          iconMarkup = `<div class="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 flex-shrink-0"><i data-lucide="alert-octagon" class="w-4 h-4"></i></div>`;
+          toastEl.setAttribute('role', 'alert');
+        } else if (type === 'warning') {
+          toastEl.classList.add('border-amber-500/40', 'glow-amber');
+          iconMarkup = `<div class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-shrink-0"><i data-lucide="alert-triangle" class="w-4 h-4"></i></div>`;
+          toastEl.setAttribute('role', 'status');
+        } else if (type === 'loading') {
+          toastEl.classList.add('border-brand-500/40');
+          iconMarkup = `<div class="w-8 h-8 rounded-xl bg-brand-500/15 border border-brand-500/30 flex items-center justify-center text-brand-400 flex-shrink-0"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i></div>`;
+          toastEl.setAttribute('role', 'status');
+        } else {
+          toastEl.classList.add('border-surface-700/80');
+          iconMarkup = `<div class="w-8 h-8 rounded-xl bg-surface-800 border border-surface-700 flex items-center justify-center text-cyan-400 flex-shrink-0"><i data-lucide="info" class="w-4 h-4"></i></div>`;
+          toastEl.setAttribute('role', 'status');
+        }
+
+        // Inner HTML Composition
+        let contentHtml = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-start gap-3 flex-1 overflow-hidden">
+              ${iconMarkup}
+              <div class="flex-1 min-w-0 pt-0.5">
+                <h4 class="text-xs font-semibold text-white leading-tight truncate">${title}</h4>
+                ${description ? `<p class="text-[11px] text-slate-400 leading-snug mt-1">${description}</p>` : ''}
+              </div>
+            </div>
+            ${dismissible ? `
+              <button onclick="toast.dismiss('${id}')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-800 transition-colors flex-shrink-0" aria-label="Dismiss notification">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            ` : ''}
+          </div>
+        `;
+
+        // Expandable Technical Details (e.g. for errors)
+        if (details) {
+          contentHtml += `
+            <div class="pt-1 border-t border-surface-800">
+              <button onclick="toggleDetails('${id}')" class="text-[10px] font-mono text-rose-400 hover:text-rose-300 flex items-center gap-1">
+                <span>View Stack Trace</span>
+                <i data-lucide="chevron-down" id="${id}_chevron" class="w-3 h-3 transition-transform"></i>
+              </button>
+              <div id="${id}_details" class="hidden mt-2 p-2 rounded-lg bg-surface-950 font-mono text-[10px] text-slate-400 overflow-x-auto max-h-24">
+                ${details}
+              </div>
+            </div>
+          `;
+        }
+
+        // Action Buttons Row (Undo or Custom Action)
+        if (action || undo) {
+          contentHtml += `<div class="flex items-center gap-2 pt-1 border-t border-surface-800/80">`;
+          if (undo) {
+            contentHtml += `
+              <button id="${id}_undo_btn" class="px-3 py-1 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95">
+                <i data-lucide="undo-2" class="w-3 h-3"></i>
+                <span>Undo</span>
+              </button>
+            `;
+          }
+          if (action) {
+            contentHtml += `
+              <button id="${id}_action_btn" class="px-3 py-1 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-200 hover:text-white font-medium text-xs transition-colors">
+                ${action.label}
+              </button>
+            `;
+          }
+          contentHtml += `</div>`;
+        }
+
+        // Linear Progress Bar Countdown
+        if (showProgress && duration > 0) {
+          contentHtml += `
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-surface-800/80 overflow-hidden">
+              <div id="${id}_progress" class="h-full bg-brand-500 transition-all duration-100 ease-linear" style="width: 100%;"></div>
+            </div>
+          `;
+        }
+
+        toastEl.innerHTML = contentHtml;
+        this.container.appendChild(toastEl);
+        lucide.createIcons({ root: toastEl });
+
+        // Setup timer & progress tracking
+        let remaining = duration;
+        let isPaused = false;
+        let startTime = Date.now();
+        let timer = null;
+        let progressInterval = null;
+
+        const startTimers = () => {
+          if (duration <= 0) return;
+          startTime = Date.now();
+          timer = setTimeout(() => {
+            this.dismiss(id);
+          }, remaining);
+
+          const progressBar = document.getElementById(`${id}_progress`);
+          if (progressBar) {
+            progressInterval = setInterval(() => {
+              if (!isPaused) {
+                const elapsed = Date.now() - startTime;
+                const pct = Math.max(0, ((remaining - elapsed) / duration) * 100);
+                progressBar.style.width = `${pct}%`;
+              }
+            }, 50);
+          }
+        };
+
+        const pauseTimers = () => {
+          if (duration <= 0) return;
+          clearTimeout(timer);
+          clearInterval(progressInterval);
+          remaining -= (Date.now() - startTime);
+          isPaused = true;
+        };
+
+        const resumeTimers = () => {
+          if (duration <= 0 || remaining <= 0) return;
+          isPaused = false;
+          startTimers();
+        };
+
+        toastEl.addEventListener('mouseenter', pauseTimers);
+        toastEl.addEventListener('mouseleave', resumeTimers);
+
+        startTimers();
+
+        // Bind Action Handlers
+        if (undo) {
+          const undoBtn = document.getElementById(`${id}_undo_btn`);
+          if (undoBtn) {
+            undoBtn.addEventListener('click', () => {
+              undo();
+              this.dismiss(id);
+            });
+          }
+        }
+        if (action && action.onClick) {
+          const actBtn = document.getElementById(`${id}_action_btn`);
+          if (actBtn) {
+            actBtn.addEventListener('click', () => {
+              action.onClick();
+              this.dismiss(id);
+            });
+          }
+        }
+
+        // Attach Swipe / Drag to Dismiss
+        this.attachSwipeGesture(toastEl, id);
+
+        this.updateToastCount();
+        return id;
+      }
+
+      dismiss(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add('animate-slide-out-right');
+        setTimeout(() => {
+          if (el && el.parentNode) {
+            el.remove();
+            this.updateToastCount();
+          }
+        }, 220);
+      }
+
+      clearAll() {
+        const items = this.container.querySelectorAll('.toast-item');
+        items.forEach(item => {
+          item.classList.add('animate-slide-out-right');
+          setTimeout(() => item.remove(), 200);
+        });
+        setTimeout(() => this.updateToastCount(), 250);
+      }
+
+      updateToastCount() {
+        const count = this.container.querySelectorAll('.toast-item').length;
+        document.getElementById('active-toast-count').innerText = count;
+      }
+
+      // Swipe / Drag Physics
+      attachSwipeGesture(element, id) {
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+
+        const onStart = (e) => {
+          startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+          isDragging = true;
+          element.classList.add('swiping');
+        };
+
+        const onMove = (e) => {
+          if (!isDragging) return;
+          currentX = (e.type.includes('touch') ? e.touches[0].clientX : e.clientX) - startX;
+          if (currentX > 0) { // Only allow swiping right
+            element.style.transform = `translateX(${currentX}px)`;
+            element.style.opacity = `${Math.max(0, 1 - currentX / 200)}`;
+          }
+        };
+
+        const onEnd = () => {
+          if (!isDragging) return;
+          isDragging = false;
+          element.classList.remove('swiping');
+
+          if (currentX > 100) {
+            // Dismissed by gesture!
+            this.dismiss(id);
+          } else {
+            // Snap back spring
+            element.style.transform = '';
+            element.style.opacity = '';
+          }
+          currentX = 0;
+        };
+
+        element.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+
+        element.addEventListener('touchstart', onStart, { passive: true });
+        element.addEventListener('touchmove', onMove, { passive: true });
+        element.addEventListener('touchend', onEnd);
+      }
+
+      // Shortcuts
+      success(title, opts = {}) { return this.show({ ...opts, type: 'success', title }); }
+      error(title, opts = {}) { return this.show({ ...opts, type: 'error', title }); }
+      warning(title, opts = {}) { return this.show({ ...opts, type: 'warning', title }); }
+      info(title, opts = {}) { return this.show({ ...opts, type: 'info', title }); }
+
+      // Promise Lifecycle Handler
+      promise(asyncFn, { loading, success, error }) {
+        const toastId = this.show({
+          type: 'loading',
+          title: loading,
+          duration: 0, // Keep until settled
+          showProgress: false,
+          dismissible: false,
+        });
+
+        asyncFn()
+          .then((res) => {
+            this.dismiss(toastId);
+            setTimeout(() => {
+              this.success(typeof success === 'function' ? success(res) : success, { duration: 4000 });
+            }, 100);
+          })
+          .catch((err) => {
+            this.dismiss(toastId);
+            setTimeout(() => {
+              this.error(typeof error === 'function' ? error(err) : error, {
+                duration: 6000,
+                details: err.stack || err.message,
+                action: {
+                  label: 'Retry Action',
+                  onClick: () => this.promise(asyncFn, { loading, success, error }),
+                }
+              });
+            }, 100);
+          });
+      }
+    }
+
+    const toast = new ToastOrchestrator();
+
+    // -------------------------------------------------------------
+    // INTERACTIVE FLAVOR LAUNCHPAD HANDLERS
+    // -------------------------------------------------------------
+    function triggerFlavor(flavor) {
+      if (flavor === 'success') {
+        toast.success('Project deployed successfully!', {
+          description: 'Production edge domain synced to 34 regional CDN PoPs in 1.2s.',
+          action: { label: 'Inspect Edge', onClick: () => alert('Edge Inspector opened!') }
+        });
+      } else if (flavor === 'error') {
+        toast.error('PostgreSQL Connection Pool Exhausted', {
+          description: 'Client connection timed out after 3000ms on port 5432.',
+          details: 'Error: ConnectionPoolExhaustedException at ConnectionManager.acquire (pg-pool.js:84:12)\n  at QueryExecutor.dispatch (executor.ts:241)\n  Cluster: pg-node-us-east-1a\n  Active Clients: 200 / 200',
+          duration: 7000,
+          action: {
+            label: 'Force Reconnect',
+            onClick: () => toast.info('Reconnecting database socket pool...')
+          }
+        });
+      } else if (flavor === 'warning') {
+        toast.warning('API Rate Limit Approaching 85%', {
+          description: 'Your tier is at 850/1,000 req/min. Burst protection engages at 95%.',
+          action: { label: 'Upgrade Tier', onClick: () => alert('Upgrade modal launched') }
+        });
+      } else if (flavor === 'info') {
+        toast.info('New Multi-Agent CLI v2.4 Available', {
+          description: 'Adds native Gemini 3.8 Live WebSocket streaming support.',
+          action: { label: 'Read Changelog', onClick: () => alert('Changelog opened') }
+        });
+      } else if (flavor === 'promise') {
+        // Simulated Async Promise
+        const fakeDeployment = () => new Promise((resolve, reject) => {
+          setTimeout(() => {
+            const isSuccess = Math.random() > 0.3;
+            if (isSuccess) resolve({ version: 'v3.1.2', latency: '42ms' });
+            else reject(new Error('GatewayTimeout: Cluster worker handshake timed out.'));
+          }, 2400);
+        });
+
+        toast.promise(fakeDeployment, {
+          loading: 'Compiling Rust WASM Edge Bundle...',
+          success: (res) => `Bundle ${res.version} verified! Latency: ${res.latency}`,
+          error: 'Edge build failed during linking step.'
+        });
+      } else if (flavor === 'undo') {
+        let isUndone = false;
+        toast.show({
+          type: 'warning',
+          title: '3 Production API Keys Revoked',
+          description: 'Keys will be permanently invalidated in 5 seconds.',
+          duration: 5000,
+          undo: () => {
+            isUndone = true;
+            toast.success('Revocation cancelled! API keys restored.');
+          }
+        });
+      }
+    }
+
+    // Custom Toast Form
+    function fireCustomToast() {
+      const title = document.getElementById('custom-title').value.trim() || 'Custom Alert';
+      const desc = document.getElementById('custom-desc').value.trim();
+      const type = document.getElementById('custom-type').value;
+      const duration = parseInt(document.getElementById('custom-duration').value, 10);
+      const hasAction = document.getElementById('toggle-has-action').checked;
+      const showProgress = document.getElementById('toggle-progress-bar').checked;
+      const dismissible = document.getElementById('toggle-dismissible').checked;
+
+      toast.show({
+        type,
+        title,
+        description: desc,
+        duration,
+        showProgress,
+        dismissible,
+        action: hasAction ? { label: 'Acknowledge', onClick: () => alert('Acknowledged!') } : null,
+      });
+    }
+
+    function resetCustomForm() {
+      document.getElementById('custom-title').value = 'Cluster Deployment Initiated';
+      document.getElementById('custom-desc').value = '3 pods provisioning in us-east-1 region.';
+      document.getElementById('custom-type').value = 'info';
+      document.getElementById('custom-duration').value = 4500;
+      document.getElementById('duration-val').innerText = '4500';
+    }
+
+    // Toggle Details Accordion in Toasts
+    function toggleDetails(id) {
+      const detailsEl = document.getElementById(`${id}_details`);
+      const chevron = document.getElementById(`${id}_chevron`);
+      if (detailsEl) {
+        detailsEl.classList.toggle('hidden');
+        if (chevron) chevron.classList.toggle('rotate-180');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // POSITIONING & STACK MODE SWITCHERS
+    // -------------------------------------------------------------
+    function setToastPosition(position) {
+      toastConfig.position = position;
+      document.getElementById('current-pos-label').innerText = position;
+
+      const root = document.getElementById('toast-root');
+      root.className = `toast-container fixed z-50 flex flex-col p-4 pointer-events-none transition-all duration-300 ${toastConfig.isStacked ? 'stacked' : 'expanded'}`;
+
+      // Reset coordinates
+      root.style.top = '';
+      root.style.bottom = '';
+      root.style.left = '';
+      root.style.right = '';
+
+      if (position.includes('top')) {
+        root.style.top = '1rem';
+        root.classList.add('pos-top');
+      } else {
+        root.style.bottom = '1rem';
+        root.classList.remove('pos-top');
+      }
+
+      if (position.includes('left')) {
+        root.style.left = '1rem';
+        root.style.alignItems = 'flex-start';
+      } else if (position.includes('center')) {
+        root.style.left = '50%';
+        root.style.transform = 'translateX(-50%)';
+        root.style.alignItems = 'center';
+      } else {
+        root.style.right = '1rem';
+        root.style.alignItems = 'flex-end';
+      }
+
+      // Update button active state
+      document.querySelectorAll('.pos-btn').forEach(btn => {
+        btn.classList.remove('active', 'border-brand-500', 'bg-brand-600/20', 'text-white');
+        btn.classList.add('border-surface-750', 'text-slate-400');
+      });
+      const activeBtn = document.querySelector(`.pos-btn[data-pos="${position}"]`);
+      if (activeBtn) {
+        activeBtn.classList.add('active', 'border-brand-500', 'bg-brand-600/20', 'text-white');
+        activeBtn.classList.remove('border-surface-750', 'text-slate-400');
+      }
+
+      toast.info(`Viewport Anchor Repositioned to ${position.toUpperCase()}`);
+    }
+
+    function toggleStackMode() {
+      toastConfig.isStacked = !toastConfig.isStacked;
+      const root = document.getElementById('toast-root');
+      const btn = document.getElementById('toggle-stack-mode');
+
+      if (toastConfig.isStacked) {
+        root.classList.add('stacked');
+        root.classList.remove('expanded');
+        btn.innerText = 'Stacked';
+        btn.className = 'px-3 py-1.5 rounded-lg bg-brand-600 text-white font-mono text-xs font-semibold';
+      } else {
+        root.classList.remove('stacked');
+        root.classList.add('expanded');
+        btn.innerText = 'Flat List';
+        btn.className = 'px-3 py-1.5 rounded-lg bg-surface-700 text-slate-300 font-mono text-xs font-semibold';
+      }
+    }
+
+    function dismissBanner() {
+      const banner = document.getElementById('system-flash-banner');
+      banner.style.maxHeight = '0';
+      banner.style.opacity = '0';
+      banner.style.padding = '0';
+      banner.style.overflow = 'hidden';
+      setTimeout(() => banner.remove(), 300);
+      toast.info('System announcement banner dismissed.');
+    }
+
+    // -------------------------------------------------------------
+    // ACCESSIBILITY & KEYBOARD SHORTCUTS
+    // -------------------------------------------------------------
+    function initKeyboardListeners() {
+      window.addEventListener('keydown', (e) => {
+        // Skip if typing in an input
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+        if (e.key === '1') triggerFlavor('success');
+        if (e.key === '2') triggerFlavor('error');
+        if (e.key === '3') triggerFlavor('warning');
+        if (e.key === '4') triggerFlavor('promise');
+        if (e.key === '5') triggerFlavor('undo');
+        if (e.key === 'Escape') {
+          // Dismiss the top-most toast
+          const newestToast = document.querySelector('.toast-item:last-child');
+          if (newestToast) toast.dismiss(newestToast.id);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
