@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AETHERIS APEX X1 — Spatial Neural Audio Monitor | Daily UI 012</title>
+
+  <!-- OpenGraph Metadata -->
+  <meta property="og:title" content="Aetheris Apex X1 — Spatial Neural Audio Monitor">
+  <meta property="og:description" content="Experience beryllium planar magnetic precision, 68-hour active noise suppression, and zero-latency spatial acoustic tracking.">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              950: '#07080c',
+              900: '#0c0e14',
+              850: '#12151e',
+              800: '#181c28',
+              750: '#202636',
+              700: '#2b3348',
+              600: '#3d4866',
+            },
+            accent: {
+              titanium: '#94a3b8',
+              silver: '#e2e8f0',
+              gold: '#f59e0b',
+              cyan: '#06b6d4',
+              violet: '#8b5cf6',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            'drawer-slide': 'drawerSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            'sticky-slide-up': 'stickySlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            'pulse-gentle': 'pulseGentle 2.5s infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'scale(0.98)' },
+              '100%': { opacity: '1', transform: 'scale(1)' },
+            },
+            drawerSlide: {
+              '0%': { transform: 'translateX(100%)' },
+              '100%': { transform: 'translateX(0)' },
+            },
+            stickySlideUp: {
+              '0%': { transform: 'translateY(100%)' },
+              '100%': { transform: 'translateY(0)' },
+            },
+            pulseGentle: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.6' },
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #07080c; }
+    ::-webkit-scrollbar-thumb { background: #202636; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+
+    /* Zoom Loupe Container */
+    .loupe-container {
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    .loupe-lens {
+      position: absolute;
+      width: 160px;
+      height: 160px;
+      border: 2px solid rgba(139, 92, 246, 0.7);
+      border-radius: 50%;
+      pointer-events: none;
+      display: none;
+      background-repeat: no-repeat;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(139, 92, 246, 0.3);
+      z-index: 30;
+    }
+
+    /* Ambient Glows */
+    .glow-cyan {
+      box-shadow: 0 0 40px -10px rgba(6, 182, 212, 0.25);
+    }
+    .glow-violet {
+      box-shadow: 0 0 40px -10px rgba(139, 92, 246, 0.25);
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-200 font-sans min-h-screen antialiased selection:bg-violet-600/30 selection:text-violet-200 relative overflow-x-hidden">
+
+  <!-- Ambient Light Backdrops -->
+  <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+    <div class="absolute -top-40 left-1/3 w-[36rem] h-[36rem] bg-violet-600/10 rounded-full blur-[160px]"></div>
+    <div class="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute -bottom-40 left-10 w-[30rem] h-[30rem] bg-indigo-600/10 rounded-full blur-[150px]"></div>
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+  </div>
+
+  <!-- Announcement Ticker Bar -->
+  <aside class="bg-gradient-to-r from-violet-950/70 via-surface-900 to-indigo-950/70 border-b border-violet-500/20 text-xs px-4 py-2 font-mono text-center flex items-center justify-center gap-2">
+    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+    <span class="text-slate-300">GLOBAL LAUNCH: Complimentary Beryllium Upgrade + Free Express Courier Delivery</span>
+    <span class="text-violet-400 font-semibold hidden sm:inline">CODE: APEXLAUNCH</span>
+  </aside>
+
+  <!-- Global Header & Cart Navigation -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-surface-950/80 border-b border-surface-800/80 px-4 sm:px-8 py-3.5 transition-all">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      
+      <!-- Left: Logo & Breadcrumbs -->
+      <div class="flex items-center gap-3">
+        <a href="../" class="group flex items-center gap-2.5 text-xs font-semibold tracking-wider uppercase text-slate-400 hover:text-white transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-surface-850 border border-surface-700/80 flex items-center justify-center text-slate-300 group-hover:border-violet-500/50 group-hover:text-violet-400 transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-0.5"></i>
+          </div>
+          <span class="hidden md:inline">Daily UI Hub</span>
+        </a>
+        <div class="h-4 w-px bg-surface-700/80"></div>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="px-2 py-0.5 rounded font-mono font-semibold bg-violet-500/15 text-violet-300 border border-violet-500/30">DAY 012</span>
+          <span class="text-slate-400 hidden lg:inline font-mono">/ AETHERIS ACOUSTICS / APEX-X1</span>
+        </div>
+      </div>
+
+      <!-- Center: Sound Engine Preview Quick Trigger -->
+      <div class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-900 border border-surface-750 text-xs text-slate-300">
+        <button id="soundscape-btn" onclick="toggleAudioDemo()" class="flex items-center gap-1.5 hover:text-white transition-colors">
+          <i id="soundscape-icon" data-lucide="play" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>Acoustic Demo (Lossless)</span>
+        </button>
+      </div>
+
+      <!-- Right: Wishlist & Cart Drawer Trigger -->
+      <div class="flex items-center gap-2.5">
+        <button onclick="toggleWishlist(this)" class="w-9 h-9 rounded-xl bg-surface-850 hover:bg-surface-800 border border-surface-700/80 flex items-center justify-center text-slate-400 hover:text-rose-400 transition-all" title="Add to Wishlist" aria-label="Add to Wishlist">
+          <i data-lucide="heart" class="w-4 h-4"></i>
+        </button>
+
+        <button onclick="openCartDrawer()" class="relative flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-surface-700/80 text-xs font-medium text-slate-200 hover:text-white transition-all shadow-sm">
+          <i data-lucide="shopping-bag" class="w-4 h-4 text-violet-400"></i>
+          <span class="hidden sm:inline">Bag</span>
+          <span id="header-cart-badge" class="px-1.5 py-0.2 rounded-full font-mono text-[10px] font-bold bg-violet-600 text-white">0</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Product Detail Viewport -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    
+    <!-- Top Breadcrumb -->
+    <nav class="flex items-center gap-2 text-xs font-mono text-slate-400 mb-6" aria-label="Breadcrumb">
+      <a href="#" class="hover:text-slate-200">Catalog</a>
+      <span>/</span>
+      <a href="#" class="hover:text-slate-200">Neural Acoustics</a>
+      <span>/</span>
+      <span class="text-violet-400">Aetheris Apex X1</span>
+    </nav>
+
+    <!-- Two-Column Hero: Gallery (Left 7 cols) & Configurator/Buy Box (Right 5 cols) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      
+      <!-- ============================================== -->
+      <!-- LEFT: PRODUCT GALLERY & 360 LOUPE INSPECTOR    -->
+      <!-- ============================================== -->
+      <div class="lg:col-span-7 space-y-4">
+        
+        <!-- Main Stage Image Container with Interactive Zoom Loupe -->
+        <div class="relative rounded-3xl bg-surface-900 border border-surface-800 p-6 sm:p-10 flex items-center justify-center overflow-hidden shadow-2xl group">
+          
+          <!-- Badges on Image -->
+          <div class="absolute top-5 left-5 z-20 flex flex-col gap-2">
+            <span class="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-violet-600/90 text-white shadow-lg backdrop-blur-md">
+              NEW RELEASE 2026
+            </span>
+            <span class="px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 backdrop-blur-md">
+              IN STOCK · READY TO SHIP
+            </span>
+          </div>
+
+          <!-- Interactive 3D / Fullscreen Toggle -->
+          <div class="absolute top-5 right-5 z-20 flex items-center gap-2">
+            <button onclick="toggle360Mode()" id="btn-360" class="px-3 py-1.5 rounded-xl bg-surface-850/80 hover:bg-surface-800 border border-surface-700/80 text-xs font-mono text-slate-300 hover:text-white flex items-center gap-1.5 backdrop-blur-md transition-all shadow-md">
+              <i data-lucide="rotate-3d" class="w-4 h-4 text-cyan-400"></i>
+              <span>360° View</span>
+            </button>
+          </div>
+
+          <!-- Loupe Magnifier Canvas / Image Stage -->
+          <div id="loupe-stage" class="loupe-container relative w-full aspect-[4/3] flex items-center justify-center">
+            <img id="main-product-img" src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=85" alt="Aetheris Apex X1 Headphones" class="w-full h-full object-contain filter drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] transition-all duration-300">
+            <!-- Loupe Lens Floating Circle -->
+            <div id="loupe-lens" class="loupe-lens"></div>
+          </div>
+
+          <!-- Hint on Hover -->
+          <div class="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-950/70 border border-surface-800 text-[10px] font-mono text-slate-400 pointer-events-none">
+            <i data-lucide="search" class="w-3 h-3 text-violet-400"></i>
+            <span>Hover / Drag to inspect texture</span>
+          </div>
+        </div>
+
+        <!-- Thumbnail Carousel Strip -->
+        <div class="grid grid-cols-5 gap-3" role="tablist" aria-label="Product Image Angles">
+          <button onclick="selectGalleryIndex(0)" class="thumb-btn active p-2 rounded-2xl bg-surface-900 border-2 border-violet-500 flex items-center justify-center aspect-square transition-all group overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=300&q=80" alt="Angle 1" class="w-full h-full object-contain group-hover:scale-105 transition-transform">
+          </button>
+          <button onclick="selectGalleryIndex(1)" class="thumb-btn p-2 rounded-2xl bg-surface-900 border border-surface-800 hover:border-surface-700 flex items-center justify-center aspect-square transition-all group overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=300&q=80" alt="Angle 2" class="w-full h-full object-contain group-hover:scale-105 transition-transform">
+          </button>
+          <button onclick="selectGalleryIndex(2)" class="thumb-btn p-2 rounded-2xl bg-surface-900 border border-surface-800 hover:border-surface-700 flex items-center justify-center aspect-square transition-all group overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=300&q=80" alt="Angle 3" class="w-full h-full object-contain group-hover:scale-105 transition-transform">
+          </button>
+          <button onclick="selectGalleryIndex(3)" class="thumb-btn p-2 rounded-2xl bg-surface-900 border border-surface-800 hover:border-surface-700 flex items-center justify-center aspect-square transition-all group overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=300&q=80" alt="Angle 4" class="w-full h-full object-contain group-hover:scale-105 transition-transform">
+          </button>
+          <button onclick="selectGalleryIndex(4)" class="thumb-btn p-2 rounded-2xl bg-surface-900 border border-surface-800 hover:border-surface-700 flex items-center justify-center aspect-square transition-all group overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=300&q=80" alt="Angle 5" class="w-full h-full object-contain group-hover:scale-105 transition-transform">
+          </button>
+        </div>
+
+        <!-- Trust Badges & Guarantee Row -->
+        <div class="grid grid-cols-3 gap-3 pt-4">
+          <div class="p-4 rounded-2xl bg-surface-900/60 border border-surface-800 text-center flex flex-col items-center">
+            <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400 mb-1.5"></i>
+            <span class="text-xs font-semibold text-white">3-Year Warranty</span>
+            <span class="text-[10px] text-slate-400 font-mono">Zero-deductible exchange</span>
+          </div>
+          <div class="p-4 rounded-2xl bg-surface-900/60 border border-surface-800 text-center flex flex-col items-center">
+            <i data-lucide="truck" class="w-5 h-5 text-cyan-400 mb-1.5"></i>
+            <span class="text-xs font-semibold text-white">Carbon-Neutral Courier</span>
+            <span class="text-[10px] text-slate-400 font-mono">Dispatches in 24 hours</span>
+          </div>
+          <div class="p-4 rounded-2xl bg-surface-900/60 border border-surface-800 text-center flex flex-col items-center">
+            <i data-lucide="rotate-ccw" class="w-5 h-5 text-violet-400 mb-1.5"></i>
+            <span class="text-xs font-semibold text-white">45-Day Trial</span>
+            <span class="text-[10px] text-slate-400 font-mono">100% money back guarantee</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- RIGHT: PRODUCT CONFIGURATOR & CONVERSION DECK  -->
+      <!-- ============================================== -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Header Info & Rating -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono uppercase tracking-widest text-violet-400 font-bold">Aetheris Flagship Architecture</span>
+            <span class="px-2 py-0.5 rounded-full font-mono text-[10px] bg-rose-500/15 text-rose-300 border border-rose-500/30 flex items-center gap-1 animate-pulse">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+              Only 4 Units Left in Finish
+            </span>
+          </div>
+
+          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight mb-2">
+            AETHERIS APEX X1
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+            Custom beryllium planar magnetic drivers, 68-hour ANC battery endurance, and neural head-tracking for spatial audio immersion.
+          </p>
+
+          <!-- Rating Stars & Reviews Anchor -->
+          <div class="flex items-center gap-3">
+            <div class="flex items-center text-amber-400 text-sm">
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-amber-400"></i>
+              <span class="ml-1.5 font-bold font-mono text-white text-xs">4.96</span>
+            </div>
+            <span class="text-slate-600">·</span>
+            <a href="#reviews-section" class="text-xs font-mono text-violet-400 hover:text-violet-300 underline underline-offset-2">1,482 Verified Reviews</a>
+          </div>
+        </div>
+
+        <!-- Pricing Card with Anchor Bias & Financing -->
+        <div class="p-5 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl space-y-3">
+          <div class="flex items-baseline justify-between">
+            <div class="flex items-baseline gap-3">
+              <span id="display-price" class="text-3xl font-extrabold font-mono text-white tracking-tight">$399.00</span>
+              <span id="display-original-price" class="text-base font-mono line-through text-slate-500">$499.00</span>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Save $100 (20% OFF)
+            </span>
+          </div>
+
+          <p class="text-xs text-slate-400 flex items-center gap-1.5 font-mono">
+            <span>Or 4 payments of <strong id="display-installments" class="text-white">$99.75</strong> with</span>
+            <span class="px-1.5 py-0.5 rounded bg-surface-800 font-bold text-slate-200">Klarna</span>
+            <span>or</span>
+            <span class="px-1.5 py-0.5 rounded bg-surface-800 font-bold text-slate-200">Affirm</span>
+          </p>
+        </div>
+
+        <!-- Variant Configuration 1: Colorway Finish -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-mono text-slate-400 uppercase tracking-wider">Finish: <strong id="selected-color-label" class="text-white">Matte Obsidian</strong></span>
+            <span class="text-[11px] font-mono text-slate-500">PVD Anti-Fingerprint</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2.5">
+            <button onclick="selectColorway('obsidian')" id="color-obsidian" class="color-btn active p-3 rounded-2xl bg-surface-900 border-2 border-violet-500 flex items-center gap-2.5 transition-all text-left">
+              <span class="w-5 h-5 rounded-full bg-slate-950 border border-slate-700 shadow-inner flex-shrink-0"></span>
+              <div>
+                <span class="block text-xs font-semibold text-white">Obsidian</span>
+                <span class="text-[10px] text-slate-400">Jet Black</span>
+              </div>
+            </button>
+
+            <button onclick="selectColorway('silver')" id="color-silver" class="color-btn p-3 rounded-2xl bg-surface-900 border border-surface-800 hover:border-surface-700 flex items-center gap-2.5 transition-all text-left">
+              <span class="w-5 h-5 rounded-full bg-slate-300 border border-white shadow-inner flex-shrink-0"></span>
+              <div>
+                <span class="block text-xs font-semibold text-white">Lunar Silver</span>
+                <span class="text-[10px] text-rose-400">4 Left</span>
+              </div>
+            </button>
+
+            <button onclick="selectColorway('damascus')" id="color-damascus" class="color-btn p-3 rounded-2xl bg-surface-900 border border-surface-800 hover:border-surface-700 flex items-center gap-2.5 transition-all text-left">
+              <span class="w-5 h-5 rounded-full bg-gradient-to-tr from-slate-700 via-violet-900 to-slate-900 border border-violet-400 shadow-inner flex-shrink-0"></span>
+              <div>
+                <span class="block text-xs font-semibold text-white">Damascus</span>
+                <span class="text-[10px] text-violet-300">Custom</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Variant Configuration 2: Driver Architecture -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-mono text-slate-400 uppercase tracking-wider">Acoustic Driver Tier</span>
+            <span class="text-[11px] font-mono text-violet-400">High-Res Certified</span>
+          </div>
+
+          <div class="space-y-2">
+            <!-- Tier 1: Included Standard -->
+            <label class="driver-tier-card active flex items-center justify-between p-3.5 rounded-2xl bg-surface-900 border-2 border-violet-500 cursor-pointer transition-all">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="driver-tier" value="standard" checked onchange="updateDriverTier(0)" class="accent-violet-600 w-4 h-4">
+                <div>
+                  <span class="block text-xs font-semibold text-white">40mm Graphene Dual-Chamber</span>
+                  <span class="text-[11px] text-slate-400">10Hz - 40kHz · 0.05% THD distortion</span>
+                </div>
+              </div>
+              <span class="text-xs font-mono font-semibold text-slate-300">Included</span>
+            </label>
+
+            <!-- Tier 2: Beryllium Planar (+ $120) -->
+            <label class="driver-tier-card flex items-center justify-between p-3.5 rounded-2xl bg-surface-900 border border-surface-800 hover:border-surface-700 cursor-pointer transition-all">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="driver-tier" value="beryllium" onchange="updateDriverTier(120)" class="accent-violet-600 w-4 h-4">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold text-white">50mm Planar Magnetic Beryllium</span>
+                    <span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono text-[9px] uppercase font-bold">Studio Ref</span>
+                  </div>
+                  <span class="text-[11px] text-slate-400">5Hz - 65kHz · Near-zero phase delay</span>
+                </div>
+              </div>
+              <span class="text-xs font-mono font-semibold text-amber-400">+$120.00</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Variant Configuration 3: Headband Fit & Sizing Guide -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-mono text-slate-400 uppercase tracking-wider">Ergonomic Fit: <strong id="selected-fit-label" class="text-white">Standard</strong></span>
+            <button onclick="openSizeGuideModal()" class="text-violet-400 hover:text-violet-300 font-mono text-[11px] underline underline-offset-2 flex items-center gap-1">
+              <i data-lucide="ruler" class="w-3.5 h-3.5"></i>
+              <span>Fit Guide</span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <button onclick="selectFit('standard')" id="fit-standard" class="fit-btn active p-3 rounded-2xl bg-surface-900 border-2 border-violet-500 text-left transition-all">
+              <span class="block text-xs font-semibold text-white">Standard Fit</span>
+              <span class="text-[10px] text-slate-400">54cm - 60cm head circumference</span>
+            </button>
+            <button onclick="selectFit('extended')" id="fit-extended" class="fit-btn p-3 rounded-2xl bg-surface-900 border border-surface-800 hover:border-surface-700 text-left transition-all">
+              <span class="block text-xs font-semibold text-white">Extended Fit</span>
+              <span class="text-[10px] text-slate-400">60cm - 66cm head circumference</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Primary Conversion Actions (Add to Cart + Express Checkout) -->
+        <div id="main-buy-box" class="space-y-3 pt-2">
+          
+          <button id="add-to-cart-btn" onclick="addToCart()" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-xl shadow-violet-600/25 transition-all transform active:scale-98 flex items-center justify-center gap-2 group">
+            <i data-lucide="shopping-bag" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
+            <span id="add-btn-text">Add to Cart — $399.00</span>
+          </button>
+
+          <button onclick="expressCheckout()" class="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-slate-100 text-black font-semibold text-sm transition-all transform active:scale-98 flex items-center justify-center gap-2 shadow-lg">
+            <i data-lucide="zap" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+            <span>Instant Express Checkout</span>
+          </button>
+
+          <!-- Delivery Speed Guarantee -->
+          <div class="p-3 rounded-2xl bg-surface-900/60 border border-surface-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <div class="flex items-center gap-2">
+              <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i>
+              <span>Order within <strong class="text-slate-200" id="countdown-timer">3h 42m</strong> for same-day dispatch</span>
+            </div>
+            <span class="text-emerald-400 font-semibold">Free Express</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TECHNICAL ARCHITECTURE & ACOUSTICS BENTO GRID -->
+    <!-- ============================================== -->
+    <section class="mt-20 space-y-6">
+      <div class="text-center max-w-2xl mx-auto mb-10">
+        <span class="text-xs font-mono uppercase tracking-widest text-violet-400 font-bold">Acoustic Engineering</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mt-1">Spatial Precision at Every Hertz</h2>
+        <p class="text-xs sm:text-sm text-slate-400 mt-2">Engineered with custom dual-cavity helmholtz resonators and real-time head-related transfer functions (HRTF).</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Bento 1: Driver Architecture with Interactive Frequency Spectrum -->
+        <div class="md:col-span-2 p-6 sm:p-8 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-violet-600/20 text-violet-400 flex items-center justify-center">
+                <i data-lucide="activity" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-white">Acoustic Frequency Response Curve</h3>
+                <p class="text-xs text-slate-400 font-mono">Reference Harman Target vs Apex X1 Profile</p>
+              </div>
+            </div>
+            <span class="text-xs font-mono text-cyan-400 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30">Sub-Bass to 65kHz</span>
+          </div>
+
+          <!-- Canvas Frequency Graph -->
+          <div class="rounded-2xl bg-surface-950 p-4 border border-surface-800 relative">
+            <canvas id="freq-canvas" width="700" height="200" class="w-full h-40"></canvas>
+            <div class="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-2 border-t border-surface-800">
+              <span>20Hz (Sub-bass)</span>
+              <span>250Hz (Bass)</span>
+              <span>1kHz (Midrange)</span>
+              <span>4kHz (Presence)</span>
+              <span>20kHz (Air)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bento 2: Active Noise Suppression Metric -->
+        <div class="p-6 sm:p-8 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center mb-4">
+              <i data-lucide="waves" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xs font-mono text-emerald-400 font-semibold uppercase">Quad-Mic Hybrid ANC</span>
+            <div class="text-4xl font-extrabold font-mono text-white mt-1 mb-2">-48 dB</div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Real-time inverted ambient wave sampling at 384,000 cycles/sec to eradicate low-frequency turbofan rumble and chatter.
+            </p>
+          </div>
+          <div class="pt-4 border-t border-surface-800 flex items-center justify-between text-xs font-mono text-slate-400">
+            <span>Latency</span>
+            <strong class="text-white">4.2ms Low-Delay</strong>
+          </div>
+        </div>
+
+        <!-- Bento 3: Battery Endurance -->
+        <div class="p-6 sm:p-8 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-cyan-600/20 text-cyan-400 flex items-center justify-center mb-4">
+              <i data-lucide="battery-charging" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xs font-mono text-cyan-400 font-semibold uppercase">Solid-State Battery</span>
+            <div class="text-4xl font-extrabold font-mono text-white mt-1 mb-2">68 Hours</div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              With full ANC active. Rapid USB-C charge yields 7 hours of playback from a 10-minute top-off.
+            </p>
+          </div>
+          <div class="pt-4 border-t border-surface-800 flex items-center justify-between text-xs font-mono text-slate-400">
+            <span>Standby</span>
+            <strong class="text-white">450 Hours</strong>
+          </div>
+        </div>
+
+        <!-- Bento 4: Material Ergonomics -->
+        <div class="md:col-span-2 p-6 sm:p-8 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-600/20 text-amber-400 flex items-center justify-center">
+              <i data-lucide="feather" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-white">Aerospace Titanium & Italian Memory Leather</h3>
+              <p class="text-xs text-slate-400 font-mono">Weight: 242 grams · Zero pressure crown distribution</p>
+            </div>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            The magnetic ear cushions utilize heat-dissipating graphene mesh infused with slow-rebound acoustic memory foam. Swappable in 2 seconds via high-flux neodymium alignment pins.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- SOCIAL PROOF & VERIFIED REVIEWS SECTION        -->
+    <!-- ============================================== -->
+    <section id="reviews-section" class="mt-20 p-6 sm:p-10 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl space-y-8">
+      
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-surface-800 pb-8">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-violet-400 font-bold">Community Validation</span>
+          <h2 class="text-2xl font-bold text-white tracking-tight mt-1">Customer Reviews & Field Reports</h2>
+          <p class="text-xs text-slate-400 mt-1">Based on 1,482 verified customer purchases across 38 countries</p>
+        </div>
+
+        <div class="flex items-center gap-4 bg-surface-950 p-4 rounded-2xl border border-surface-800">
+          <div class="text-center pr-4 border-r border-surface-800">
+            <span class="text-3xl font-extrabold font-mono text-white">4.96</span>
+            <span class="block text-[10px] text-slate-400">out of 5.0</span>
+          </div>
+          <div>
+            <div class="flex items-center text-amber-400 text-xs mb-1">
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+            </div>
+            <span class="text-xs text-emerald-400 font-mono font-semibold">98.4% Recommend Rate</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Review Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Review 1 -->
+        <div class="p-5 rounded-2xl bg-surface-850/70 border border-surface-750 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-violet-600/30 text-violet-300 font-bold flex items-center justify-center text-xs">MK</div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-semibold text-white">Marcus K.</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Verified Buyer</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-mono">Beryllium 50mm · Lunar Silver</span>
+              </div>
+            </div>
+            <div class="flex text-amber-400 text-xs">
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+            </div>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            “The planar drivers are in an entirely different league than Apple or Sony flagships. The instrument separation in complex orchestral arrangements is breathtaking, and the clamp force feels featherlight during 8-hour coding sessions.”
+          </p>
+        </div>
+
+        <!-- Review 2 -->
+        <div class="p-5 rounded-2xl bg-surface-850/70 border border-surface-750 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-cyan-600/30 text-cyan-300 font-bold flex items-center justify-center text-xs">SL</div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-semibold text-white">Dr. Sarah Lin</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Audio Architect</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-mono">Standard 40mm · Matte Obsidian</span>
+              </div>
+            </div>
+            <div class="flex text-amber-400 text-xs">
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+            </div>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            “Sub-bass extension down to 10Hz without artificial bass-boost bloating. The build finish feels like milled surgical titanium. Will be recommending this to our entire mastering studio.”
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- STICKY BOTTOM CONVERSION BAR (Appears on Scroll)       -->
+  <!-- ======================================================== -->
+  <aside id="sticky-bar" class="fixed bottom-0 left-0 right-0 z-40 bg-surface-900/95 backdrop-blur-xl border-t border-surface-800 p-3 sm:p-4 transform translate-y-full transition-transform duration-300 shadow-2xl">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      
+      <!-- Product Mini Profile -->
+      <div class="flex items-center gap-3">
+        <img id="sticky-thumb" src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=120&q=80" alt="Apex X1" class="w-10 h-10 rounded-xl object-contain bg-surface-950 p-1 border border-surface-700">
+        <div>
+          <h4 class="text-xs font-bold text-white">AETHERIS APEX X1</h4>
+          <p class="text-[11px] text-slate-400 font-mono" id="sticky-spec-summary">Matte Obsidian · Standard Graphene</p>
+        </div>
+      </div>
+
+      <!-- Price & Conversion CTA -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <div class="text-right hidden sm:block">
+          <span id="sticky-price" class="text-base font-extrabold font-mono text-white">$399.00</span>
+          <span class="block text-[10px] text-emerald-400 font-mono">Free Express Courier</span>
+        </div>
+
+        <button onclick="addToCart()" class="py-2.5 px-5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs shadow-lg shadow-violet-600/30 transition-all flex items-center gap-2">
+          <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+          <span>Add to Bag</span>
+        </button>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ======================================================== -->
+  <!-- SLIDE-OVER CART DRAWER                                  -->
+  <!-- ======================================================== -->
+  <div id="cart-drawer-backdrop" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+    <div id="cart-drawer-panel" class="absolute top-0 right-0 bottom-0 w-full max-w-md bg-surface-900 border-l border-surface-800 p-6 flex flex-col shadow-2xl transform translate-x-full transition-transform duration-300">
+      
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-surface-800">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-violet-600/20 text-violet-400 flex items-center justify-center">
+            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+          </div>
+          <h3 id="cart-title" class="text-base font-bold text-white">Your Shopping Bag</h3>
+          <span id="cart-drawer-count" class="px-2 py-0.5 rounded-full bg-surface-800 text-violet-300 font-mono text-xs font-semibold">0</span>
+        </div>
+        <button onclick="closeCartDrawer()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-surface-800 transition-colors" aria-label="Close Shopping Bag">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Free Shipping Progress Tracker -->
+      <div class="py-3 border-b border-surface-800">
+        <div class="flex items-center justify-between text-xs font-mono mb-1.5">
+          <span class="text-slate-400" id="shipping-progress-text">Free Global Express Shipping Unlocked!</span>
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+        <div class="w-full h-1.5 bg-surface-950 rounded-full overflow-hidden">
+          <div id="shipping-progress-bar" class="h-full bg-gradient-to-r from-violet-600 to-emerald-400 rounded-full" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Cart Items Scroll List -->
+      <div id="cart-items-container" class="flex-1 overflow-y-auto py-4 space-y-4">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Cart Drawer Footer -->
+      <div class="pt-4 border-t border-surface-800 space-y-4 bg-surface-900">
+        
+        <!-- Promo Coupon Input -->
+        <div class="flex items-center gap-2">
+          <input id="promo-input" type="text" placeholder="Promo code (e.g. APEX20)" class="flex-1 px-3 py-2 rounded-xl bg-surface-950 border border-surface-700 font-mono text-xs text-white uppercase focus:outline-none focus:ring-1 focus:ring-violet-500">
+          <button onclick="applyPromoCode()" class="px-3.5 py-2 rounded-xl bg-surface-800 hover:bg-surface-750 text-slate-200 text-xs font-semibold font-mono transition-all">Apply</button>
+        </div>
+
+        <!-- Cost Breakdown -->
+        <div class="space-y-1.5 text-xs font-mono text-slate-400">
+          <div class="flex justify-between">
+            <span>Subtotal</span>
+            <span id="cart-subtotal" class="text-white">$0.00</span>
+          </div>
+          <div class="flex justify-between" id="discount-row" style="display: none;">
+            <span class="text-emerald-400">Promo Discount</span>
+            <span id="cart-discount" class="text-emerald-400">-$20.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Estimated Shipping</span>
+            <span class="text-emerald-400">FREE</span>
+          </div>
+          <div class="flex justify-between pt-2 border-t border-surface-800 text-sm font-bold text-white">
+            <span>Estimated Total</span>
+            <span id="cart-total" class="text-violet-400">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Checkout Trigger (Links to Day 002 Checkout prototype) -->
+        <a href="../day-002-checkout/" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-xl shadow-violet-600/30 transition-all active:scale-98">
+          <span>Proceed to Secure Checkout</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Sizing Fit Guide Modal -->
+  <div id="size-modal-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-200 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="size-title">
+    <div id="size-modal-panel" class="bg-surface-900 border border-surface-750 rounded-3xl w-full max-w-lg p-6 shadow-2xl transform scale-95 transition-transform duration-200">
+      <div class="flex items-center justify-between pb-3 border-b border-surface-800">
+        <h3 id="size-title" class="text-base font-bold text-white">Ergonomic Fit & Sizing Guide</h3>
+        <button onclick="closeSizeGuideModal()" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-surface-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="py-4 space-y-4 text-xs text-slate-300 leading-relaxed">
+        <p>Aetheris headbands feature a multi-axis articulating suspension yoke. Choose your size based on head circumference:</p>
+        
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+            <span class="block font-bold text-white text-sm mb-1">Standard Fit</span>
+            <span class="block text-violet-400 font-mono mb-2">54cm – 60cm</span>
+            <p class="text-[11px] text-slate-400">Fits 88% of adults. Balanced 1.2N clamping force for active movement.</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+            <span class="block font-bold text-white text-sm mb-1">Extended Fit</span>
+            <span class="block text-cyan-400 font-mono mb-2">60cm – 66cm</span>
+            <p class="text-[11px] text-slate-400">For broader crowns or individuals wearing corrective eyewear/caps.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-surface-800 flex justify-end">
+        <button onclick="closeSizeGuideModal()" class="px-4 py-2 rounded-xl bg-violet-600 text-white font-medium text-xs">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-time Toast Notifications -->
+  <div id="toast-shelf" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none" aria-live="polite"></div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: COMMERCE SUITE & SOUND SYNTHESIS ENGINE     -->
+  <!-- ======================================================== -->
+  <script>
+    // Product Gallery Data
+    const galleryImages = [
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=85",
+      "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=1200&q=85",
+      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=1200&q=85",
+      "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=1200&q=85",
+      "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=1200&q=85"
+    ];
+
+    // Master Commerce State
+    const productState = {
+      basePrice: 399,
+      driverUpgrade: 0,
+      colorway: 'obsidian',
+      colorLabel: 'Matte Obsidian',
+      fit: 'standard',
+      fitLabel: 'Standard Fit',
+      discount: 0,
+      cart: [],
+      audioDemoPlaying: false,
+    };
+
+    // DOM Ready
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initZoomLoupe();
+      initScrollObservers();
+      drawFrequencyResponse();
+      startCountdown();
+    });
+
+    // -------------------------------------------------------------
+    // WEB AUDIO API NATIVE HAPTIC SOUNDS & DEMO SYNTHESIZER
+    // -------------------------------------------------------------
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function playClick() {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.04, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
+      } catch (e) {}
+    }
+
+    function playCartChime() {
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        [523.25, 659.25, 783.99].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.06, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.25);
+        });
+      } catch (e) {}
+    }
+
+    // Interactive Lossless Audio Synthesizer Demo
+    let demoOsc1 = null, demoOsc2 = null;
+    function toggleAudioDemo() {
+      const btn = document.getElementById('soundscape-btn');
+      const icon = document.getElementById('soundscape-icon');
+      const ctx = getAudioContext();
+
+      if (!productState.audioDemoPlaying) {
+        demoOsc1 = ctx.createOscillator();
+        demoOsc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+        demoOsc1.connect(gain);
+        demoOsc2.connect(gain);
+        gain.connect(ctx.destination);
+
+        demoOsc1.type = 'sine';
+        demoOsc1.frequency.setValueAtTime(220, ctx.currentTime); // A3
+        demoOsc2.type = 'triangle';
+        demoOsc2.frequency.setValueAtTime(440, ctx.currentTime); // A4
+        gain.gain.setValueAtTime(0.05, ctx.currentTime);
+
+        demoOsc1.start();
+        demoOsc2.start();
+        productState.audioDemoPlaying = true;
+        btn.classList.add('text-cyan-400');
+        icon.setAttribute('data-lucide', 'square');
+        showToast('Playing synthetic lossless 96kHz acoustic test tone');
+      } else {
+        if (demoOsc1) demoOsc1.stop();
+        if (demoOsc2) demoOsc2.stop();
+        productState.audioDemoPlaying = false;
+        btn.classList.remove('text-cyan-400');
+        icon.setAttribute('data-lucide', 'play');
+        showToast('Acoustic demo stopped');
+      }
+      lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // INTERACTIVE ZOOM LOUPE MAGNIFIER
+    // -------------------------------------------------------------
+    function initZoomLoupe() {
+      const stage = document.getElementById('loupe-stage');
+      const img = document.getElementById('main-product-img');
+      const lens = document.getElementById('loupe-lens');
+
+      stage.addEventListener('mousemove', (e) => {
+        lens.style.display = 'block';
+        const rect = stage.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Position lens
+        lens.style.left = `${x - 80}px`;
+        lens.style.top = `${y - 80}px`;
+
+        // Background zoom on lens
+        lens.style.backgroundImage = `url('${img.src}')`;
+        lens.style.backgroundSize = `${rect.width * 2.2}px ${rect.height * 2.2}px`;
+        lens.style.backgroundPosition = `-${x * 2.2 - 80}px -${y * 2.2 - 80}px`;
+      });
+
+      stage.addEventListener('mouseleave', () => {
+        lens.style.display = 'none';
+      });
+    }
+
+    function selectGalleryIndex(idx) {
+      playClick();
+      const mainImg = document.getElementById('main-product-img');
+      mainImg.src = galleryImages[idx];
+
+      document.querySelectorAll('.thumb-btn').forEach((btn, i) => {
+        if (i === idx) {
+          btn.className = 'thumb-btn active p-2 rounded-2xl bg-surface-900 border-2 border-violet-500 flex items-center justify-center aspect-square transition-all group overflow-hidden';
+        } else {
+          btn.className = 'thumb-btn p-2 rounded-2xl bg-surface-900 border border-surface-800 hover:border-surface-700 flex items-center justify-center aspect-square transition-all group overflow-hidden';
+        }
+      });
+    }
+
+    function toggle360Mode() {
+      playClick();
+      let step = 0;
+      const interval = setInterval(() => {
+        selectGalleryIndex(step % galleryImages.length);
+        step++;
+        if (step >= galleryImages.length * 2) clearInterval(interval);
+      }, 180);
+      showToast('Spinning 360° multi-angle showcase');
+    }
+
+    // -------------------------------------------------------------
+    // PRODUCT CONFIGURATION LOGIC (COLOR, DRIVERS, FIT)
+    // -------------------------------------------------------------
+    function selectColorway(color) {
+      playClick();
+      productState.colorway = color;
+      document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.classList.remove('border-2', 'border-violet-500');
+        btn.classList.add('border-surface-800');
+      });
+
+      const selectedBtn = document.getElementById(`color-${color}`);
+      if (selectedBtn) {
+        selectedBtn.classList.add('border-2', 'border-violet-500');
+        selectedBtn.classList.remove('border-surface-800');
+      }
+
+      if (color === 'obsidian') {
+        productState.colorLabel = 'Matte Obsidian';
+        selectGalleryIndex(0);
+      } else if (color === 'silver') {
+        productState.colorLabel = 'Lunar Silver';
+        selectGalleryIndex(1);
+      } else if (color === 'damascus') {
+        productState.colorLabel = 'Damascus Titanium';
+        selectGalleryIndex(2);
+      }
+
+      document.getElementById('selected-color-label').innerText = productState.colorLabel;
+      updatePricingDisplay();
+    }
+
+    function updateDriverTier(upgradePrice) {
+      playClick();
+      productState.driverUpgrade = upgradePrice;
+      document.querySelectorAll('.driver-tier-card').forEach(card => {
+        card.classList.remove('border-2', 'border-violet-500');
+        card.classList.add('border-surface-800');
+      });
+      event.currentTarget.classList.add('border-2', 'border-violet-500');
+      event.currentTarget.classList.remove('border-surface-800');
+      updatePricingDisplay();
+    }
+
+    function selectFit(fit) {
+      playClick();
+      productState.fit = fit;
+      productState.fitLabel = fit === 'standard' ? 'Standard Fit' : 'Extended Fit';
+      document.getElementById('selected-fit-label').innerText = productState.fitLabel;
+
+      document.querySelectorAll('.fit-btn').forEach(b => {
+        b.classList.remove('border-2', 'border-violet-500');
+        b.classList.add('border-surface-800');
+      });
+      document.getElementById(`fit-${fit}`).classList.add('border-2', 'border-violet-500');
+      document.getElementById(`fit-${fit}`).classList.remove('border-surface-800');
+      updatePricingDisplay();
+    }
+
+    function updatePricingDisplay() {
+      const currentTotal = productState.basePrice + productState.driverUpgrade;
+      const formatted = `$${currentTotal}.00`;
+      const installmentFormatted = `$${(currentTotal / 4).toFixed(2)}`;
+
+      document.getElementById('display-price').innerText = formatted;
+      document.getElementById('display-installments').innerText = installmentFormatted;
+      document.getElementById('add-btn-text').innerText = `Add to Cart — ${formatted}`;
+      document.getElementById('sticky-price').innerText = formatted;
+      document.getElementById('sticky-spec-summary').innerText = `${productState.colorLabel} · ${productState.driverUpgrade > 0 ? '50mm Beryllium' : '40mm Graphene'}`;
+    }
+
+    // -------------------------------------------------------------
+    // CART ENGINE & SLIDE-OVER DRAWER
+    // -------------------------------------------------------------
+    function addToCart() {
+      playCartChime();
+      const unitPrice = productState.basePrice + productState.driverUpgrade;
+
+      const item = {
+        id: Date.now(),
+        title: 'AETHERIS APEX X1',
+        color: productState.colorLabel,
+        driver: productState.driverUpgrade > 0 ? '50mm Planar Beryllium' : '40mm Graphene',
+        fit: productState.fitLabel,
+        price: unitPrice,
+        image: galleryImages[productState.colorway === 'obsidian' ? 0 : 1]
+      };
+
+      productState.cart.push(item);
+      renderCart();
+      openCartDrawer();
+      showToast(`Added ${item.title} (${item.color}) to your bag!`);
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cart-items-container');
+      const badge = document.getElementById('header-cart-badge');
+      const drawerCount = document.getElementById('cart-drawer-count');
+
+      badge.innerText = productState.cart.length;
+      drawerCount.innerText = productState.cart.length;
+
+      if (productState.cart.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 space-y-3">
+            <i data-lucide="shopping-bag" class="w-12 h-12 text-slate-600 mx-auto stroke-1"></i>
+            <p class="text-sm text-slate-400">Your bag is currently empty.</p>
+          </div>
+        `;
+        lucide.createIcons({ root: container });
+        updateTotals();
+        return;
+      }
+
+      container.innerHTML = productState.cart.map((item, idx) => `
+        <div class="p-3.5 rounded-2xl bg-surface-850 border border-surface-750 flex items-center gap-3">
+          <img src="${item.image}" alt="${item.title}" class="w-14 h-14 rounded-xl object-contain bg-surface-950 p-1 border border-surface-700">
+          <div class="flex-1 min-w-0">
+            <h4 class="text-xs font-bold text-white truncate">${item.title}</h4>
+            <p class="text-[11px] text-slate-400 font-mono">${item.color} · ${item.fit}</p>
+            <p class="text-[10px] text-violet-400 font-mono">${item.driver}</p>
+            <span class="text-xs font-bold font-mono text-white mt-1 block">$${item.price}.00</span>
+          </div>
+          <button onclick="removeCartItem(${idx})" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-surface-800 transition-colors" aria-label="Remove item">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `).join('');
+
+      lucide.createIcons({ root: container });
+      updateTotals();
+    }
+
+    function removeCartItem(idx) {
+      playClick();
+      productState.cart.splice(idx, 1);
+      renderCart();
+      showToast('Item removed from bag');
+    }
+
+    function updateTotals() {
+      const subtotal = productState.cart.reduce((sum, item) => sum + item.price, 0);
+      const total = Math.max(0, subtotal - productState.discount);
+
+      document.getElementById('cart-subtotal').innerText = `$${subtotal.toFixed(2)}`;
+      document.getElementById('cart-total').innerText = `$${total.toFixed(2)}`;
+    }
+
+    function applyPromoCode() {
+      const code = document.getElementById('promo-input').value.trim().toUpperCase();
+      if (code === 'APEX20' || code === 'APEXLAUNCH') {
+        productState.discount = 20;
+        document.getElementById('discount-row').style.display = 'flex';
+        updateTotals();
+        playCartChime();
+        showToast('Promo code applied! $20 discount deducted.');
+      } else {
+        showToast('Invalid promo code. Try APEX20');
+      }
+    }
+
+    function openCartDrawer() {
+      const backdrop = document.getElementById('cart-drawer-backdrop');
+      const panel = document.getElementById('cart-drawer-panel');
+      backdrop.classList.remove('hidden');
+      setTimeout(() => {
+        backdrop.classList.remove('opacity-0');
+        panel.classList.remove('translate-x-full');
+      }, 10);
+    }
+
+    function closeCartDrawer() {
+      const backdrop = document.getElementById('cart-drawer-backdrop');
+      const panel = document.getElementById('cart-drawer-panel');
+      panel.classList.add('translate-x-full');
+      backdrop.classList.add('opacity-0');
+      setTimeout(() => backdrop.classList.add('hidden'), 300);
+    }
+
+    document.getElementById('cart-drawer-backdrop').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('cart-drawer-backdrop')) closeCartDrawer();
+    });
+
+    function expressCheckout() {
+      addToCart();
+      setTimeout(() => {
+        window.location.href = '../day-002-checkout/';
+      }, 400);
+    }
+
+    // -------------------------------------------------------------
+    // STICKY CONVERSION BAR OBSERVER
+    // -------------------------------------------------------------
+    function initScrollObservers() {
+      const buyBox = document.getElementById('main-buy-box');
+      const stickyBar = document.getElementById('sticky-bar');
+
+      window.addEventListener('scroll', () => {
+        const rect = buyBox.getBoundingClientRect();
+        if (rect.bottom < 0) {
+          stickyBar.classList.remove('translate-y-full');
+        } else {
+          stickyBar.classList.add('translate-y-full');
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // MODALS: SIZING GUIDE
+    // -------------------------------------------------------------
+    function openSizeGuideModal() {
+      const backdrop = document.getElementById('size-modal-backdrop');
+      const panel = document.getElementById('size-modal-panel');
+      backdrop.classList.remove('hidden');
+      setTimeout(() => {
+        backdrop.classList.remove('opacity-0');
+        panel.classList.remove('scale-95');
+        panel.classList.add('scale-100');
+      }, 10);
+    }
+
+    function closeSizeGuideModal() {
+      const backdrop = document.getElementById('size-modal-backdrop');
+      const panel = document.getElementById('size-modal-panel');
+      panel.classList.remove('scale-100');
+      panel.classList.add('scale-95');
+      backdrop.classList.add('opacity-0');
+      setTimeout(() => backdrop.classList.add('hidden'), 200);
+    }
+
+    function toggleWishlist(btn) {
+      playClick();
+      const icon = btn.querySelector('svg') || btn.querySelector('i');
+      btn.classList.toggle('text-rose-400');
+      btn.classList.toggle('border-rose-500/40');
+      showToast('Saved to your personal hardware wishlist!');
+    }
+
+    // -------------------------------------------------------------
+    // CANVAS ACOUSTIC FREQUENCY RESPONSE CURVE
+    // -------------------------------------------------------------
+    function drawFrequencyResponse() {
+      const c = document.getElementById('freq-canvas');
+      const ctx = c.getContext('2d');
+      const W = c.width;
+      const H = c.height;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Grid lines
+      ctx.strokeStyle = '#181c28';
+      ctx.lineWidth = 1;
+      for (let y = 30; y < H; y += 35) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+
+      // Harman Target Baseline (Dotted Gray)
+      ctx.beginPath();
+      ctx.strokeStyle = '#414d73';
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 2;
+      ctx.moveTo(0, 110);
+      ctx.bezierCurveTo(150, 90, 300, 105, 450, 80);
+      ctx.bezierCurveTo(550, 70, 620, 120, W, 130);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Apex X1 Measured Response (Solid Cyan / Violet Gradient)
+      const grad = ctx.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0, '#06b6d4');
+      grad.addColorStop(0.5, '#8b5cf6');
+      grad.addColorStop(1, '#ec4899');
+
+      ctx.beginPath();
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 3;
+      ctx.moveTo(0, 100);
+      ctx.bezierCurveTo(140, 80, 260, 102, 420, 75);
+      ctx.bezierCurveTo(530, 60, 610, 105, W, 115);
+      ctx.stroke();
+    }
+
+    // Shipping Countdown Timer Simulation
+    function startCountdown() {
+      let seconds = 3 * 3600 + 42 * 60;
+      setInterval(() => {
+        seconds--;
+        if (seconds <= 0) seconds = 86400;
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        const el = document.getElementById('countdown-timer');
+        if (el) el.innerText = `${h}h ${m}m ${s < 10 ? '0' : ''}${s}s`;
+      }, 1000);
+    }
+
+    // Toast Manager
+    function showToast(msg) {
+      const shelf = document.getElementById('toast-shelf');
+      const t = document.createElement('div');
+      t.className = 'px-4 py-3 rounded-2xl bg-surface-900 border border-surface-700 text-xs text-white shadow-2xl flex items-center gap-2 transform translate-y-3 opacity-0 transition-all duration-300 pointer-events-auto backdrop-blur-xl';
+      t.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i><span>${msg}</span>`;
+      shelf.appendChild(t);
+      lucide.createIcons({ root: t });
+      setTimeout(() => t.classList.remove('translate-y-3', 'opacity-0'), 10);
+      setTimeout(() => {
+        t.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => t.remove(), 300);
+      }, 3200);
+    }
+  </script>
+</body>
+</html>

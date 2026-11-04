@@ -30,7 +30,8 @@ Every daily challenge is executed under four core engineering pillars:
 | **009** | **Spatial Audio & Media Player** | Entertainment | [Day 009 Prototype](./day-009-music-player/index.html) | ✅ Completed |
 | **010** | **Social Share Widget & Growth Studio** | Engagement / Growth | [Day 010 Prototype](./day-010-social-share/index.html) | ✅ Completed |
 | **011** | **Flash Message & Toast Architecture** | System Feedback | [Day 011 Prototype](./day-011-flash-message/index.html) | ✅ Completed |
-| **012** | E-Commerce Product Detail Page | E-Commerce / Retail | *Upcoming* | ⏳ Queued |
+| **012** | **E-Commerce Product Detail Page** | E-Commerce / Retail | [Day 012 Prototype](./day-012-ecommerce-shop/index.html) | ✅ Completed |
+| **013** | Direct Messaging & Chat Interface | Social / Productivity | *Upcoming* | ⏳ Queued |
 
 ---
 
