@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 013: Direct Messaging & Collaborative Chat Interface | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              950: '#07090e',
+              900: '#0c0f17',
+              850: '#111622',
+              800: '#171e2e',
+              750: '#1f273b',
+              700: '#2a344d',
+              600: '#3c496c',
+            },
+            brand: {
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            'slide-up': 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            'typing-bounce': 'typingBounce 1.4s infinite ease-in-out both',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(6px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            slideUp: {
+              '0%': { opacity: '0', transform: 'scale(0.96)' },
+              '100%': { opacity: '1', transform: 'scale(1)' },
+            },
+            typingBounce: {
+              '0%, 80%, 100%': { transform: 'scale(0)' },
+              '40%': { transform: 'scale(1)' },
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #07090e; }
+    ::-webkit-scrollbar-thumb { background: #1f273b; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+
+    /* Typing indicator delays */
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    .typing-dot:nth-child(3) { animation-delay: 0s; }
+
+    /* Audio wave bars */
+    .wave-bar {
+      transition: height 0.15s ease;
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-200 font-sans h-full flex flex-col antialiased selection:bg-brand-600/30 selection:text-indigo-200 overflow-hidden">
+
+  <!-- Top Global Bar -->
+  <header class="flex-shrink-0 backdrop-blur-xl bg-surface-950/90 border-b border-surface-800/80 px-4 py-2.5 flex items-center justify-between z-30">
+    <div class="flex items-center gap-3">
+      <a href="../" class="group flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-slate-400 hover:text-white transition-colors">
+        <div class="w-7 h-7 rounded-lg bg-surface-850 border border-surface-700 flex items-center justify-center text-slate-300 group-hover:border-brand-500/50 group-hover:text-brand-400 transition-all">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        </div>
+        <span class="hidden sm:inline">Daily UI Hub</span>
+      </a>
+      <div class="h-3.5 w-px bg-surface-700"></div>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="px-2 py-0.5 rounded font-mono font-bold bg-brand-500/10 text-brand-300 border border-brand-500/25">DAY 013</span>
+        <span class="text-slate-400 hidden md:inline font-mono">/ SYNAPSE CHAT INTERFACE</span>
+      </div>
+    </div>
+
+    <!-- Right Controls: Audio Feedback & User Status Pill -->
+    <div class="flex items-center gap-2.5">
+      <button id="audio-toggle-btn" onclick="toggleAudio()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-surface-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all" title="Toggle Chat SFX">
+        <i id="audio-icon" data-lucide="volume-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span class="hidden sm:inline" id="audio-label">SFX On</span>
+      </button>
+
+      <!-- Current Profile Pill with Status Selector -->
+      <div class="relative">
+        <button onclick="toggleStatusDropdown()" class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-surface-850 hover:bg-surface-800 border border-surface-700/80 transition-all text-left">
+          <div class="relative">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="You" class="w-6 h-6 rounded-lg object-cover ring-1 ring-surface-700">
+            <span id="user-status-dot" class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-surface-950"></span>
+          </div>
+          <span class="text-xs font-semibold text-white hidden md:inline">Elena R.</span>
+          <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+        </button>
+
+        <!-- Status Dropdown Menu -->
+        <div id="status-menu" class="hidden absolute right-0 mt-2 w-44 rounded-2xl bg-surface-900 border border-surface-750 shadow-2xl p-1.5 z-50 text-xs font-medium space-y-0.5">
+          <button onclick="setStatus('online', 'bg-emerald-400', 'Active Now')" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-slate-200">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>Active Now</span>
+          </button>
+          <button onclick="setStatus('away', 'bg-amber-400', 'Away (In Studio)')" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-slate-200">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span>Away</span>
+          </button>
+          <button onclick="setStatus('dnd', 'bg-rose-400', 'Do Not Disturb')" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-slate-200">
+            <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+            <span>Do Not Disturb</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 3-Pane Messaging Workspace -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- ============================================== -->
+    <!-- PANE 1: CONVERSATIONS & CHANNELS SIDEBAR       -->
+    <!-- ============================================== -->
+    <aside id="sidebar-panel" class="w-72 sm:w-80 flex-shrink-0 bg-surface-900/90 border-r border-surface-800/80 flex flex-col transition-all duration-300 z-20">
+      
+      <!-- Search & Command Filter Bar -->
+      <div class="p-3 border-b border-surface-800/80">
+        <div class="relative">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3"></i>
+          <input id="search-input" type="text" oninput="filterConversations()" placeholder="Search messages (Cmd+K)" class="w-full pl-8 pr-12 py-2 rounded-xl bg-surface-950 border border-surface-750 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500 font-sans">
+          <span class="absolute right-2.5 top-2.5 px-1.5 py-0.5 rounded text-[9px] font-mono bg-surface-800 text-slate-400 border border-surface-700">⌘K</span>
+        </div>
+      </div>
+
+      <!-- Conversations Scroll List -->
+      <div class="flex-1 overflow-y-auto p-2 space-y-4">
+        
+        <!-- Channels Section -->
+        <div>
+          <div class="flex items-center justify-between px-2.5 py-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400">
+            <span>Workspaces</span>
+            <button onclick="createNewChannelPrompt()" class="hover:text-white p-0.5" title="Create Channel"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+          </div>
+          <div class="space-y-0.5 mt-1" id="channels-list">
+            <button onclick="selectConversation('channel-design')" class="conv-btn active w-full flex items-center justify-between px-3 py-2 rounded-xl bg-brand-600/15 border border-brand-500/30 text-left transition-all group">
+              <div class="flex items-center gap-2.5 truncate">
+                <i data-lucide="hash" class="w-4 h-4 text-brand-400 flex-shrink-0"></i>
+                <span class="text-xs font-semibold text-white truncate">spatial-ux-core</span>
+              </div>
+              <span class="w-2 h-2 rounded-full bg-brand-400"></span>
+            </button>
+
+            <button onclick="selectConversation('channel-deploy')" class="conv-btn w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-surface-850 text-left transition-all group">
+              <div class="flex items-center gap-2.5 truncate">
+                <i data-lucide="hash" class="w-4 h-4 text-slate-400 group-hover:text-slate-300 flex-shrink-0"></i>
+                <span class="text-xs font-medium text-slate-300 truncate">agentic-infra</span>
+              </div>
+              <span class="px-1.5 py-0.2 rounded-full font-mono text-[9px] font-bold bg-surface-800 text-slate-400">3</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Direct Messages Section -->
+        <div>
+          <div class="flex items-center justify-between px-2.5 py-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400">
+            <span>Direct Messages</span>
+            <span class="text-[10px] font-mono text-emerald-400">3 Online</span>
+          </div>
+
+          <div class="space-y-0.5 mt-1" id="dms-list">
+            
+            <!-- DM 1: Alex Vance (AI Copilot / Design Architect) -->
+            <button onclick="selectConversation('dm-alex')" class="conv-btn w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-surface-850 text-left transition-all group relative">
+              <div class="relative flex-shrink-0">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80" alt="Alex" class="w-9 h-9 rounded-xl object-cover ring-1 ring-surface-700">
+                <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-surface-900"></span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-xs font-semibold text-white truncate">Alex Vance</span>
+                  <span class="text-[10px] font-mono text-slate-500">12:41</span>
+                </div>
+                <p class="text-[11px] text-slate-400 truncate font-light">Let's lock in the spatial tactile curve...</p>
+              </div>
+            </button>
+
+            <!-- DM 2: Sophia Thorne (Lead Engineer) -->
+            <button onclick="selectConversation('dm-sophia')" class="conv-btn w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-surface-850 text-left transition-all group relative">
+              <div class="relative flex-shrink-0">
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80" alt="Sophia" class="w-9 h-9 rounded-xl object-cover ring-1 ring-surface-700">
+                <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-surface-900"></span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-xs font-semibold text-white truncate">Sophia Thorne</span>
+                  <span class="text-[10px] font-mono text-slate-500">11:15</span>
+                </div>
+                <p class="text-[11px] text-slate-400 truncate font-light">Edge deployment passed test suite!</p>
+              </div>
+              <span class="w-2 h-2 rounded-full bg-brand-400"></span>
+            </button>
+
+            <!-- DM 3: Synapse AI Copilot -->
+            <button onclick="selectConversation('dm-synapse-bot')" class="conv-btn w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-surface-850 text-left transition-all group relative">
+              <div class="relative flex-shrink-0">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-500 flex items-center justify-center text-white ring-1 ring-brand-400/40 shadow-sm">
+                  <i data-lucide="bot" class="w-4 h-4"></i>
+                </div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-cyan-400 ring-2 ring-surface-900"></span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between mb-0.5">
+                  <span class="text-xs font-semibold text-brand-300 truncate">Synapse Bot</span>
+                  <span class="text-[9px] font-mono px-1 rounded bg-brand-500/20 text-brand-300">AI</span>
+                </div>
+                <p class="text-[11px] text-slate-400 truncate font-light">Telemetry benchmark ready to review</p>
+              </div>
+            </button>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom User Profile Card -->
+      <div class="p-3 border-t border-surface-800/80 bg-surface-950/60 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="Elena" class="w-8 h-8 rounded-xl object-cover ring-1 ring-surface-700">
+          <div>
+            <h4 class="text-xs font-bold text-white">Elena Rostova</h4>
+            <span class="text-[10px] text-emerald-400 font-mono">Spatial Arch · Online</span>
+          </div>
+        </div>
+        <button onclick="toggleAudio()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-surface-850 transition-colors">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ============================================== -->
+    <!-- PANE 2: ACTIVE CHAT STREAM & COMPOSER          -->
+    <!-- ============================================== -->
+    <section class="flex-1 flex flex-col bg-surface-950 relative overflow-hidden" aria-label="Chat Conversation">
+      
+      <!-- Chat Header -->
+      <div class="flex-shrink-0 px-4 sm:px-6 py-3 border-b border-surface-800/80 bg-surface-950/90 backdrop-blur-md flex items-center justify-between z-20">
+        <div class="flex items-center gap-3">
+          <div id="active-conv-icon" class="w-9 h-9 rounded-xl bg-brand-600/20 border border-brand-500/30 flex items-center justify-center text-brand-300 font-mono font-bold text-sm">
+            #
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="active-conv-title" class="text-sm font-bold text-white">spatial-ux-core</h2>
+              <span class="px-2 py-0.2 rounded-full font-mono text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span>
+            </div>
+            <p id="active-conv-subtext" class="text-[11px] text-slate-400 font-mono">14 collaborators · Architecture discussion & tactile design</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Voice Call Simulator Button -->
+          <button onclick="simulateVoiceCall()" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white border border-surface-700/80 transition-all" title="Start Haptic Audio Call">
+            <i data-lucide="phone" class="w-4 h-4 text-emerald-400"></i>
+          </button>
+
+          <!-- Toggle Right Context Inspector -->
+          <button onclick="toggleContextInspector()" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-slate-300 hover:text-white border border-surface-700/80 transition-all" title="Toggle Channel Details">
+            <i data-lucide="sidebar" class="w-4 h-4 text-brand-400"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages Stream Viewport -->
+      <div id="messages-container" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" role="log" aria-live="polite">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Floating Typing Indicator -->
+      <div id="typing-indicator" class="hidden px-6 py-2 flex items-center gap-2 text-xs font-mono text-slate-400">
+        <div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-900 border border-surface-800">
+          <span class="typing-dot w-1.5 h-1.5 rounded-full bg-brand-400 animate-typing-bounce"></span>
+          <span class="typing-dot w-1.5 h-1.5 rounded-full bg-brand-400 animate-typing-bounce"></span>
+          <span class="typing-dot w-1.5 h-1.5 rounded-full bg-brand-400 animate-typing-bounce"></span>
+        </div>
+        <span id="typing-user-text">Alex Vance is typing...</span>
+      </div>
+
+      <!-- Rich Message Composer Deck -->
+      <div class="flex-shrink-0 p-3 sm:p-4 bg-surface-950 border-t border-surface-800/80 relative z-20">
+        
+        <!-- Voice Note Recording Banner (Appears when recording) -->
+        <div id="voice-recording-deck" class="hidden mb-2 p-3 rounded-2xl bg-surface-900 border border-rose-500/40 flex items-center justify-between animate-slide-up">
+          <div class="flex items-center gap-3">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+            <span class="text-xs font-mono text-rose-300 font-semibold">Recording Voice Note (<span id="voice-timer">0:00</span>)</span>
+            <!-- Simulated Waveform Bars -->
+            <div class="flex items-center gap-1 h-4">
+              <span class="wave-bar w-1 bg-rose-400 rounded-full h-2 animate-pulse"></span>
+              <span class="wave-bar w-1 bg-rose-400 rounded-full h-4 animate-pulse"></span>
+              <span class="wave-bar w-1 bg-rose-400 rounded-full h-1 animate-pulse"></span>
+              <span class="wave-bar w-1 bg-rose-400 rounded-full h-3 animate-pulse"></span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="cancelVoiceRecording()" class="px-2.5 py-1 text-xs text-slate-400 hover:text-white">Cancel</button>
+            <button onclick="sendVoiceNote()" class="px-3 py-1 rounded-lg bg-rose-600 text-white font-medium text-xs">Send Audio</button>
+          </div>
+        </div>
+
+        <!-- Main Composer Box -->
+        <div class="rounded-2xl bg-surface-900 border border-surface-750 focus-within:border-brand-500/60 shadow-xl transition-all p-2 flex flex-col gap-2">
+          
+          <textarea id="message-input" rows="2" placeholder="Send a message to #spatial-ux-core... (Shift+Enter for new line)" class="w-full bg-transparent px-2 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none font-sans leading-relaxed"></textarea>
+
+          <!-- Composer Action Toolbar -->
+          <div class="flex items-center justify-between pt-1 border-t border-surface-800/60 text-xs">
+            
+            <div class="flex items-center gap-1">
+              <!-- Code Snippet Insertion -->
+              <button onclick="insertCodeTemplate()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-surface-800 transition-colors" title="Insert Code Snippet">
+                <i data-lucide="code" class="w-4 h-4"></i>
+              </button>
+
+              <!-- Emoji Popover Trigger -->
+              <button onclick="toggleEmojiDrawer()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-surface-800 transition-colors" title="Add Emoji">
+                <i data-lucide="smile" class="w-4 h-4"></i>
+              </button>
+
+              <!-- Voice Recording Button -->
+              <button onclick="startVoiceRecording()" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-surface-800 transition-colors" title="Record Voice Note">
+                <i data-lucide="mic" class="w-4 h-4"></i>
+              </button>
+
+              <!-- Attachment Simulator -->
+              <button onclick="simulateAttachment()" class="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-surface-800 transition-colors" title="Attach Media or File">
+                <i data-lucide="paperclip" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Send Action -->
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-mono text-slate-500 hidden sm:inline">Enter to send</span>
+              <button id="send-btn" onclick="sendMessage()" class="p-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium shadow-md shadow-brand-600/30 transition-all active:scale-95 flex items-center justify-center">
+                <i data-lucide="send" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Mini Emoji Picker Drawer -->
+        <div id="emoji-drawer" class="hidden absolute bottom-24 left-4 p-2 rounded-2xl bg-surface-900 border border-surface-700 shadow-2xl flex items-center gap-1 z-50 animate-slide-up">
+          <button onclick="insertEmoji('🚀')" class="p-2 hover:bg-surface-800 rounded-lg text-base">🚀</button>
+          <button onclick="insertEmoji('❤️')" class="p-2 hover:bg-surface-800 rounded-lg text-base">❤️</button>
+          <button onclick="insertEmoji('🔥')" class="p-2 hover:bg-surface-800 rounded-lg text-base">🔥</button>
+          <button onclick="insertEmoji('💡')" class="p-2 hover:bg-surface-800 rounded-lg text-base">💡</button>
+          <button onclick="insertEmoji('✨')" class="p-2 hover:bg-surface-800 rounded-lg text-base">✨</button>
+          <button onclick="insertEmoji('👏')" class="p-2 hover:bg-surface-800 rounded-lg text-base">👏</button>
+          <button onclick="insertEmoji('👍')" class="p-2 hover:bg-surface-800 rounded-lg text-base">👍</button>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ============================================== -->
+    <!-- PANE 3: CONTEXT & CHANNEL INSPECTOR (RIGHT)    -->
+    <!-- ============================================== -->
+    <aside id="context-inspector" class="w-72 sm:w-80 flex-shrink-0 bg-surface-900/90 border-l border-surface-800/80 flex flex-col transition-all duration-300 z-10 hidden xl:flex">
+      
+      <!-- Inspector Header -->
+      <div class="p-4 border-b border-surface-800/80 flex items-center justify-between">
+        <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-slate-300">Channel Context</h3>
+        <button onclick="toggleContextInspector()" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-surface-850">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Inspector Body -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-6 text-xs">
+        
+        <!-- Pinned Messages Deck -->
+        <div>
+          <span class="block font-mono text-[11px] text-brand-400 font-semibold uppercase tracking-wider mb-2">📌 Pinned Architecture Guideline</span>
+          <div class="p-3 rounded-2xl bg-surface-950 border border-surface-800 space-y-1.5">
+            <span class="text-[10px] font-mono text-slate-500">Pinned by Elena · Today</span>
+            <p class="text-slate-300 leading-relaxed font-light">
+              "All spatial audio components must support sub-5ms low latency mode and HRTF binaural panning."
+            </p>
+          </div>
+        </div>
+
+        <!-- Shared Media & Files -->
+        <div>
+          <span class="block font-mono text-[11px] text-slate-400 font-semibold uppercase tracking-wider mb-2">Shared Artifacts</span>
+          <div class="space-y-2">
+            <div class="p-2.5 rounded-xl bg-surface-850 border border-surface-750 flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-violet-600/20 text-violet-400 flex items-center justify-center flex-shrink-0 font-mono text-[10px]">GLTF</div>
+              <div class="truncate">
+                <span class="block font-semibold text-white truncate">apex-driver-exploded.gltf</span>
+                <span class="text-[10px] text-slate-500 font-mono">14.2 MB · 3D Mesh</span>
+              </div>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-surface-850 border border-surface-750 flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center flex-shrink-0 font-mono text-[10px]">WAV</div>
+              <div class="truncate">
+                <span class="block font-semibold text-white truncate">lossless-96k-master.wav</span>
+                <span class="text-[10px] text-slate-500 font-mono">48.6 MB · Audio Sample</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Participants List -->
+        <div>
+          <span class="block font-mono text-[11px] text-slate-400 font-semibold uppercase tracking-wider mb-2">Active In Channel (4)</span>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span class="text-slate-200">Elena Rostova (You)</span>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span class="text-slate-200">Alex Vance</span>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span class="text-slate-200">Sophia Thorne</span>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+              <span class="text-brand-300">Synapse AI Bot</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- Notification Toasts Shelf -->
+  <div id="toast-shelf" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none" aria-live="polite"></div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: MESSAGING ENGINE & SYNTHESIZED SFX          -->
+  <!-- ======================================================== -->
+  <script>
+    // Initial Conversation Seed Data
+    const conversations = {
+      'channel-design': {
+        type: 'channel',
+        title: 'spatial-ux-core',
+        subtext: '14 collaborators · Architecture discussion & tactile design',
+        icon: '#',
+        messages: [
+          {
+            id: 1,
+            author: 'Alex Vance',
+            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+            time: '12:40 PM',
+            text: 'Hey team, I just reviewed the new beryllium driver impulse response on the Apex X1. The phase coherence in the 2kHz-6kHz range is phenomenal.',
+            reactions: { '🔥': 3, '❤️': 2 },
+            isMe: false,
+          },
+          {
+            id: 2,
+            author: 'Elena Rostova',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+            time: '12:42 PM',
+            text: 'Agreed! We just pushed the PDP live on Day 012 with real-time frequency curves. How does the clamp pressure test look for extended sessions?',
+            reactions: { '🚀': 4 },
+            isMe: true,
+          },
+          {
+            id: 3,
+            author: 'Sophia Thorne',
+            avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
+            time: '12:45 PM',
+            text: 'Zero fatigue measured across 12 human trials. Clamping force rests right at 1.2N with memory foam pressure distribution.',
+            code: 'const clampConfig = {\n  targetForce: 1.2, // Newtons\n  meshDispersion: "graphene-matrix",\n  thermalDissipation: true\n};',
+            reactions: { '💡': 2 },
+            isMe: false,
+          }
+        ]
+      },
+      'channel-deploy': {
+        type: 'channel',
+        title: 'agentic-infra',
+        subtext: 'DevOps & Multi-Agent orchestration',
+        icon: '#',
+        messages: [
+          {
+            id: 101,
+            author: 'Synapse Bot',
+            avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=120&q=80',
+            time: '11:00 AM',
+            text: 'Automated CI/CD build complete for commit 8d4bf5c. 34 Edge regions updated.',
+            reactions: { '✅': 5 },
+            isMe: false,
+          }
+        ]
+      },
+      'dm-alex': {
+        type: 'dm',
+        title: 'Alex Vance',
+        subtext: 'Staff Spatial Designer · Active Now',
+        icon: 'AV',
+        messages: [
+          {
+            id: 201,
+            author: 'Alex Vance',
+            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+            time: '12:30 PM',
+            text: 'Elena, do you have 5 minutes to test the haptic spatial audio call?',
+            reactions: {},
+            isMe: false,
+          }
+        ]
+      },
+      'dm-sophia': {
+        type: 'dm',
+        title: 'Sophia Thorne',
+        subtext: 'Lead Systems Engineer · Active Now',
+        icon: 'ST',
+        messages: [
+          {
+            id: 301,
+            author: 'Sophia Thorne',
+            avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
+            time: '11:15 AM',
+            text: 'Edge deployment passed test suite! All ready for Day 013 release.',
+            reactions: { '🎉': 2 },
+            isMe: false,
+          }
+        ]
+      },
+      'dm-synapse-bot': {
+        type: 'bot',
+        title: 'Synapse Bot',
+        subtext: 'Autonomous AI Copilot · Online',
+        icon: 'AI',
+        messages: [
+          {
+            id: 401,
+            author: 'Synapse Bot',
+            avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=120&q=80',
+            time: '10:00 AM',
+            text: 'Hello Elena! I monitor your workspace telemetry and assist with code synthesis. Mention @synapse or ask me anything.',
+            reactions: { '🤖': 1 },
+            isMe: false,
+          }
+        ]
+      }
+    };
+
+    let activeConvKey = 'channel-design';
+    let audioEnabled = true;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderActiveConversation();
+      initComposerShortcuts();
+    });
+
+    // -------------------------------------------------------------
+    // WEB AUDIO API NATIVE CHAT SOUNDS (ZERO EXTERNAL ASSETS)
+    // -------------------------------------------------------------
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const icon = document.getElementById('audio-icon');
+      const label = document.getElementById('audio-label');
+
+      if (audioEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.className = 'w-3.5 h-3.5 text-emerald-400';
+        label.innerText = 'SFX On';
+        playReceivedSound();
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.className = 'w-3.5 h-3.5 text-slate-500';
+        label.innerText = 'Muted';
+      }
+      lucide.createIcons();
+    }
+
+    function playSentSound() {
+      if (!audioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        // Crisp high-frequency pop (600Hz -> 900Hz)
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(950, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      } catch (e) {}
+    }
+
+    function playReceivedSound() {
+      if (!audioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        // Warm dual-harmonic tone (440Hz -> 554.37Hz)
+        [440, 554.37].forEach((f, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now + idx * 0.07);
+          gain.gain.setValueAtTime(0.06, now + idx * 0.07);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.2);
+          osc.start(now + idx * 0.07);
+          osc.stop(now + idx * 0.07 + 0.2);
+        });
+      } catch (e) {}
+    }
+
+    // -------------------------------------------------------------
+    // CONVERSATION NAVIGATION & RENDERING
+    // -------------------------------------------------------------
+    function selectConversation(key) {
+      activeConvKey = key;
+      const conv = conversations[key];
+      if (!conv) return;
+
+      // Update header
+      document.getElementById('active-conv-title').innerText = conv.title;
+      document.getElementById('active-conv-subtext').innerText = conv.subtext;
+      document.getElementById('active-conv-icon').innerText = conv.icon;
+      document.getElementById('message-input').placeholder = `Send a message to ${conv.title}... (Shift+Enter for new line)`;
+
+      // Active button styling
+      document.querySelectorAll('.conv-btn').forEach(btn => {
+        btn.classList.remove('bg-brand-600/15', 'border-brand-500/30', 'text-white');
+      });
+      if (event && event.currentTarget) {
+        event.currentTarget.classList.add('bg-brand-600/15', 'border-brand-500/30', 'text-white');
+      }
+
+      renderActiveConversation();
+    }
+
+    function renderActiveConversation() {
+      const container = document.getElementById('messages-container');
+      const conv = conversations[activeConvKey];
+      if (!conv) return;
+
+      container.innerHTML = conv.messages.map(msg => renderMessageHtml(msg)).join('');
+      lucide.createIcons({ root: container });
+      scrollToBottom();
+    }
+
+    function renderMessageHtml(msg) {
+      const isMe = msg.isMe;
+      return `
+        <div class="group flex gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'} items-start animate-fade-in relative hover:bg-surface-900/40 p-2 rounded-2xl transition-colors" id="msg-${msg.id}">
+          
+          <!-- Avatar -->
+          <img src="${msg.avatar}" alt="${msg.author}" class="w-8 h-8 rounded-xl object-cover ring-1 ring-surface-700 flex-shrink-0">
+
+          <!-- Message Body -->
+          <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-xl">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-semibold ${isMe ? 'text-brand-300' : 'text-white'}">${msg.author}</span>
+              <span class="text-[10px] font-mono text-slate-500">${msg.time}</span>
+            </div>
+
+            <!-- Bubble Content -->
+            <div class="p-3.5 rounded-2xl ${isMe ? 'bg-gradient-to-tr from-brand-600 to-indigo-600 text-white shadow-lg shadow-brand-600/20' : 'bg-surface-850 border border-surface-750 text-slate-200'} text-xs sm:text-sm leading-relaxed space-y-2">
+              <p>${msg.text}</p>
+              ${msg.code ? `
+                <pre class="p-3 rounded-xl bg-surface-950/90 border border-surface-800 font-mono text-xs text-brand-300 overflow-x-auto select-all"><code>${escapeHtml(msg.code)}</code></pre>
+              ` : ''}
+              ${msg.isVoice ? `
+                <div class="flex items-center gap-3 pt-1">
+                  <button onclick="playVoiceSample(this)" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-all">
+                    <i data-lucide="play" class="w-4 h-4 ml-0.5"></i>
+                  </button>
+                  <div class="flex items-center gap-1">
+                    <span class="w-1 bg-white/60 rounded-full h-2"></span>
+                    <span class="w-1 bg-white/90 rounded-full h-4"></span>
+                    <span class="w-1 bg-white/40 rounded-full h-1"></span>
+                    <span class="w-1 bg-white/80 rounded-full h-3"></span>
+                    <span class="w-1 bg-white/70 rounded-full h-5"></span>
+                  </div>
+                  <span class="text-[11px] font-mono opacity-80">${msg.duration || '0:04'}</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Reactions Row -->
+            ${Object.keys(msg.reactions || {}).length > 0 ? `
+              <div class="flex items-center gap-1 mt-1.5 flex-wrap">
+                ${Object.entries(msg.reactions).map(([emoji, count]) => `
+                  <button onclick="reactToMessage(${msg.id}, '${emoji}')" class="px-2 py-0.5 rounded-full bg-surface-850 hover:bg-surface-800 border border-surface-700/80 text-[11px] font-mono flex items-center gap-1 transition-all">
+                    <span>${emoji}</span>
+                    <span class="text-slate-400 font-semibold">${count}</span>
+                  </button>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Hover Action Toolbar -->
+          <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute top-1 ${isMe ? 'left-4' : 'right-4'} flex items-center gap-1 p-1 rounded-xl bg-surface-900 border border-surface-750 shadow-xl backdrop-blur-md">
+            <button onclick="reactToMessage(${msg.id}, '❤️')" class="p-1 hover:bg-surface-800 rounded-lg text-xs" title="React Love">❤️</button>
+            <button onclick="reactToMessage(${msg.id}, '🔥')" class="p-1 hover:bg-surface-800 rounded-lg text-xs" title="React Fire">🔥</button>
+            <button onclick="reactToMessage(${msg.id}, '🚀')" class="p-1 hover:bg-surface-800 rounded-lg text-xs" title="React Rocket">🚀</button>
+            <button onclick="copyMessageText('${escapeAttr(msg.text)}')" class="p-1 hover:bg-surface-800 rounded-lg text-slate-400 hover:text-white" title="Copy Text">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function scrollToBottom() {
+      const container = document.getElementById('messages-container');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // -------------------------------------------------------------
+    // MESSAGE COMPOSER & REAL-TIME BOT REPLIES
+    // -------------------------------------------------------------
+    function sendMessage() {
+      const input = document.getElementById('message-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      playSentSound();
+
+      const newMsg = {
+        id: Date.now(),
+        author: 'Elena Rostova',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: text,
+        reactions: {},
+        isMe: true,
+      };
+
+      conversations[activeConvKey].messages.push(newMsg);
+      input.value = '';
+      renderActiveConversation();
+
+      // Trigger Simulated Peer or Copilot Response after delay
+      triggerSimulatedResponse(text);
+    }
+
+    function triggerSimulatedResponse(triggerText) {
+      const indicator = document.getElementById('typing-indicator');
+      const userTextEl = document.getElementById('typing-user-text');
+
+      let replyAuthor = 'Alex Vance';
+      let replyAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80';
+      let replyContent = "That sounds great! I'll update the acoustic parameters in our next sync.";
+
+      if (triggerText.toLowerCase().includes('code') || triggerText.toLowerCase().includes('driver')) {
+        replyContent = "I've reviewed the driver implementation. The 0.05% THD threshold is holding steady across all benchmark suites.";
+      } else if (triggerText.toLowerCase().includes('bot') || triggerText.includes('@synapse') || activeConvKey === 'dm-synapse-bot') {
+        replyAuthor = 'Synapse Bot';
+        replyAvatar = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=120&q=80';
+        replyContent = `[Synapse Agent Log]: Parsed instruction "${triggerText.slice(0, 30)}...". All 34 regional edge clusters are synced with zero anomalies.`;
+      }
+
+      userTextEl.innerText = `${replyAuthor} is typing...`;
+      indicator.classList.remove('hidden');
+      scrollToBottom();
+
+      setTimeout(() => {
+        indicator.classList.add('hidden');
+        playReceivedSound();
+
+        const replyMsg = {
+          id: Date.now() + 1,
+          author: replyAuthor,
+          avatar: replyAvatar,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text: replyContent,
+          reactions: { '👍': 1 },
+          isMe: false,
+        };
+
+        conversations[activeConvKey].messages.push(replyMsg);
+        renderActiveConversation();
+      }, 1800);
+    }
+
+    // -------------------------------------------------------------
+    // REACTIONS & ATTACHMENT TOOLS
+    // -------------------------------------------------------------
+    function reactToMessage(msgId, emoji) {
+      const conv = conversations[activeConvKey];
+      const msg = conv.messages.find(m => m.id === msgId);
+      if (!msg) return;
+
+      if (!msg.reactions) msg.reactions = {};
+      msg.reactions[emoji] = (msg.reactions[emoji] || 0) + 1;
+      playSentSound();
+      renderActiveConversation();
+    }
+
+    function insertCodeTemplate() {
+      const input = document.getElementById('message-input');
+      input.value += "\n```typescript\n// Autonomous Agent Spatial Config\nconst spatialNode = new SpatialCluster({\n  binauralHRTF: true,\n  latencyTarget: 4.2\n});\n```\n";
+      input.focus();
+    }
+
+    function toggleEmojiDrawer() {
+      document.getElementById('emoji-drawer').classList.toggle('hidden');
+    }
+
+    function insertEmoji(emoji) {
+      const input = document.getElementById('message-input');
+      input.value += emoji;
+      input.focus();
+      document.getElementById('emoji-drawer').classList.add('hidden');
+    }
+
+    function copyMessageText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Message text copied to clipboard!');
+      });
+    }
+
+    // -------------------------------------------------------------
+    // VOICE NOTE SIMULATOR
+    // -------------------------------------------------------------
+    let recordingTimer = null;
+    let recordingSec = 0;
+
+    function startVoiceRecording() {
+      document.getElementById('voice-recording-deck').classList.remove('hidden');
+      recordingSec = 0;
+      recordingTimer = setInterval(() => {
+        recordingSec++;
+        const m = Math.floor(recordingSec / 60);
+        const s = recordingSec % 60;
+        document.getElementById('voice-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+      }, 1000);
+    }
+
+    function cancelVoiceRecording() {
+      clearInterval(recordingTimer);
+      document.getElementById('voice-recording-deck').classList.add('hidden');
+    }
+
+    function sendVoiceNote() {
+      clearInterval(recordingTimer);
+      document.getElementById('voice-recording-deck').classList.add('hidden');
+      playSentSound();
+
+      const newMsg = {
+        id: Date.now(),
+        author: 'Elena Rostova',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: 'Voice message dispatch',
+        isVoice: true,
+        duration: `0:0${Math.max(2, recordingSec)}`,
+        reactions: {},
+        isMe: true,
+      };
+
+      conversations[activeConvKey].messages.push(newMsg);
+      renderActiveConversation();
+    }
+
+    function playVoiceSample(btn) {
+      playReceivedSound();
+      showToast('Playing synthesized voice note sample');
+    }
+
+    // -------------------------------------------------------------
+    // UTILITIES & ACCESSIBILITY
+    // -------------------------------------------------------------
+    function initComposerShortcuts() {
+      const input = document.getElementById('message-input');
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      // Quick ⌘K handler
+      window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          document.getElementById('search-input').focus();
+        }
+      });
+    }
+
+    function toggleContextInspector() {
+      const inspector = document.getElementById('context-inspector');
+      inspector.classList.toggle('hidden');
+    }
+
+    function toggleStatusDropdown() {
+      document.getElementById('status-menu').classList.toggle('hidden');
+    }
+
+    function setStatus(statusKey, colorClass, label) {
+      const dot = document.getElementById('user-status-dot');
+      dot.className = `absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-surface-950 ${colorClass}`;
+      document.getElementById('status-menu').classList.add('hidden');
+      showToast(`Status updated to: ${label}`);
+    }
+
+    function filterConversations() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      document.querySelectorAll('.conv-btn').forEach(btn => {
+        const text = btn.innerText.toLowerCase();
+        btn.style.display = text.includes(query) ? 'flex' : 'none';
+      });
+    }
+
+    function simulateVoiceCall() {
+      playReceivedSound();
+      showToast('Initiating haptic spatial audio call channel...');
+    }
+
+    function simulateAttachment() {
+      showToast('Attachment picker triggered: apex-telemetry-spec.pdf');
+    }
+
+    function createNewChannelPrompt() {
+      const name = prompt('Enter new channel name (e.g. mobile-sensors):');
+      if (name) {
+        showToast(`Channel #${name} created!`);
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function escapeAttr(str) {
+      return str.replace(/'/g, "\\'");
+    }
+
+    function showToast(msg) {
+      const shelf = document.getElementById('toast-shelf');
+      const t = document.createElement('div');
+      t.className = 'px-4 py-2.5 rounded-2xl bg-surface-900 border border-surface-700 text-xs text-white shadow-2xl flex items-center gap-2 transform translate-y-3 opacity-0 transition-all duration-300 pointer-events-auto backdrop-blur-xl';
+      t.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-brand-400"></i><span>${msg}</span>`;
+      shelf.appendChild(t);
+      lucide.createIcons({ root: t });
+      setTimeout(() => t.classList.remove('translate-y-3', 'opacity-0'), 10);
+      setTimeout(() => {
+        t.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => t.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
