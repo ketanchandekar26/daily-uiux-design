@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 014: Countdown Timer & Limited Drop Studio | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              950: '#07090d',
+              900: '#0b0e14',
+              850: '#10151f',
+              800: '#161d2b',
+              750: '#1e273a',
+              700: '#29354d',
+              600: '#3a4968',
+            },
+            amberAccent: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+            }
+          },
+          animation: {
+            'pulse-rapid': 'pulseRapid 1s infinite cubic-bezier(0.4, 0, 0.6, 1)',
+            'glow-pulse': 'glowPulse 2s ease-in-out infinite',
+            'shimmer': 'shimmer 2.5s infinite linear',
+          },
+          keyframes: {
+            pulseRapid: {
+              '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+              '50%': { opacity: '0.7', transform: 'scale(1.03)' },
+            },
+            glowPulse: {
+              '0%, 100%': { filter: 'drop-shadow(0 0 15px rgba(245, 158, 11, 0.3))' },
+              '50%': { filter: 'drop-shadow(0 0 35px rgba(245, 158, 11, 0.65))' },
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' },
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #07090d; }
+    ::-webkit-scrollbar-thumb { background: #1e273a; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+
+    /* Holographic VIP Ticket Pass */
+    .holo-ticket {
+      background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(245,158,11,0.15) 35%, rgba(6,182,212,0.15) 70%, rgba(255,255,255,0.05) 100%);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(245,158,11,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .holo-ticket::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+      pointer-events: none;
+      transform: rotate(25deg);
+    }
+
+    /* Sub-second digit smoothness */
+    .digit-box {
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.04em;
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-200 font-sans min-h-screen antialiased selection:bg-amber-500/30 selection:text-amber-200 relative overflow-x-hidden">
+
+  <!-- Ambient Light Orbs -->
+  <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+    <div id="ambient-glow-orb" class="absolute -top-32 left-1/3 w-[38rem] h-[38rem] bg-amber-500/10 rounded-full blur-[160px] transition-all duration-700"></div>
+    <div class="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute -bottom-40 left-10 w-[32rem] h-[32rem] bg-rose-600/10 rounded-full blur-[160px]"></div>
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+  </div>
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-surface-950/80 border-b border-surface-800/80 px-4 sm:px-8 py-3.5 transition-all">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      
+      <div class="flex items-center gap-3">
+        <a href="../" class="group flex items-center gap-2.5 text-xs font-semibold tracking-wider uppercase text-slate-400 hover:text-white transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-surface-850 border border-surface-700/80 flex items-center justify-center text-slate-300 group-hover:border-amber-500/50 group-hover:text-amber-400 transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-0.5"></i>
+          </div>
+          <span class="hidden sm:inline">Daily UI Hub</span>
+        </a>
+        <div class="h-4 w-px bg-surface-700/80"></div>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="px-2 py-0.5 rounded font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">DAY 014</span>
+          <span class="text-slate-400 hidden md:inline font-mono">/ AETHERIS FOUNDRY · LIMITED DROP</span>
+        </div>
+      </div>
+
+      <!-- Audio Metronome & Quick Sim Controls -->
+      <div class="flex items-center gap-2.5">
+        <button id="sound-btn" onclick="toggleSound()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-surface-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all" title="Toggle Metronome & Drop Chimes">
+          <i id="sound-icon" data-lucide="volume-2" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span class="hidden sm:inline" id="sound-label">Audio On</span>
+        </button>
+
+        <button onclick="openSimDrawer()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs font-mono text-amber-300 font-semibold transition-all">
+          <i data-lucide="fast-forward" class="w-3.5 h-3.5"></i>
+          <span>Simulate Phase</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Hero Viewport -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-12">
+    
+    <!-- Top Drop Badge & Title -->
+    <div class="text-center space-y-3 max-w-2xl mx-auto">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono text-xs font-bold tracking-widest uppercase">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span id="drop-status-badge">Phase: Exclusive Waitlist Allocation</span>
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-none uppercase font-sans">
+        AETHERIS ZERO-G
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400 font-mono tracking-wide">
+        Founders Edition · 500 Numbered Cybernetic Timepieces · Hand-Forged Damascus Titanium
+      </p>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MASTER PRECISION COUNTDOWN CHRONOGRAPH         -->
+    <!-- ============================================== -->
+    <div class="p-6 sm:p-10 rounded-3xl bg-surface-900/90 border border-surface-800 shadow-2xl relative overflow-hidden backdrop-blur-xl animate-glow-pulse" id="countdown-card">
+      
+      <!-- Progress Ring Indicators Row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 text-center" role="timer" aria-live="polite">
+        
+        <!-- DAYS -->
+        <div class="p-4 sm:p-6 rounded-2xl bg-surface-850/80 border border-surface-750 flex flex-col items-center justify-center relative overflow-hidden group">
+          <div class="text-4xl sm:text-6xl md:text-7xl font-extrabold font-mono text-white digit-box" id="time-days">02</div>
+          <span class="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-slate-400 mt-2 font-semibold">Days</span>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-surface-750">
+            <div id="bar-days" class="h-full bg-amber-500 transition-all duration-300" style="width: 66%;"></div>
+          </div>
+        </div>
+
+        <!-- HOURS -->
+        <div class="p-4 sm:p-6 rounded-2xl bg-surface-850/80 border border-surface-750 flex flex-col items-center justify-center relative overflow-hidden group">
+          <div class="text-4xl sm:text-6xl md:text-7xl font-extrabold font-mono text-white digit-box" id="time-hours">14</div>
+          <span class="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-slate-400 mt-2 font-semibold">Hours</span>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-surface-750">
+            <div id="bar-hours" class="h-full bg-amber-500 transition-all duration-300" style="width: 58%;"></div>
+          </div>
+        </div>
+
+        <!-- MINUTES -->
+        <div class="p-4 sm:p-6 rounded-2xl bg-surface-850/80 border border-surface-750 flex flex-col items-center justify-center relative overflow-hidden group">
+          <div class="text-4xl sm:text-6xl md:text-7xl font-extrabold font-mono text-white digit-box" id="time-mins">36</div>
+          <span class="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-slate-400 mt-2 font-semibold">Minutes</span>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-surface-750">
+            <div id="bar-mins" class="h-full bg-amber-500 transition-all duration-300" style="width: 60%;"></div>
+          </div>
+        </div>
+
+        <!-- SECONDS & MS (KINETIC TICKER) -->
+        <div class="p-4 sm:p-6 rounded-2xl bg-surface-850/80 border border-surface-750 flex flex-col items-center justify-center relative overflow-hidden group">
+          <div class="flex items-baseline justify-center">
+            <span class="text-4xl sm:text-6xl md:text-7xl font-extrabold font-mono text-amber-400 digit-box" id="time-secs">48</span>
+            <span class="text-lg sm:text-2xl font-mono text-amber-500/70 ml-1 digit-box" id="time-ms">.82</span>
+          </div>
+          <span class="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-slate-400 mt-2 font-semibold">Seconds</span>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-surface-750">
+            <div id="bar-secs" class="h-full bg-amber-400 transition-all duration-75" style="width: 80%;"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Allocation Progress Bar (Scarcity & Loss Aversion) -->
+      <div class="mt-8 pt-6 border-t border-surface-800 space-y-2">
+        <div class="flex items-center justify-between text-xs font-mono">
+          <span class="text-slate-400">Founders Batch Allocation (#001 – #500)</span>
+          <span class="text-amber-400 font-bold"><span id="units-claimed">348</span> / 500 Claimed (<span id="units-pct">69.6</span>%)</span>
+        </div>
+        <div class="w-full h-2.5 bg-surface-950 rounded-full overflow-hidden p-0.5 border border-surface-800">
+          <div id="allocation-fill" class="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-rose-500 rounded-full transition-all duration-500" style="width: 69.6%;"></div>
+        </div>
+      </div>
+
+      <!-- Action Button Area (Dynamic State Switching) -->
+      <div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="text-left">
+          <span class="text-xs font-mono text-slate-400 block" id="action-hint">Drop opens globally when timer reaches zero</span>
+          <span class="text-sm font-bold text-white font-mono" id="price-tag">MSRP: $1,250 USD · Hand-Numbered</span>
+        </div>
+
+        <!-- Locked Pre-Drop vs Unlocked Live-Drop Button -->
+        <button id="primary-cta-btn" onclick="handlePrimaryCta()" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-surface-800 hover:bg-surface-750 border border-surface-700 text-slate-200 font-bold font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg active:scale-98">
+          <i id="cta-icon" data-lucide="lock" class="w-4 h-4 text-amber-400"></i>
+          <span id="cta-text">Enter VIP Queue (Get Pass)</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- INTERACTIVE VIP PASS & CALENDAR INVITE ROW    -->
+    <!-- ============================================== -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+      
+      <!-- Generated Holographic VIP Ticket Pass -->
+      <div class="holo-ticket rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-2xl space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-2.5 py-1 rounded font-mono text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase">
+              FOUNDRY VIP PASS
+            </span>
+            <span class="text-xs font-mono text-slate-400">PRIORITY ACCESS</span>
+          </div>
+
+          <h3 class="text-xl sm:text-2xl font-black text-white uppercase tracking-tight mb-1">AETHERIS ZERO-G</h3>
+          <p class="text-xs text-slate-300 font-light leading-relaxed">
+            Grants 15-minute early reservation window before public pool opening. One token per verified wallet/ID.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-surface-950/70 border border-surface-700/80 flex items-center justify-between font-mono text-xs">
+          <div>
+            <span class="block text-[10px] text-slate-500 uppercase">Ticket ID</span>
+            <span class="font-bold text-amber-400" id="ticket-number">VIP-TK#8921-X</span>
+          </div>
+          <div class="text-right">
+            <span class="block text-[10px] text-slate-500 uppercase">Allocated Tier</span>
+            <span class="text-white font-semibold">Founders Circle</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2">
+          <span class="text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span>Cryptographically Verified</span>
+          </span>
+          <button onclick="regenerateTicket()" class="text-xs font-mono text-slate-400 hover:text-white underline">Regenerate</button>
+        </div>
+      </div>
+
+      <!-- Quick Calendar & Notification Suite -->
+      <div class="rounded-3xl bg-surface-900 border border-surface-800 p-6 sm:p-8 flex flex-col justify-between shadow-xl space-y-6">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-amber-400 font-bold block mb-1">Never Miss a Release</span>
+          <h3 class="text-lg sm:text-xl font-bold text-white mb-2">Sync Release to Calendar</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Download an automated <code>.ics</code> calendar invite with pre-configured 15-minute drop alerts and instant checkout deep-links.
+          </p>
+        </div>
+
+        <!-- 1-Click .ICS Generator Download -->
+        <div class="space-y-3">
+          <button onclick="downloadCalendarInvite()" class="w-full py-3.5 px-4 rounded-xl bg-surface-850 hover:bg-surface-800 border border-surface-700 text-slate-200 hover:text-white font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-all">
+            <i data-lucide="calendar" class="w-4 h-4 text-cyan-400"></i>
+            <span>Add to Apple / Google Calendar (.ics)</span>
+          </button>
+
+          <div class="flex items-center gap-2">
+            <input id="email-notify" type="email" placeholder="Enter email for SMS alert..." class="flex-1 px-3.5 py-2.5 rounded-xl bg-surface-950 border border-surface-750 text-xs font-sans text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+            <button onclick="subscribeAlert()" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs font-mono transition-all">Notify</button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] font-mono text-slate-500 pt-2 border-t border-surface-800">
+          <span>Global Launch Sync</span>
+          <span>Tokyo · London · New York · SF</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TIME DISCOUNTING & PSYCHOLOGICAL HEURISTICS    -->
+    <!-- ============================================== -->
+    <section class="p-6 sm:p-8 rounded-3xl bg-surface-900/60 border border-surface-800 space-y-6">
+      <div class="border-b border-surface-800 pb-4">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="brain" class="w-5 h-5 text-amber-400"></i>
+          <span>Cognitive Psychology & Temporal Urgency Heuristics</span>
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-400 leading-relaxed">
+        <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+          <h4 class="font-bold text-white text-sm mb-1">Goal-Gradient Effect</h4>
+          <p>As users perceive the countdown approaching zero, dopamine arousal accelerates. Sub-second millisecond tickers tangibly reinforce temporal proximity and urgency.</p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+          <h4 class="font-bold text-white text-sm mb-1">Scarcity & Loss Aversion</h4>
+          <p>Real-time units claimed counter (348/500) triggers behavioral loss aversion. The fear of missing a numbered founders piece creates decisive purchase intent.</p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+          <h4 class="font-bold text-white text-sm mb-1">Auditory Entrainment</h4>
+          <p>Synthesizing a low-pitch acoustic metronome that shifts into high-urgency double-beats under 10 seconds leverages rhythmic entrainment to focus user sensory attention.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- SIMULATION PHASE CONTROLLER DRAWER             -->
+  <!-- ============================================== -->
+  <div id="sim-drawer-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-labelledby="sim-title">
+    <div id="sim-drawer-panel" class="absolute top-0 right-0 bottom-0 w-full max-w-sm bg-surface-900 border-l border-surface-800 p-6 flex flex-col shadow-2xl transform translate-x-full transition-transform duration-300 space-y-6">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-surface-800">
+        <div class="flex items-center gap-2">
+          <i data-lucide="fast-forward" class="w-5 h-5 text-amber-400"></i>
+          <h3 id="sim-title" class="text-sm font-bold text-white font-mono uppercase">Simulation Deck</h3>
+        </div>
+        <button onclick="closeSimDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Test how the UI seamlessly transitions across time horizons without waiting days:
+      </p>
+
+      <div class="space-y-3 font-mono text-xs">
+        <!-- Preset 1: 5 Seconds Remaining (Climax Climax) -->
+        <button onclick="setTimerSeconds(5)" class="w-full p-3 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 text-left transition-all group">
+          <span class="block text-white font-bold group-hover:text-rose-300">🔥 5 Seconds to Drop</span>
+          <span class="text-[10px] text-slate-400">Test Heartbeat sound & Live Drop release state</span>
+        </button>
+
+        <!-- Preset 2: 30 Seconds Remaining (Waiting Room) -->
+        <button onclick="setTimerSeconds(30)" class="w-full p-3 rounded-xl bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/40 text-left transition-all group">
+          <span class="block text-white font-bold group-hover:text-amber-300">⚡ 30 Seconds Remaining</span>
+          <span class="text-[10px] text-slate-400">Test Waiting room state & rapid ticking</span>
+        </button>
+
+        <!-- Preset 3: 15 Minutes Remaining -->
+        <button onclick="setTimerSeconds(900)" class="w-full p-3 rounded-xl bg-surface-850 hover:bg-surface-800 border border-surface-750 text-left transition-all group">
+          <span class="block text-white font-bold">⏱️ 15 Minutes Remaining</span>
+          <span class="text-[10px] text-slate-400">Pre-gate registration window</span>
+        </button>
+
+        <!-- Preset 4: Full Reset (2 Days, 14 Hours) -->
+        <button onclick="resetFullTimer()" class="w-full p-3 rounded-xl bg-surface-850 hover:bg-surface-800 border border-surface-750 text-left transition-all group">
+          <span class="block text-white font-bold">🔄 Reset to Default (2d 14h)</span>
+          <span class="text-[10px] text-slate-400">Standard initial state</span>
+        </button>
+      </div>
+
+      <div class="pt-4 border-t border-surface-800">
+        <button onclick="closeSimDrawer()" class="w-full py-2.5 rounded-xl bg-surface-800 hover:bg-surface-750 text-xs font-mono text-slate-300">Close Controller</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Particle / Confetti Canvas -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+  <!-- Real-time Toast Notifications -->
+  <div id="toast-shelf" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none" aria-live="polite"></div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: PRECISION TIMER & ACOUSTIC SYNTHESIZER      -->
+  <!-- ======================================================== -->
+  <script>
+    // State
+    const state = {
+      targetTime: Date.now() + (2 * 86400 + 14 * 3600 + 36 * 60 + 48) * 1000,
+      soundEnabled: true,
+      dropLive: false,
+      unitsClaimed: 348,
+      totalUnits: 500,
+      lastTickSec: -1,
+    };
+
+    // DOM Ready
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      startPrecisionLoop();
+      generateRandomTicket();
+    });
+
+    // -------------------------------------------------------------
+    // WEB AUDIO API NATIVE METRONOME & CELEBRATION CHIMES
+    // -------------------------------------------------------------
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function toggleSound() {
+      state.soundEnabled = !state.soundEnabled;
+      const icon = document.getElementById('sound-icon');
+      const label = document.getElementById('sound-label');
+
+      if (state.soundEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.className = 'w-3.5 h-3.5 text-amber-400';
+        label.innerText = 'Audio On';
+        playTick(800, 0.05);
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.className = 'w-3.5 h-3.5 text-slate-500';
+        label.innerText = 'Muted';
+      }
+      lucide.createIcons();
+    }
+
+    function playTick(freq = 600, gainVol = 0.03) {
+      if (!state.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(gainVol, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.04);
+      } catch (e) {}
+    }
+
+    function playDropFanfare() {
+      if (!state.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.50].forEach((f, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + idx * 0.1);
+          gain.gain.setValueAtTime(0.08, now + idx * 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.4);
+          osc.start(now + idx * 0.1);
+          osc.stop(now + idx * 0.1 + 0.4);
+        });
+      } catch (e) {}
+    }
+
+    // -------------------------------------------------------------
+    // KINETIC MILLISECOND PRECISION CHRONOGRAPH LOOP
+    // -------------------------------------------------------------
+    function startPrecisionLoop() {
+      function update() {
+        const now = Date.now();
+        const diff = Math.max(0, state.targetTime - now);
+
+        if (diff === 0 && !state.dropLive) {
+          triggerDropLive();
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((diff / (1000 * 60)) % 60);
+        const secs = Math.floor((diff / 1000) % 60);
+        const ms = Math.floor((diff % 1000) / 10);
+
+        document.getElementById('time-days').innerText = String(days).padStart(2, '0');
+        document.getElementById('time-hours').innerText = String(hours).padStart(2, '0');
+        document.getElementById('time-mins').innerText = String(mins).padStart(2, '0');
+        document.getElementById('time-secs').innerText = String(secs).padStart(2, '0');
+        document.getElementById('time-ms').innerText = `.${String(ms).padStart(2, '0')}`;
+
+        // Update mini progress bars
+        document.getElementById('bar-days').style.width = `${Math.min(100, (days / 7) * 100)}%`;
+        document.getElementById('bar-hours').style.width = `${(hours / 24) * 100}%`;
+        document.getElementById('bar-mins').style.width = `${(mins / 60) * 100}%`;
+        document.getElementById('bar-secs').style.width = `${(secs / 60) * 100}%`;
+
+        // Audible Metronome Tick on each new second
+        if (secs !== state.lastTickSec) {
+          state.lastTickSec = secs;
+          if (diff <= 10000 && diff > 0) {
+            // Under 10 seconds: Urgent Heartbeat double tick
+            playTick(880, 0.06);
+            setTimeout(() => playTick(660, 0.05), 120);
+          } else if (diff <= 30000 && diff > 0) {
+            playTick(720, 0.04);
+          }
+        }
+
+        if (diff > 0) {
+          requestAnimationFrame(update);
+        }
+      }
+      requestAnimationFrame(update);
+    }
+
+    // -------------------------------------------------------------
+    // DROP LIVE UNLOCKED STATE TRANSITION
+    // -------------------------------------------------------------
+    function triggerDropLive() {
+      state.dropLive = true;
+      playDropFanfare();
+      triggerConfetti();
+
+      // Update badge & styling
+      const badge = document.getElementById('drop-status-badge');
+      badge.innerText = '🔴 DROP IS LIVE · CLAIM ALLOCATION';
+      badge.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+      badge.parentElement.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold tracking-widest uppercase';
+
+      // Update CTA
+      const btn = document.getElementById('primary-cta-btn');
+      const icon = document.getElementById('cta-icon');
+      const text = document.getElementById('cta-text');
+      const hint = document.getElementById('action-hint');
+
+      btn.className = 'w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:from-emerald-400 hover:to-teal-400 text-black font-extrabold font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-xl shadow-emerald-500/30 transform scale-105 active:scale-98 animate-pulse';
+      icon.setAttribute('data-lucide', 'unlock');
+      icon.className = 'w-4 h-4 text-black';
+      text.innerText = 'CLAIM FOUNDERS PIECE (#349)';
+      hint.innerText = 'Gate opened. Real-time units depleting rapidly.';
+      lucide.createIcons();
+
+      showToast('⚡ DROP IS LIVE! Founders batch now allocating in real-time.');
+    }
+
+    function handlePrimaryCta() {
+      if (state.dropLive) {
+        // Claim Unit
+        if (state.unitsClaimed < state.totalUnits) {
+          state.unitsClaimed++;
+          const pct = ((state.unitsClaimed / state.totalUnits) * 100).toFixed(1);
+          document.getElementById('units-claimed').innerText = state.unitsClaimed;
+          document.getElementById('units-pct').innerText = pct;
+          document.getElementById('allocation-fill').style.width = `${pct}%`;
+
+          playDropFanfare();
+          triggerConfetti();
+          showToast(`Success! You claimed Piece #${state.unitsClaimed}/500. Redirecting to checkout...`);
+          setTimeout(() => {
+            window.location.href = '../day-002-checkout/';
+          }, 1500);
+        }
+      } else {
+        // Pre-drop RSVP
+        playTick(900, 0.05);
+        showToast('VIP Pass Registered! Calendar alert enabled.');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // SIMULATION PRESET CONTROLLER
+    // -------------------------------------------------------------
+    function openSimDrawer() {
+      const backdrop = document.getElementById('sim-drawer-backdrop');
+      const panel = document.getElementById('sim-drawer-panel');
+      backdrop.classList.remove('hidden');
+      setTimeout(() => {
+        backdrop.classList.remove('opacity-0');
+        panel.classList.remove('translate-x-full');
+      }, 10);
+    }
+
+    function closeSimDrawer() {
+      const backdrop = document.getElementById('sim-drawer-backdrop');
+      const panel = document.getElementById('sim-drawer-panel');
+      panel.classList.add('translate-x-full');
+      backdrop.classList.add('opacity-0');
+      setTimeout(() => backdrop.classList.add('hidden'), 300);
+    }
+
+    document.getElementById('sim-drawer-backdrop').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('sim-drawer-backdrop')) closeSimDrawer();
+    });
+
+    function setTimerSeconds(secs) {
+      state.dropLive = false;
+      state.targetTime = Date.now() + secs * 1000;
+      closeSimDrawer();
+      startPrecisionLoop();
+      showToast(`Simulation set to ${secs}s countdown!`);
+    }
+
+    function resetFullTimer() {
+      state.dropLive = false;
+      state.targetTime = Date.now() + (2 * 86400 + 14 * 3600 + 36 * 60 + 48) * 1000;
+      closeSimDrawer();
+      startPrecisionLoop();
+      showToast('Reset to standard 2d 14h drop target.');
+    }
+
+    // -------------------------------------------------------------
+    // VIP TICKET GENERATOR & CALENDAR .ICS DOWNLOAD
+    // -------------------------------------------------------------
+    function generateRandomTicket() {
+      const num = Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('ticket-number').innerText = `VIP-TK#${num}-X`;
+    }
+
+    function regenerateTicket() {
+      generateRandomTicket();
+      playTick(850, 0.04);
+      showToast('New cryptographic VIP serial hash generated!');
+    }
+
+    function downloadCalendarInvite() {
+      const icsData = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Aetheris Foundry//Drop Radar//EN",
+        "BEGIN:VEVENT",
+        "SUMMARY:AETHERIS ZERO-G: Founders Edition Drop",
+        "DESCRIPTION:Global limited drop of 500 Damascus Titanium timepieces. VIP Pass holders receive 15m early allocation access.",
+        "STATUS:CONFIRMED",
+        "DTSTART;VALUE=DATE-TIME:20261108T180000Z",
+        "DTEND;VALUE=DATE-TIME:20261108T190000Z",
+        "LOCATION:https://ketanchandekar26.github.io/daily-uiux-design/day-014-countdown-timer/",
+        "BEGIN:VALARM",
+        "TRIGGER:-PT15M",
+        "ACTION:DISPLAY",
+        "DESCRIPTION:Aetheris Drop gate opens in 15 minutes!",
+        "END:VALARM",
+        "END:VEVENT",
+        "END:VCALENDAR"
+      ].join("\r\n");
+
+      const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "aetheris-zero-g-drop.ics";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast(".ics Calendar alert file downloaded!");
+    }
+
+    function subscribeAlert() {
+      const input = document.getElementById('email-notify');
+      if (input.value.includes('@')) {
+        playTick(800, 0.04);
+        showToast(`Alert registered for ${input.value}!`);
+        input.value = '';
+      } else {
+        showToast('Please enter a valid email address.');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // CELEBRATION CONFETTI ENGINE
+    // -------------------------------------------------------------
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function triggerConfetti() {
+      const colors = ['#f59e0b', '#fbbf24', '#10b981', '#06b6d4', '#ec4899', '#ffffff'];
+      for (let i = 0; i < 70; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 10 + 4;
+        particles.push({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 3,
+          size: Math.random() * 5 + 3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          decay: Math.random() * 0.02 + 0.015,
+        });
+      }
+      if (particles.length <= 70) renderConfetti();
+    }
+
+    function renderConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.25; // Gravity
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      if (particles.length > 0) requestAnimationFrame(renderConfetti);
+    }
+
+    function showToast(msg) {
+      const shelf = document.getElementById('toast-shelf');
+      const t = document.createElement('div');
+      t.className = 'px-4 py-2.5 rounded-2xl bg-surface-900 border border-surface-700 text-xs text-white shadow-2xl flex items-center gap-2 transform translate-y-3 opacity-0 transition-all duration-300 pointer-events-auto backdrop-blur-xl';
+      t.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-amber-400"></i><span>${msg}</span>`;
+      shelf.appendChild(t);
+      lucide.createIcons({ root: t });
+      setTimeout(() => t.classList.remove('translate-y-3', 'opacity-0'), 10);
+      setTimeout(() => {
+        t.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => t.remove(), 300);
+      }, 3200);
+    }
+  </script>
+</body>
+</html>
