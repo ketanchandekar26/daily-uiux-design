@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 015: On/Off Switch & Tactile Toggle Matrix | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              950: '#06070a',
+              900: '#0a0d14',
+              850: '#0f1420',
+              800: '#151c2c',
+              750: '#1d263a',
+              700: '#28344e',
+              600: '#3a4a6e',
+            },
+            accent: {
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              cyan: '#06b6d4',
+              rose: '#f43f5e',
+              violet: '#8b5cf6',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- SVG Gooey Filter for Liquid Gel Switch -->
+  <svg class="sr-only" aria-hidden="true">
+    <defs>
+      <filter id="goo">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+        <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+      </filter>
+    </defs>
+  </svg>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #06070a; }
+    ::-webkit-scrollbar-thumb { background: #1d263a; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+
+    /* Neumorphic Soft Recessed Shadows */
+    .neu-flat {
+      background: #0f1420;
+      box-shadow: 6px 6px 14px #06080d, -6px -6px 14px #182033;
+    }
+    .neu-pressed {
+      background: #0d121c;
+      box-shadow: inset 4px 4px 8px #06080d, inset -4px -4px 8px #182033;
+    }
+
+    /* Industrial Rocker 3D Perspective */
+    .rocker-switch {
+      perspective: 300px;
+    }
+    .rocker-plate {
+      transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+      transform-origin: center;
+    }
+    .rocker-plate.off {
+      transform: rotateY(-18deg);
+      box-shadow: -4px 0 10px rgba(0,0,0,0.7), inset 2px 0 3px rgba(255,255,255,0.1);
+    }
+    .rocker-plate.on {
+      transform: rotateY(18deg);
+      box-shadow: 4px 0 10px rgba(0,0,0,0.7), inset -2px 0 3px rgba(255,255,255,0.1);
+    }
+
+    /* Spring Handle Dynamic Stretch */
+    .spring-thumb {
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.2s ease;
+    }
+    .switch-track:active .spring-thumb {
+      width: 2.2rem !important;
+    }
+
+    /* Aerospace Flip Guard Lid */
+    .guard-lid {
+      transform-origin: top center;
+      transition: transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1);
+    }
+    .guard-lid.open {
+      transform: rotateX(115deg);
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-200 font-sans min-h-screen antialiased selection:bg-emerald-500/30 selection:text-emerald-200 relative overflow-x-hidden">
+
+  <!-- Ambient Light Orbs -->
+  <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+    <div id="ambient-orb" class="absolute -top-32 left-1/4 w-[38rem] h-[38rem] bg-emerald-600/10 rounded-full blur-[160px] transition-all duration-700"></div>
+    <div class="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute -bottom-40 left-10 w-[30rem] h-[30rem] bg-violet-600/10 rounded-full blur-[160px]"></div>
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+  </div>
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-surface-950/80 border-b border-surface-800/80 px-4 sm:px-8 py-3.5 transition-all">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      
+      <div class="flex items-center gap-3">
+        <a href="../" class="group flex items-center gap-2.5 text-xs font-semibold tracking-wider uppercase text-slate-400 hover:text-white transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-surface-850 border border-surface-700/80 flex items-center justify-center text-slate-300 group-hover:border-emerald-500/50 group-hover:text-emerald-400 transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-0.5"></i>
+          </div>
+          <span class="hidden sm:inline">Daily UI Hub</span>
+        </a>
+        <div class="h-4 w-px bg-surface-700/80"></div>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">DAY 015</span>
+          <span class="text-slate-400 hidden md:inline font-mono">/ TACTILE TOGGLE SWITCHBOARD</span>
+        </div>
+      </div>
+
+      <!-- Header Controls: Audio Haptics & Master Cut -->
+      <div class="flex items-center gap-2.5">
+        <button id="audio-toggle-btn" onclick="toggleAudio()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-surface-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all">
+          <i id="audio-icon" data-lucide="volume-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="hidden sm:inline" id="audio-label">Haptic SFX On</span>
+        </button>
+
+        <button onclick="toggleAllSwitches()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-surface-700/80 text-xs font-mono text-slate-300 hover:text-white transition-all">
+          <i data-lucide="power" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>Cycle All</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-12">
+    
+    <!-- Hero Header -->
+    <div class="text-center space-y-3 max-w-2xl mx-auto">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 font-mono text-xs font-bold tracking-widest uppercase">
+        <i data-lucide="toggle-right" class="w-3.5 h-3.5"></i>
+        <span>Micro-Interaction Physics & Signifiers</span>
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight uppercase font-sans">
+        The Tactile Switchboard
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400 font-mono tracking-wide leading-relaxed">
+        6 distinct architectural switch archetypes: Spring mechanics, 3D industrial rockers, flight deck safety guards, and liquid gooey physics with synthesized acoustic haptics.
+      </p>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 6-ARCHETYPE SWITCH GALLERY GRID                -->
+    <!-- ============================================== -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      
+      <!-- 1. iOS Human Interface Spring Switch -->
+      <div class="p-6 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl flex flex-col justify-between space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">ARCHETYPE 01</span>
+            <span class="text-xs font-mono text-slate-500">Cubic-Bezier Spring</span>
+          </div>
+          <h2 class="text-base font-bold text-white">iOS Spring Physics Toggle</h2>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            Elastic stretch-and-squash on drag, tactile snap back, and dual `I/O` accessibility signifiers.
+          </p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-surface-950/80 border border-surface-800 flex items-center justify-between">
+          <div>
+            <span class="block text-xs font-semibold text-white">Neural ANC Filter</span>
+            <span class="text-[10px] font-mono text-slate-400" id="label-ios">State: Active (I)</span>
+          </div>
+
+          <!-- Switch Element -->
+          <button role="switch" aria-checked="true" aria-label="Toggle Neural ANC" id="switch-ios" onclick="toggleIosSwitch()" class="switch-track relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-emerald-500 transition-colors duration-250 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-400/50">
+            <span class="sr-only">Toggle Neural ANC</span>
+            <span id="thumb-ios" class="spring-thumb pointer-events-none inline-flex h-7 w-7 transform items-center justify-center rounded-full bg-white shadow-lg ring-0 transition duration-250 ease-in-out translate-x-6 text-[10px] font-mono font-bold text-emerald-600">
+              I
+            </span>
+          </button>
+        </div>
+
+        <div class="pt-2 border-t border-surface-800 flex justify-between items-center text-[11px] font-mono text-slate-500">
+          <span>Stiffness: 280 N/m</span>
+          <button onclick="copyCodeSnippet('ios')" class="text-emerald-400 hover:text-emerald-300 underline">Get Code</button>
+        </div>
+      </div>
+
+      <!-- 2. Industrial Heavy 3D Rocker Switch -->
+      <div class="p-6 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl flex flex-col justify-between space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">ARCHETYPE 02</span>
+            <span class="text-xs font-mono text-slate-500">Mechanical Pivot</span>
+          </div>
+          <h2 class="text-base font-bold text-white">Industrial 3D Rocker</h2>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            Skeuomorphic hardware pivot with physical perspective tilt, LED status indicator diode, and heavy acoustic thud.
+          </p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-surface-950/80 border border-surface-800 flex items-center justify-between rocker-switch">
+          <div>
+            <span class="block text-xs font-semibold text-white">High-Voltage Bus</span>
+            <span class="text-[10px] font-mono text-slate-400" id="label-rocker">State: Engaged (ON)</span>
+          </div>
+
+          <!-- Rocker Element -->
+          <div class="flex items-center gap-3">
+            <span id="led-rocker" class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_#f59e0b]"></span>
+            
+            <button role="switch" aria-checked="true" aria-label="Toggle High-Voltage Bus" id="switch-rocker" onclick="toggleRockerSwitch()" class="w-16 h-10 rounded-lg bg-surface-950 border border-surface-700 p-1 flex items-center justify-center focus:outline-none">
+              <div id="plate-rocker" class="rocker-plate on w-full h-full rounded bg-gradient-to-r from-surface-800 to-surface-750 border border-surface-650 flex items-center justify-between px-2 text-[10px] font-mono font-bold">
+                <span class="text-slate-500">0</span>
+                <span class="text-amber-400">1</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-surface-800 flex justify-between items-center text-[11px] font-mono text-slate-500">
+          <span>Detent: 18° Incline</span>
+          <button onclick="copyCodeSnippet('rocker')" class="text-amber-400 hover:text-amber-300 underline">Get Code</button>
+        </div>
+      </div>
+
+      <!-- 3. Neumorphic Recessed Tactile Switch -->
+      <div class="p-6 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl flex flex-col justify-between space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">ARCHETYPE 03</span>
+            <span class="text-xs font-mono text-slate-500">Soft Extrusion</span>
+          </div>
+          <h2 class="text-base font-bold text-white">Neumorphic Soft Switch</h2>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            Depth inversion physics using dual ambient directional shadows that depress into the chassis on click.
+          </p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-surface-950/80 border border-surface-800 flex items-center justify-between">
+          <div>
+            <span class="block text-xs font-semibold text-white">Sub-Bass Boost</span>
+            <span class="text-[10px] font-mono text-slate-400" id="label-neu">State: Depressed (Active)</span>
+          </div>
+
+          <!-- Neumorphic Button -->
+          <button role="switch" aria-checked="true" aria-label="Toggle Sub-Bass Boost" id="switch-neu" onclick="toggleNeuSwitch()" class="neu-pressed w-14 h-8 rounded-full p-1 transition-all duration-200 flex items-center justify-end focus:outline-none">
+            <span id="thumb-neu" class="w-6 h-6 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.8)] flex items-center justify-center text-surface-950 font-bold text-[10px]">
+              <i data-lucide="check" class="w-3 h-3"></i>
+            </span>
+          </button>
+        </div>
+
+        <div class="pt-2 border-t border-surface-800 flex justify-between items-center text-[11px] font-mono text-slate-500">
+          <span>Depth: -4px Inset</span>
+          <button onclick="copyCodeSnippet('neu')" class="text-cyan-400 hover:text-cyan-300 underline">Get Code</button>
+        </div>
+      </div>
+
+      <!-- 4. Liquid Gooey Gel Switch -->
+      <div class="p-6 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl flex flex-col justify-between space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-violet-500/10 text-violet-300 border border-violet-500/30">ARCHETYPE 04</span>
+            <span class="text-xs font-mono text-slate-500">SVG Metamorphic</span>
+          </div>
+          <h2 class="text-base font-bold text-white">Liquid Gooey Gel Switch</h2>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            SVG feColorMatrix and Gaussian blur metamorphism: thumb morphs and stretches organically like molten liquid.
+          </p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-surface-950/80 border border-surface-800 flex items-center justify-between">
+          <div>
+            <span class="block text-xs font-semibold text-white">Overclock Mode</span>
+            <span class="text-[10px] font-mono text-slate-400" id="label-goo">State: Turbo Engaged</span>
+          </div>
+
+          <!-- Liquid Switch -->
+          <div style="filter: url('#goo');" class="inline-block p-1">
+            <button role="switch" aria-checked="true" aria-label="Toggle Overclock Mode" id="switch-goo" onclick="toggleGooSwitch()" class="w-16 h-8 rounded-full bg-violet-600 transition-colors duration-300 flex items-center p-1 focus:outline-none">
+              <span id="thumb-goo" class="w-6 h-6 rounded-full bg-white transform translate-x-8 transition-transform duration-300 shadow-md"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-surface-800 flex justify-between items-center text-[11px] font-mono text-slate-500">
+          <span>Viscosity: 19 Matrix Gain</span>
+          <button onclick="copyCodeSnippet('goo')" class="text-violet-400 hover:text-violet-300 underline">Get Code</button>
+        </div>
+      </div>
+
+      <!-- 5. Cyberpunk Laser Circuit Switch -->
+      <div class="p-6 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl flex flex-col justify-between space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/30">ARCHETYPE 05</span>
+            <span class="text-xs font-mono text-slate-500">Neon Conduit</span>
+          </div>
+          <h2 class="text-base font-bold text-white">Cyberpunk Laser Toggle</h2>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            High-contrast neon conduit path that illuminates dynamic laser circuit lines upon binary engagement.
+          </p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-surface-950/80 border border-surface-800 flex items-center justify-between">
+          <div>
+            <span class="block text-xs font-semibold text-white">Matrix Grid HUD</span>
+            <span class="text-[10px] font-mono text-slate-400" id="label-cyber">State: Online [1]</span>
+          </div>
+
+          <!-- Cyberpunk Switch -->
+          <button role="switch" aria-checked="true" aria-label="Toggle Matrix Grid HUD" id="switch-cyber" onclick="toggleCyberSwitch()" class="relative w-16 h-8 rounded bg-surface-950 border border-rose-500/60 p-0.5 focus:outline-none shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-all">
+            <span id="laser-line" class="absolute left-1 right-1 top-1/2 -translate-y-1/2 h-0.5 bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
+            <span id="thumb-cyber" class="relative z-10 block w-7 h-6 rounded bg-rose-600 text-white font-mono text-[10px] font-bold flex items-center justify-center transform translate-x-7 transition-transform duration-200 shadow-md">
+              ON
+            </span>
+          </button>
+        </div>
+
+        <div class="pt-2 border-t border-surface-800 flex justify-between items-center text-[11px] font-mono text-slate-500">
+          <span>Luminescence: 650nm Laser</span>
+          <button onclick="copyCodeSnippet('cyber')" class="text-rose-400 hover:text-rose-300 underline">Get Code</button>
+        </div>
+      </div>
+
+      <!-- 6. Aerospace Flight Deck Guarded Switch -->
+      <div class="p-6 rounded-3xl bg-surface-900 border border-surface-800 shadow-xl flex flex-col justify-between space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-rose-600 text-white uppercase">CRITICAL SAFETY</span>
+            <span class="text-xs font-mono text-rose-400">Two-Step Interlock</span>
+          </div>
+          <h2 class="text-base font-bold text-white">Aerospace Guarded Switch</h2>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            Two-step destructive safety: requires physically flipping the spring cover open before throwing the master circuit breaker.
+          </p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-surface-950/80 border border-surface-800 flex items-center justify-between">
+          <div>
+            <span class="block text-xs font-semibold text-rose-300">Emergency Cluster Flush</span>
+            <span class="text-[10px] font-mono text-slate-400" id="label-safety">Status: Armed & Guarded</span>
+          </div>
+
+          <!-- Guarded Switch Component -->
+          <div class="relative flex items-center gap-3">
+            <!-- Safety Lid -->
+            <button onclick="toggleSafetyGuard()" id="btn-guard-lid" class="guard-lid px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-[10px] font-mono font-bold text-amber-300 uppercase shadow-md flex items-center gap-1 transition-all">
+              <i data-lucide="shield-alert" class="w-3 h-3"></i>
+              <span id="guard-lid-text">Open Lid</span>
+            </button>
+
+            <!-- Inner Critical Switch -->
+            <button role="switch" aria-checked="false" aria-label="Emergency Cluster Flush" id="switch-safety" onclick="toggleSafetySwitch()" disabled class="w-12 h-7 rounded bg-surface-800 opacity-40 cursor-not-allowed border border-surface-700 flex items-center p-1 transition-all focus:outline-none">
+              <span id="thumb-safety" class="w-5 h-5 rounded bg-slate-500 transition-all transform translate-x-0"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-surface-800 flex justify-between items-center text-[11px] font-mono text-slate-500">
+          <span>Interlock: Two-Step Lockout</span>
+          <button onclick="copyCodeSnippet('safety')" class="text-rose-400 hover:text-rose-300 underline">Get Code</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- LIVE HARDWARE SIMULATOR STATUS DECK            -->
+    <!-- ============================================== -->
+    <div class="p-6 sm:p-8 rounded-3xl bg-surface-900 border border-surface-800 shadow-2xl space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-800 pb-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-emerald-400 font-bold">Hardware Rig Telemetry</span>
+          <h3 class="text-lg font-bold text-white mt-1">Live Power & Audio Subsystem Response</h3>
+        </div>
+        <div class="flex items-center gap-2 font-mono text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-slate-300">Active Switches: <strong id="active-switches-count" class="text-white">5</strong> / 6</span>
+        </div>
+      </div>
+
+      <!-- Real-time Metrics Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
+        <div class="p-4 rounded-2xl bg-surface-950 border border-surface-800">
+          <span class="text-slate-500 block mb-1">Acoustic Suppression</span>
+          <span id="metric-anc" class="text-lg font-bold text-emerald-400">-48 dB [Active]</span>
+        </div>
+        <div class="p-4 rounded-2xl bg-surface-950 border border-surface-800">
+          <span class="text-slate-500 block mb-1">Power Bus Voltage</span>
+          <span id="metric-voltage" class="text-lg font-bold text-amber-400">480 V [Engaged]</span>
+        </div>
+        <div class="p-4 rounded-2xl bg-surface-950 border border-surface-800">
+          <span class="text-slate-500 block mb-1">Overclock Clockrate</span>
+          <span id="metric-clock" class="text-lg font-bold text-violet-400">4.8 GHz [Turbo]</span>
+        </div>
+        <div class="p-4 rounded-2xl bg-surface-950 border border-surface-800">
+          <span class="text-slate-500 block mb-1">Laser HUD Conduit</span>
+          <span id="metric-hud" class="text-lg font-bold text-rose-400">650nm [Online]</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- COGNITIVE HEURISTICS & ACCESSIBILITY SECTION   -->
+    <!-- ============================================== -->
+    <section class="p-6 sm:p-8 rounded-3xl bg-surface-900/60 border border-surface-800 space-y-6">
+      <div class="border-b border-surface-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="book-open" class="w-5 h-5 text-emerald-400"></i>
+          <span>Cognitive Psychology & State Certainty Heuristics</span>
+        </h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-400 leading-relaxed">
+        <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+          <h4 class="font-bold text-white text-sm mb-1">Norman's Affordances & Signifiers</h4>
+          <p>A switch must declare its state independently of color. We integrate physical spatial displacement (left = off, right = on) and standardized text/glyph signifiers (`I` / `O`).</p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+          <h4 class="font-bold text-white text-sm mb-1">Haptic Confirmation & Latency</h4>
+          <p>Synthesizing auditory feedback within 16ms of actuation matches biological tactile nerve latency, removing doubt over whether a state transition was recorded.</p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-surface-850 border border-surface-750">
+          <h4 class="font-bold text-white text-sm mb-1">Interlock Forcing Functions</h4>
+          <p>The aerospace safety lid acts as a Norman forcing function: by physically barring accidental activation, it prevents catastrophe in high-consequence operations.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Real-time Notification Toast Shelf -->
+  <div id="toast-shelf" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none" aria-live="polite"></div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: TACTILE ENGINE & WEB AUDIO SYNTHESIZER      -->
+  <!-- ======================================================== -->
+  <script>
+    // State
+    const state = {
+      audioEnabled: true,
+      ios: true,
+      rocker: true,
+      neu: true,
+      goo: true,
+      cyber: true,
+      safetyOpen: false,
+      safety: false,
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      updateActiveCount();
+    });
+
+    // -------------------------------------------------------------
+    // WEB AUDIO API NATIVE HAPTIC SOUND SYNTHESIZER
+    // -------------------------------------------------------------
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function toggleAudio() {
+      state.audioEnabled = !state.audioEnabled;
+      const icon = document.getElementById('audio-icon');
+      const label = document.getElementById('audio-label');
+
+      if (state.audioEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.className = 'w-3.5 h-3.5 text-emerald-400';
+        label.innerText = 'Haptic SFX On';
+        playSwitchTone('ios', true);
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.className = 'w-3.5 h-3.5 text-slate-500';
+        label.innerText = 'SFX Muted';
+      }
+      lucide.createIcons();
+    }
+
+    function playSwitchTone(archetype, isTurnedOn) {
+      if (!state.audioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (archetype === 'ios') {
+          // Crisp high-frequency snap (1200Hz if ON, 800Hz if OFF)
+          osc.type = 'sine';
+          const freq = isTurnedOn ? 1200 : 750;
+          osc.frequency.setValueAtTime(freq, now);
+          osc.frequency.exponentialRampToValueAtTime(freq * 0.7, now + 0.04);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.start(now);
+          osc.stop(now + 0.05);
+
+        } else if (archetype === 'rocker') {
+          // Heavy mechanical clunk (low triangle + transient)
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(180, now);
+          osc.frequency.exponentialRampToValueAtTime(70, now + 0.08);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.start(now);
+          osc.stop(now + 0.09);
+
+        } else if (archetype === 'neu') {
+          // Soft muted thud
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, now);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+          osc.start(now);
+          osc.stop(now + 0.06);
+
+        } else if (archetype === 'goo') {
+          // Ascending/descending water droplet pop
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(isTurnedOn ? 400 : 700, now);
+          osc.frequency.exponentialRampToValueAtTime(isTurnedOn ? 850 : 350, now + 0.1);
+          gain.gain.setValueAtTime(0.07, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+
+        } else if (archetype === 'cyber') {
+          // High-tech laser chirrup
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(1800, now);
+          osc.frequency.exponentialRampToValueAtTime(400, now + 0.07);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+          osc.start(now);
+          osc.stop(now + 0.07);
+
+        } else if (archetype === 'safety') {
+          // Heavy metallic clank
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(90, now + 0.12);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          osc.start(now);
+          osc.stop(now + 0.15);
+        }
+      } catch (e) {}
+    }
+
+    // -------------------------------------------------------------
+    // SWITCH INTERACTION LOGIC
+    // -------------------------------------------------------------
+    function toggleIosSwitch() {
+      state.ios = !state.ios;
+      const track = document.getElementById('switch-ios');
+      const thumb = document.getElementById('thumb-ios');
+      const label = document.getElementById('label-ios');
+      const metric = document.getElementById('metric-anc');
+
+      playSwitchTone('ios', state.ios);
+
+      if (state.ios) {
+        track.className = 'switch-track relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-emerald-500 transition-colors duration-250 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-400/50';
+        thumb.className = 'spring-thumb pointer-events-none inline-flex h-7 w-7 transform items-center justify-center rounded-full bg-white shadow-lg ring-0 transition duration-250 ease-in-out translate-x-6 text-[10px] font-mono font-bold text-emerald-600';
+        thumb.innerText = 'I';
+        label.innerText = 'State: Active (I)';
+        metric.innerText = '-48 dB [Active]';
+        metric.className = 'text-lg font-bold text-emerald-400';
+        track.setAttribute('aria-checked', 'true');
+      } else {
+        track.className = 'switch-track relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-surface-800 transition-colors duration-250 ease-in-out focus:outline-none focus:ring-2 focus:ring-slate-500';
+        thumb.className = 'spring-thumb pointer-events-none inline-flex h-7 w-7 transform items-center justify-center rounded-full bg-slate-300 shadow-lg ring-0 transition duration-250 ease-in-out translate-x-0 text-[10px] font-mono font-bold text-slate-600';
+        thumb.innerText = 'O';
+        label.innerText = 'State: Muted (O)';
+        metric.innerText = '0 dB [Bypassed]';
+        metric.className = 'text-lg font-bold text-slate-500';
+        track.setAttribute('aria-checked', 'false');
+      }
+      updateActiveCount();
+    }
+
+    function toggleRockerSwitch() {
+      state.rocker = !state.rocker;
+      const plate = document.getElementById('plate-rocker');
+      const led = document.getElementById('led-rocker');
+      const label = document.getElementById('label-rocker');
+      const metric = document.getElementById('metric-voltage');
+
+      playSwitchTone('rocker', state.rocker);
+
+      if (state.rocker) {
+        plate.className = 'rocker-plate on w-full h-full rounded bg-gradient-to-r from-surface-800 to-surface-750 border border-surface-650 flex items-center justify-between px-2 text-[10px] font-mono font-bold';
+        led.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_#f59e0b]';
+        label.innerText = 'State: Engaged (ON)';
+        metric.innerText = '480 V [Engaged]';
+        metric.className = 'text-lg font-bold text-amber-400';
+      } else {
+        plate.className = 'rocker-plate off w-full h-full rounded bg-gradient-to-r from-surface-850 to-surface-900 border border-surface-800 flex items-center justify-between px-2 text-[10px] font-mono font-bold';
+        led.className = 'w-2.5 h-2.5 rounded-full bg-slate-700 shadow-none';
+        label.innerText = 'State: Open (OFF)';
+        metric.innerText = '0 V [Disengaged]';
+        metric.className = 'text-lg font-bold text-slate-500';
+      }
+      updateActiveCount();
+    }
+
+    function toggleNeuSwitch() {
+      state.neu = !state.neu;
+      const btn = document.getElementById('switch-neu');
+      const thumb = document.getElementById('thumb-neu');
+      const label = document.getElementById('label-neu');
+
+      playSwitchTone('neu', state.neu);
+
+      if (state.neu) {
+        btn.className = 'neu-pressed w-14 h-8 rounded-full p-1 transition-all duration-200 flex items-center justify-end focus:outline-none';
+        thumb.className = 'w-6 h-6 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.8)] flex items-center justify-center text-surface-950 font-bold text-[10px]';
+        thumb.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i>';
+        label.innerText = 'State: Depressed (Active)';
+      } else {
+        btn.className = 'neu-flat w-14 h-8 rounded-full p-1 transition-all duration-200 flex items-center justify-start focus:outline-none';
+        thumb.className = 'w-6 h-6 rounded-full bg-slate-600 shadow-none flex items-center justify-center text-slate-400 font-bold text-[10px]';
+        thumb.innerHTML = '';
+        label.innerText = 'State: Elevated (Inactive)';
+      }
+      lucide.createIcons();
+      updateActiveCount();
+    }
+
+    function toggleGooSwitch() {
+      state.goo = !state.goo;
+      const track = document.getElementById('switch-goo');
+      const thumb = document.getElementById('thumb-goo');
+      const label = document.getElementById('label-goo');
+      const metric = document.getElementById('metric-clock');
+
+      playSwitchTone('goo', state.goo);
+
+      if (state.goo) {
+        track.className = 'w-16 h-8 rounded-full bg-violet-600 transition-colors duration-300 flex items-center p-1 focus:outline-none';
+        thumb.className = 'w-6 h-6 rounded-full bg-white transform translate-x-8 transition-transform duration-300 shadow-md';
+        label.innerText = 'State: Turbo Engaged';
+        metric.innerText = '4.8 GHz [Turbo]';
+        metric.className = 'text-lg font-bold text-violet-400';
+      } else {
+        track.className = 'w-16 h-8 rounded-full bg-surface-800 transition-colors duration-300 flex items-center p-1 focus:outline-none';
+        thumb.className = 'w-6 h-6 rounded-full bg-slate-400 transform translate-x-0 transition-transform duration-300 shadow-md';
+        label.innerText = 'State: Eco Throttled';
+        metric.innerText = '1.2 GHz [Idle]';
+        metric.className = 'text-lg font-bold text-slate-500';
+      }
+      updateActiveCount();
+    }
+
+    function toggleCyberSwitch() {
+      state.cyber = !state.cyber;
+      const thumb = document.getElementById('thumb-cyber');
+      const line = document.getElementById('laser-line');
+      const label = document.getElementById('label-cyber');
+      const metric = document.getElementById('metric-hud');
+
+      playSwitchTone('cyber', state.cyber);
+
+      if (state.cyber) {
+        thumb.className = 'relative z-10 block w-7 h-6 rounded bg-rose-600 text-white font-mono text-[10px] font-bold flex items-center justify-center transform translate-x-7 transition-transform duration-200 shadow-md';
+        thumb.innerText = 'ON';
+        line.className = 'absolute left-1 right-1 top-1/2 -translate-y-1/2 h-0.5 bg-rose-500 shadow-[0_0_8px_#f43f5e]';
+        label.innerText = 'State: Online [1]';
+        metric.innerText = '650nm [Online]';
+        metric.className = 'text-lg font-bold text-rose-400';
+      } else {
+        thumb.className = 'relative z-10 block w-7 h-6 rounded bg-surface-800 text-slate-400 font-mono text-[10px] font-bold flex items-center justify-center transform translate-x-0 transition-transform duration-200 shadow-none';
+        thumb.innerText = 'OFF';
+        line.className = 'absolute left-1 right-1 top-1/2 -translate-y-1/2 h-0.5 bg-surface-800 shadow-none';
+        label.innerText = 'State: Standby [0]';
+        metric.innerText = 'Dark [Offline]';
+        metric.className = 'text-lg font-bold text-slate-500';
+      }
+      updateActiveCount();
+    }
+
+    function toggleSafetyGuard() {
+      state.safetyOpen = !state.safetyOpen;
+      const lid = document.getElementById('btn-guard-lid');
+      const text = document.getElementById('guard-lid-text');
+      const switchBtn = document.getElementById('switch-safety');
+      const label = document.getElementById('label-safety');
+
+      playSwitchTone('safety', state.safetyOpen);
+
+      if (state.safetyOpen) {
+        lid.classList.add('open', 'border-rose-500', 'bg-rose-500/20', 'text-rose-300');
+        text.innerText = 'Lid Open!';
+        switchBtn.disabled = false;
+        switchBtn.className = 'w-12 h-7 rounded bg-surface-750 cursor-pointer border border-rose-500/50 flex items-center p-1 transition-all focus:outline-none';
+        label.innerText = 'Status: UNGUARDED (Ready to Throw)';
+        label.className = 'text-[10px] font-mono text-rose-400 font-bold animate-pulse';
+        showToast('⚠️ Critical Safety Guard Raised: Interlock disengaged.');
+      } else {
+        lid.classList.remove('open', 'border-rose-500', 'bg-rose-500/20', 'text-rose-300');
+        text.innerText = 'Open Lid';
+        switchBtn.disabled = true;
+        switchBtn.className = 'w-12 h-7 rounded bg-surface-800 opacity-40 cursor-not-allowed border border-surface-700 flex items-center p-1 transition-all focus:outline-none';
+        label.innerText = 'Status: Armed & Guarded';
+        label.className = 'text-[10px] font-mono text-slate-400';
+      }
+    }
+
+    function toggleSafetySwitch() {
+      if (!state.safetyOpen) return;
+      state.safety = !state.safety;
+      const thumb = document.getElementById('thumb-safety');
+      const label = document.getElementById('label-safety');
+
+      playSwitchTone('safety', state.safety);
+
+      if (state.safety) {
+        thumb.className = 'w-5 h-5 rounded bg-rose-500 shadow-[0_0_12px_#f43f5e] transition-all transform translate-x-5';
+        label.innerText = 'CRITICAL: CLUSTER FLUSH PURGE ACTIVE';
+        label.className = 'text-[10px] font-mono text-rose-500 font-black animate-pulse';
+        showToast('🚨 CRITICAL BREAKER THROWN: Emergency flush initiated!');
+      } else {
+        thumb.className = 'w-5 h-5 rounded bg-slate-500 transition-all transform translate-x-0';
+        label.innerText = 'Status: Disengaged (Idle)';
+        label.className = 'text-[10px] font-mono text-slate-400';
+      }
+      updateActiveCount();
+    }
+
+    function toggleAllSwitches() {
+      toggleIosSwitch();
+      toggleRockerSwitch();
+      toggleNeuSwitch();
+      toggleGooSwitch();
+      toggleCyberSwitch();
+      showToast('All subsystem switches toggled simultaneously.');
+    }
+
+    function updateActiveCount() {
+      let count = 0;
+      if (state.ios) count++;
+      if (state.rocker) count++;
+      if (state.neu) count++;
+      if (state.goo) count++;
+      if (state.cyber) count++;
+      if (state.safety) count++;
+      document.getElementById('active-switches-count').innerText = count;
+    }
+
+    function copyCodeSnippet(archetype) {
+      let code = '';
+      if (archetype === 'ios') {
+        code = `<button role="switch" aria-checked="true" class="relative inline-flex h-8 w-14 rounded-full bg-emerald-500 transition-colors focus:outline-none">\n  <span class="inline-block h-7 w-7 transform rounded-full bg-white shadow translate-x-6 transition-transform"></span>\n</button>`;
+      } else if (archetype === 'rocker') {
+        code = `<button role="switch" class="perspective-300 w-16 h-10 bg-slate-900 border rounded">\n  <div class="rotate-y-18 transition-transform font-mono text-xs">1</div>\n</button>`;
+      } else if (archetype === 'neu') {
+        code = `.neu-pressed { box-shadow: inset 4px 4px 8px #06080d, inset -4px -4px 8px #182033; }`;
+      } else if (archetype === 'goo') {
+        code = `<div style="filter: url('#goo');">\n  <button class="w-16 h-8 bg-violet-600 rounded-full">\n    <span class="w-6 h-6 bg-white rounded-full translate-x-8"></span>\n  </button>\n</div>`;
+      } else if (archetype === 'cyber') {
+        code = `<button class="w-16 h-8 border border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]">\n  <span class="w-7 h-6 bg-rose-600 text-white font-mono">ON</span>\n</button>`;
+      } else if (archetype === 'safety') {
+        code = `<!-- Two-step safety switch lockout -->\n<div class="guard-lid"><button disabled>Circuit Breaker</button></div>`;
+      }
+
+      navigator.clipboard.writeText(code).then(() => {
+        showToast(`Copied snippet for ${archetype.toUpperCase()} switch!`);
+      });
+    }
+
+    function showToast(msg) {
+      const shelf = document.getElementById('toast-shelf');
+      const t = document.createElement('div');
+      t.className = 'px-4 py-2.5 rounded-2xl bg-surface-900 border border-surface-700 text-xs text-white shadow-2xl flex items-center gap-2 transform translate-y-3 opacity-0 transition-all duration-300 pointer-events-auto backdrop-blur-xl';
+      t.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i><span>${msg}</span>`;
+      shelf.appendChild(t);
+      lucide.createIcons({ root: t });
+      setTimeout(() => t.classList.remove('translate-y-3', 'opacity-0'), 10);
+      setTimeout(() => {
+        t.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => t.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
