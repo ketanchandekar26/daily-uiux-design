@@ -34,7 +34,8 @@ Every daily challenge is executed under four core engineering pillars:
 | **013** | **Direct Messaging & Chat Interface** | Social / Productivity | [Day 013 Prototype](./day-013-chat-interface/index.html) | ✅ Completed |
 | **014** | **Countdown Timer & Limited Drop Studio** | E-Commerce / Marketing | [Day 014 Prototype](./day-014-countdown-timer/index.html) | ✅ Completed |
 | **015** | **On/Off Switch & Tactile Toggle Matrix** | Micro-Interactions | [Day 015 Prototype](./day-015-on-off-switch/index.html) | ✅ Completed |
-| **016** | Pop-Up Overlay & High-Conversion Modal | Overlays / Growth | *Upcoming* | ⏳ Queued |
+| **016** | **Pop-Up Overlay & Modal Studio** | Overlays / Growth | [Day 016 Prototype](./day-016-popup-overlay/index.html) | ✅ Completed |
+| **017** | Email Receipt & Order Invoice Suite | E-Commerce / Billing | *Upcoming* | ⏳ Queued |
 
 ---
 

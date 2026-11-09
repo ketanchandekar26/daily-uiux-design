@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 016: Pop-Up Overlay & High-Conversion Modal Studio | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              950: '#07080d',
+              900: '#0c0f17',
+              850: '#111521',
+              800: '#171d2c',
+              750: '#1e263a',
+              700: '#29344e',
+              600: '#3a4a6e',
+            },
+            accent: {
+              violet: '#8b5cf6',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+              cyan: '#06b6d4',
+            }
+          },
+          animation: {
+            'modal-in': 'modalIn 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+            'shake': 'shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both',
+          },
+          keyframes: {
+            modalIn: {
+              '0%': { opacity: '0', transform: 'scale(0.94) translateY(12px)' },
+              '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+            },
+            shake: {
+              '10%, 90%': { transform: 'translateX(-2px)' },
+              '20%, 80%': { transform: 'translateX(4px)' },
+              '30%, 50%, 70%': { transform: 'translateX(-6px)' },
+              '40%, 60%': { transform: 'translateX(6px)' },
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #07080d; }
+    ::-webkit-scrollbar-thumb { background: #1e263a; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+
+    /* Modal Backdrop Transitions */
+    .modal-backdrop {
+      transition: opacity 0.25s ease, backdrop-filter 0.25s ease;
+    }
+
+    /* Ambient Glows */
+    .glow-violet {
+      box-shadow: 0 0 50px -10px rgba(139, 92, 246, 0.35);
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-200 font-sans min-h-screen antialiased selection:bg-violet-600/30 selection:text-violet-200 relative overflow-x-hidden">
+
+  <!-- Ambient Light Backdrops -->
+  <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+    <div class="absolute -top-32 left-1/4 w-[38rem] h-[38rem] bg-violet-600/10 rounded-full blur-[160px]"></div>
+    <div class="absolute top-1/2 -right-40 w-96 h-96 bg-cyan-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute -bottom-40 left-10 w-[30rem] h-[30rem] bg-emerald-600/10 rounded-full blur-[150px]"></div>
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+  </div>
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-surface-950/80 border-b border-surface-800/80 px-4 sm:px-8 py-3.5 transition-all">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      
+      <div class="flex items-center gap-3">
+        <a href="../" class="group flex items-center gap-2.5 text-xs font-semibold tracking-wider uppercase text-slate-400 hover:text-white transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-surface-850 border border-surface-700/80 flex items-center justify-center text-slate-300 group-hover:border-violet-500/50 group-hover:text-violet-400 transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-0.5"></i>
+          </div>
+          <span class="hidden sm:inline">Daily UI Hub</span>
+        </a>
+        <div class="h-4 w-px bg-surface-700/80"></div>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="px-2 py-0.5 rounded font-mono font-bold bg-violet-500/10 text-violet-300 border border-violet-500/30">DAY 016</span>
+          <span class="text-slate-400 hidden md:inline font-mono">/ POP-UP OVERLAY & MODAL STUDIO</span>
+        </div>
+      </div>
+
+      <!-- Controls: Audio & Quick Triggers -->
+      <div class="flex items-center gap-2.5">
+        <button id="sound-btn" onclick="toggleSound()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-surface-700/80 text-xs font-medium text-slate-300 hover:text-white transition-all">
+          <i id="sound-icon" data-lucide="volume-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="hidden sm:inline" id="sound-label">Audio On</span>
+        </button>
+
+        <button onclick="openModal('exit-intent')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-medium text-xs shadow-lg shadow-violet-600/20 transition-all">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <span>Launch Modal</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Viewport Content -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-12">
+    
+    <!-- Hero Header -->
+    <div class="text-center space-y-3 max-w-2xl mx-auto">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-300 font-mono text-xs font-bold tracking-widest uppercase">
+        <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+        <span>Ethical Overlay Ergonomics</span>
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight uppercase font-sans">
+        High-Conversion Modal Studio
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400 font-mono tracking-wide leading-relaxed">
+        4 conversion archetypes: Exit-Intent Value Offer, Interactive Feature Tour, 6-Digit MFA Verification, and Gamified Reward Wheel with strict WCAG focus trapping.
+      </p>
+    </div>
+
+    <!-- Interactive Trigger Playground Launchpad -->
+    <div class="p-6 sm:p-8 rounded-3xl bg-surface-900 border border-surface-800 shadow-2xl space-y-6">
+      <div class="flex items-center justify-between border-b border-surface-800 pb-4">
+        <div>
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-violet-400"></i>
+            <span>Modal Archetype Launchpad</span>
+          </h2>
+          <p class="text-xs text-slate-400">Select any archetype to inspect its layout, transitions, and focus trapping</p>
+        </div>
+        <span class="text-xs font-mono text-violet-400 hidden sm:inline">Press Esc to dismiss any modal</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Archetype 1: Exit-Intent Value Offer -->
+        <button onclick="openModal('exit-intent')" class="group p-5 rounded-2xl bg-surface-850 hover:bg-violet-950/20 border border-surface-750 hover:border-violet-500/40 text-left transition-all flex flex-col justify-between space-y-4">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <i data-lucide="tag" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">01. Exit-Intent Offer</h3>
+            <p class="text-[11px] text-slate-400 mt-1 leading-snug">
+              20% discount coupon with scratch-reveal and 1-click apply.
+            </p>
+          </div>
+          <span class="text-xs font-mono text-violet-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <span>Launch Archetype</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </span>
+        </button>
+
+        <!-- Archetype 2: Product Tour / Feature Spotlight -->
+        <button onclick="openModal('tour')" class="group p-5 rounded-2xl bg-surface-850 hover:bg-cyan-950/20 border border-surface-750 hover:border-cyan-500/40 text-left transition-all flex flex-col justify-between space-y-4">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <i data-lucide="compass" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">02. Onboarding Tour</h3>
+            <p class="text-[11px] text-slate-400 mt-1 leading-snug">
+              3-step feature spotlight carousel with keyboard arrow navigation.
+            </p>
+          </div>
+          <span class="text-xs font-mono text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <span>Launch Archetype</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </span>
+        </button>
+
+        <!-- Archetype 3: 6-Digit MFA Verification -->
+        <button onclick="openModal('mfa')" class="group p-5 rounded-2xl bg-surface-850 hover:bg-emerald-950/20 border border-surface-750 hover:border-emerald-500/40 text-left transition-all flex flex-col justify-between space-y-4">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">03. Security MFA PIN</h3>
+            <p class="text-[11px] text-slate-400 mt-1 leading-snug">
+              Auto-advancing 6-box OTP with error shake physics and paste parsing.
+            </p>
+          </div>
+          <span class="text-xs font-mono text-emerald-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <span>Launch Archetype</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </span>
+        </button>
+
+        <!-- Archetype 4: Interactive Reward Wheel -->
+        <button onclick="openModal('wheel')" class="group p-5 rounded-2xl bg-surface-850 hover:bg-amber-950/20 border border-surface-750 hover:border-amber-500/40 text-left transition-all flex flex-col justify-between space-y-4">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <i data-lucide="disc" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">04. Gamified Wheel</h3>
+            <p class="text-[11px] text-slate-400 mt-1 leading-snug">
+              Canvas-based prize roulette wheel with decelerating angular physics.
+            </p>
+          </div>
+          <span class="text-xs font-mono text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <span>Launch Archetype</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </span>
+        </button>
+
+      </div>
+
+      <!-- Trigger Simulation Deck (Exit-Intent / Scroll Depth) -->
+      <div class="pt-4 border-t border-surface-800 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-slate-400">
+        <div class="flex items-center gap-2">
+          <span class="text-white font-semibold">Active Triggers:</span>
+          <span class="px-2 py-0.5 rounded bg-surface-800 text-slate-300">Exit-Intent (Mouse out top)</span>
+          <span class="px-2 py-0.5 rounded bg-surface-800 text-slate-300">Scroll (60% depth)</span>
+        </div>
+        <button onclick="simulateExitIntent()" class="text-violet-400 hover:text-violet-300 underline underline-offset-2">
+          ⚡ Force Exit-Intent Simulation
+        </button>
+      </div>
+    </div>
+
+    <!-- Mock Page Content (Simulating deep reading page to test scroll triggers) -->
+    <article class="p-8 sm:p-12 rounded-3xl bg-surface-900/60 border border-surface-800 space-y-6 text-slate-300 text-sm leading-relaxed">
+      <div class="flex items-center gap-3 text-xs font-mono text-slate-500 pb-2 border-b border-surface-800">
+        <span>SIMULATED HOST ARTICLE</span>
+        <span>·</span>
+        <span>Scroll down past 60% to trigger scroll overlay</span>
+      </div>
+
+      <h2 class="text-xl sm:text-2xl font-bold text-white">The Architecture of Respectful Conversion Overlays</h2>
+      <p>
+        Pop-up overlays are frequently derided because aggressive marketing teams employ dark patterns: confirm-shaming copy ("No thanks, I hate great deals"), delayed close buttons, and intrusive full-page takeovers before users have read a single paragraph.
+      </p>
+      <p>
+        In contrast, high-conversion ethical modals respect human cognitive limits. They trigger only after high-intent signals (such as 60% scroll depth or cursor velocity vectors directed toward the browser exit tab) and offer undeniable, immediate value without coercive psychological friction.
+      </p>
+      <div class="p-6 rounded-2xl bg-surface-850 border border-surface-750 flex items-center justify-between">
+        <span class="text-xs font-mono text-violet-300">Scroll down further to test automated scroll-depth threshold activation...</span>
+        <span id="scroll-pct-indicator" class="font-mono text-xs text-slate-400">0% Scrolled</span>
+      </div>
+      <p>
+        Furthermore, true production-grade modals adhere strictly to WCAG 2.1 AA dialog guidelines: locking background page scrolling, trapping focus cycles, rendering high-contrast visible close controls, and restoring keyboard focus cleanly to the trigger button upon dismissal.
+      </p>
+    </article>
+
+    <!-- Cognitive Psychology Breakdown -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-400 leading-relaxed">
+      <div class="p-5 rounded-2xl bg-surface-900 border border-surface-800 space-y-2">
+        <h3 class="font-bold text-white text-sm">Psychological Reactance</h3>
+        <p>Intrusive overlays trigger reactance: a subconscious motivation to reject the offer to reclaim perceived personal autonomy. Overlays must offer value before asking for data.</p>
+      </div>
+      <div class="p-5 rounded-2xl bg-surface-900 border border-surface-800 space-y-2">
+        <h3 class="font-bold text-white text-sm">Exit-Intent Vector Tracking</h3>
+        <p>By measuring mouse velocity when <code>clientY &le; 10</code>, we identify the exact microsecond a visitor decides to leave, capturing the single highest-value recovery moment.</p>
+      </div>
+      <div class="p-5 rounded-2xl bg-surface-900 border border-surface-800 space-y-2">
+        <h3 class="font-bold text-white text-sm">Focus Containment (a11y)</h3>
+        <p>Screen reader and keyboard users can easily become trapped in invisible background layers without strict <code>aria-modal="true"</code> focus confinement.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 01: EXIT-INTENT VALUE OFFER                      -->
+  <!-- ======================================================== -->
+  <div id="modal-exit-intent" class="modal-backdrop fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden opacity-0 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="exit-title">
+    <div class="modal-panel bg-surface-900 border border-surface-750 rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl relative overflow-hidden animate-modal-in glow-violet">
+      
+      <!-- Close Button -->
+      <button onclick="closeActiveModal()" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-surface-800 transition-colors" aria-label="Close dialog">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Badge & Header -->
+      <div class="text-center space-y-2 mb-6">
+        <span class="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-violet-500/15 text-violet-300 border border-violet-500/30">
+          WAIT! EXCLUSIVE FOUNDERS OFFER
+        </span>
+        <h2 id="exit-title" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Claim 20% Off Your Apex Order
+        </h2>
+        <p class="text-xs text-slate-300 font-light max-w-sm mx-auto">
+          Before you depart, take $100 off your hardware configuration plus complimentary carbon-neutral shipping.
+        </p>
+      </div>
+
+      <!-- Scratch-To-Reveal Promo Box -->
+      <div class="p-4 rounded-2xl bg-surface-950 border border-surface-800 text-center space-y-2 mb-6">
+        <span class="text-[10px] font-mono uppercase text-slate-500 tracking-wider">Your Exclusive Promo Code</span>
+        <div class="flex items-center justify-center gap-3">
+          <span class="text-xl sm:text-2xl font-black font-mono text-emerald-400 tracking-widest select-all">APEX20</span>
+          <button onclick="copyPromo('APEX20')" class="px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-xs font-mono text-white transition-all flex items-center gap-1.5">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="copy-promo-label">Copy Code</span>
+          </button>
+        </div>
+        <span class="text-[10px] text-slate-500 block font-mono">Expires in 15 minutes · Valid on all tiers</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2.5">
+        <a href="../day-012-ecommerce-shop/" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-xs tracking-wide uppercase flex items-center justify-center gap-2 shadow-xl shadow-violet-600/30 transition-all active:scale-98">
+          <span>Apply Discount to Cart &rarr;</span>
+        </a>
+        <button onclick="closeActiveModal()" class="w-full py-2 text-xs text-slate-400 hover:text-white font-mono">
+          No thanks, continue browsing
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 02: 3-STEP ONBOARDING TOUR CAROUSEL              -->
+  <!-- ======================================================== -->
+  <div id="modal-tour" class="modal-backdrop fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden opacity-0 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+    <div class="modal-panel bg-surface-900 border border-surface-750 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative overflow-hidden animate-modal-in">
+      
+      <!-- Close Button -->
+      <button onclick="closeActiveModal()" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-surface-800 transition-colors" aria-label="Close tour">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Carousel Slide Container -->
+      <div id="tour-slide-content" class="text-center space-y-4 my-4">
+        <!-- Rendered dynamically via JS -->
+      </div>
+
+      <!-- Carousel Navigation (Dots & Next Button) -->
+      <div class="pt-6 border-t border-surface-800 flex items-center justify-between">
+        <!-- Step Indicator Dots -->
+        <div class="flex items-center gap-1.5">
+          <span id="tour-dot-0" class="w-2.5 h-2.5 rounded-full bg-cyan-400 transition-all"></span>
+          <span id="tour-dot-1" class="w-2.5 h-2.5 rounded-full bg-surface-750 transition-all"></span>
+          <span id="tour-dot-2" class="w-2.5 h-2.5 rounded-full bg-surface-750 transition-all"></span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="tour-prev-btn" onclick="prevTourSlide()" class="px-3 py-1.5 rounded-xl bg-surface-800 text-slate-400 hover:text-white text-xs font-mono">Back</button>
+          <button id="tour-next-btn" onclick="nextTourSlide()" class="px-4 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-xs font-mono">Next</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 03: 6-DIGIT MFA VERIFICATION PIN CHALLENGE       -->
+  <!-- ======================================================== -->
+  <div id="modal-mfa" class="modal-backdrop fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden opacity-0 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="mfa-title">
+    <div id="mfa-card-panel" class="modal-panel bg-surface-900 border border-surface-750 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative overflow-hidden animate-modal-in">
+      
+      <!-- Close Button -->
+      <button onclick="closeActiveModal()" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-surface-800 transition-colors" aria-label="Close authentication">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center space-y-2 mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="shield-check" class="w-6 h-6"></i>
+        </div>
+        <h2 id="mfa-title" class="text-xl font-bold text-white tracking-tight">Security Verification</h2>
+        <p class="text-xs text-slate-400">Enter the 6-digit code sent to your verified authenticator app</p>
+      </div>
+
+      <!-- 6 Input OTP Boxes with auto-advance and paste support -->
+      <div class="flex items-center justify-center gap-2 sm:gap-2.5 mb-6" id="otp-container">
+        <input type="text" maxlength="1" class="otp-box w-10 sm:w-12 h-12 sm:h-14 rounded-xl bg-surface-950 border border-surface-750 text-center font-mono text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400" autofocus>
+        <input type="text" maxlength="1" class="otp-box w-10 sm:w-12 h-12 sm:h-14 rounded-xl bg-surface-950 border border-surface-750 text-center font-mono text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+        <input type="text" maxlength="1" class="otp-box w-10 sm:w-12 h-12 sm:h-14 rounded-xl bg-surface-950 border border-surface-750 text-center font-mono text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+        <input type="text" maxlength="1" class="otp-box w-10 sm:w-12 h-12 sm:h-14 rounded-xl bg-surface-950 border border-surface-750 text-center font-mono text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+        <input type="text" maxlength="1" class="otp-box w-10 sm:w-12 h-12 sm:h-14 rounded-xl bg-surface-950 border border-surface-750 text-center font-mono text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+        <input type="text" maxlength="1" class="otp-box w-10 sm:w-12 h-12 sm:h-14 rounded-xl bg-surface-950 border border-surface-750 text-center font-mono text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+      </div>
+
+      <div class="space-y-3">
+        <button onclick="verifyMfaPin()" class="w-full py-3.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs uppercase tracking-wider font-mono transition-all">
+          Verify Security Token
+        </button>
+        <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2">
+          <span>Didn't receive code?</span>
+          <button onclick="resendMfaCode()" class="text-emerald-400 hover:text-emerald-300 underline">Resend Code (30s)</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 04: GAMIFIED REWARD ROULETTE WHEEL               -->
+  <!-- ======================================================== -->
+  <div id="modal-wheel" class="modal-backdrop fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden opacity-0 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="wheel-title">
+    <div class="modal-panel bg-surface-900 border border-surface-750 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative overflow-hidden animate-modal-in text-center">
+      
+      <!-- Close Button -->
+      <button onclick="closeActiveModal()" class="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-surface-800 transition-colors" aria-label="Close reward wheel">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <span class="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 uppercase">
+        LUCKY FOUNDERS REWARD
+      </span>
+      <h2 id="wheel-title" class="text-xl font-bold text-white tracking-tight mt-2 mb-1">Spin to Unlock Your Perk</h2>
+      <p class="text-xs text-slate-400 mb-4">Every spin guarantees a real discount code or hardware upgrade.</p>
+
+      <!-- Canvas Wheel -->
+      <div class="relative w-64 h-64 mx-auto my-4 flex items-center justify-center">
+        <!-- Pointer Needle -->
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-20 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[18px] border-t-amber-400 drop-shadow-md"></div>
+        <canvas id="wheel-canvas" width="256" height="256" class="w-full h-full rounded-full shadow-2xl border-4 border-surface-800"></canvas>
+      </div>
+
+      <button id="spin-wheel-btn" onclick="spinWheel()" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-xs uppercase tracking-wider font-mono shadow-xl shadow-amber-500/20 transition-all active:scale-98">
+        SPIN THE WHEEL
+      </button>
+      <span id="wheel-result-label" class="text-xs font-mono text-emerald-400 mt-3 block font-bold"></span>
+
+    </div>
+  </div>
+
+  <!-- Particle Celebration Layer -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+  <!-- Notification Toasts Shelf -->
+  <div id="toast-shelf" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none" aria-live="polite"></div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: MODAL ARCHITECTURE & INTERACTION SUITE      -->
+  <!-- ======================================================== -->
+  <script>
+    // State
+    const state = {
+      activeModal: null,
+      soundEnabled: true,
+      exitIntentArmed: true,
+      hasTriggeredScroll: false,
+      tourStep: 0,
+      wheelAngle: 0,
+      isSpinning: false,
+      wheelPrizes: ['20% OFF', 'FREE SHIP', '$50 CREDIT', 'VIP PASS', '10% OFF', 'APEX GEAR'],
+    };
+
+    let previousActiveElement = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initScrollTrigger();
+      initExitIntentListener();
+      initOtpBoxes();
+      initWheelCanvas();
+      renderTourSlide();
+    });
+
+    // -------------------------------------------------------------
+    // WEB AUDIO API NATIVE CHIME SYNTHESIZER
+    // -------------------------------------------------------------
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function toggleSound() {
+      state.soundEnabled = !state.soundEnabled;
+      const icon = document.getElementById('sound-icon');
+      const label = document.getElementById('sound-label');
+
+      if (state.soundEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.className = 'w-3.5 h-3.5 text-emerald-400';
+        label.innerText = 'Audio On';
+        playTone('chime');
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.className = 'w-3.5 h-3.5 text-slate-500';
+        label.innerText = 'Muted';
+      }
+      lucide.createIcons();
+    }
+
+    function playTone(type) {
+      if (!state.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'open') {
+          // Soft harmonic entry chime (440Hz -> 880Hz)
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.14);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'close') {
+          // Crisp soft click
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(600, now);
+          gain.gain.setValueAtTime(0.04, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        } else if (type === 'fanfare') {
+          // Success harmonic arpeggio
+          [523.25, 659.25, 783.99, 1046.50].forEach((f, idx) => {
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.connect(g);
+            g.connect(ctx.destination);
+            o.type = 'triangle';
+            o.frequency.setValueAtTime(f, now + idx * 0.08);
+            g.gain.setValueAtTime(0.08, now + idx * 0.08);
+            g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+            o.start(now + idx * 0.08);
+            o.stop(now + idx * 0.08 + 0.3);
+          });
+        }
+      } catch (e) {}
+    }
+
+    // -------------------------------------------------------------
+    // MODAL LIFECYCLE & FOCUS TRAPPING
+    // -------------------------------------------------------------
+    function openModal(modalId) {
+      previousActiveElement = document.activeElement;
+      state.activeModal = modalId;
+
+      const modal = document.getElementById(`modal-${modalId}`);
+      if (!modal) return;
+
+      playTone('open');
+      document.body.style.overflow = 'hidden'; // Lock page scroll
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        trapFocus(modal);
+      }, 10);
+    }
+
+    function closeActiveModal() {
+      if (!state.activeModal) return;
+      playTone('close');
+
+      const modal = document.getElementById(`modal-${state.activeModal}`);
+      if (modal) {
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          document.body.style.overflow = ''; // Restore page scroll
+          if (previousActiveElement) previousActiveElement.focus();
+          state.activeModal = null;
+        }, 220);
+      }
+    }
+
+    // Dismiss on backdrop click
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeActiveModal();
+      });
+    });
+
+    // Keyboard controls (Esc to dismiss)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && state.activeModal) {
+        closeActiveModal();
+      }
+    });
+
+    // Accessible Focus Trapping
+    function trapFocus(modalElement) {
+      const focusable = modalElement.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      first.focus();
+
+      modalElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // TRIGGER SIGNALS: EXIT-INTENT & SCROLL DEPTH
+    // -------------------------------------------------------------
+    function initExitIntentListener() {
+      document.addEventListener('mouseleave', (e) => {
+        if (e.clientY <= 15 && state.exitIntentArmed && !state.activeModal) {
+          state.exitIntentArmed = false;
+          openModal('exit-intent');
+          showToast('Exit-intent detected: presenting exclusive founders offer');
+        }
+      });
+    }
+
+    function simulateExitIntent() {
+      openModal('exit-intent');
+      showToast('Exit-intent simulation triggered');
+    }
+
+    function initScrollTrigger() {
+      window.addEventListener('scroll', () => {
+        const h = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = Math.min(100, Math.round((window.scrollY / h) * 100));
+        const indicator = document.getElementById('scroll-pct-indicator');
+        if (indicator) indicator.innerText = `${pct}% Scrolled`;
+
+        if (pct >= 60 && !state.hasTriggeredScroll && !state.activeModal) {
+          state.hasTriggeredScroll = true;
+          openModal('tour');
+          showToast('Scroll depth 60% reached: launching feature onboarding tour');
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // ARCHETYPE 1: PROMO CODE COPY
+    // -------------------------------------------------------------
+    function copyPromo(code) {
+      navigator.clipboard.writeText(code).then(() => {
+        document.getElementById('copy-promo-label').innerText = 'Copied!';
+        playTone('fanfare');
+        triggerConfetti();
+        showToast(`Promo code ${code} copied! Ready to paste.`);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // ARCHETYPE 2: ONBOARDING TOUR SLIDES
+    // -------------------------------------------------------------
+    const tourSlides = [
+      {
+        title: "Spatial HRTF Audio Positioning",
+        desc: "Experience true 3D binaural depth tailored dynamically to your ear acoustics in real time.",
+        icon: "waves",
+        color: "text-cyan-400"
+      },
+      {
+        title: "Sub-5ms Ultra-Low Latency",
+        desc: "Engineered with proprietary dual-transceiver protocol for zero discernible lip-sync lag.",
+        icon: "zap",
+        color: "text-amber-400"
+      },
+      {
+        title: "Autonomous Soundscape Agents",
+        desc: "Synapse AI dynamically suppresses harsh ambient transients while enhancing vocal clarity.",
+        icon: "bot",
+        color: "text-violet-400"
+      }
+    ];
+
+    function renderTourSlide() {
+      const s = tourSlides[state.tourStep];
+      const container = document.getElementById('tour-slide-content');
+      container.innerHTML = `
+        <div class="w-14 h-14 rounded-2xl bg-surface-850 border border-surface-750 flex items-center justify-center mx-auto mb-2 ${s.color}">
+          <i data-lucide="${s.icon}" class="w-7 h-7"></i>
+        </div>
+        <h3 id="tour-title" class="text-lg font-bold text-white tracking-tight">${s.title}</h3>
+        <p class="text-xs text-slate-300 font-light leading-relaxed max-w-xs mx-auto">${s.desc}</p>
+      `;
+      lucide.createIcons({ root: container });
+
+      // Update dots
+      [0, 1, 2].forEach(i => {
+        const dot = document.getElementById(`tour-dot-${i}`);
+        if (dot) dot.className = (i === state.tourStep) ? 'w-5 h-2 rounded-full bg-cyan-400 transition-all' : 'w-2 h-2 rounded-full bg-surface-750 transition-all';
+      });
+
+      document.getElementById('tour-next-btn').innerText = (state.tourStep === tourSlides.length - 1) ? 'Finish' : 'Next';
+    }
+
+    function nextTourSlide() {
+      if (state.tourStep < tourSlides.length - 1) {
+        state.tourStep++;
+        renderTourSlide();
+        playTone('open');
+      } else {
+        closeActiveModal();
+        triggerConfetti();
+        showToast('Onboarding tour completed!');
+      }
+    }
+
+    function prevTourSlide() {
+      if (state.tourStep > 0) {
+        state.tourStep--;
+        renderTourSlide();
+        playTone('open');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // ARCHETYPE 3: AUTO-ADVANCING 6-BOX OTP VERIFICATION
+    // -------------------------------------------------------------
+    function initOtpBoxes() {
+      const boxes = document.querySelectorAll('.otp-box');
+      boxes.forEach((box, idx) => {
+        box.addEventListener('input', (e) => {
+          if (box.value.length === 1 && idx < boxes.length - 1) {
+            boxes[idx + 1].focus();
+          }
+        });
+        box.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !box.value && idx > 0) {
+            boxes[idx - 1].focus();
+          }
+        });
+        box.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const paste = (e.clipboardData || window.clipboardData).getData('text').trim();
+          if (/^\d+$/.test(paste)) {
+            paste.split('').slice(0, 6).forEach((char, i) => {
+              if (boxes[i]) boxes[i].value = char;
+            });
+            if (paste.length >= 6) boxes[5].focus();
+          }
+        });
+      });
+    }
+
+    function verifyMfaPin() {
+      const boxes = document.querySelectorAll('.otp-box');
+      const pin = Array.from(boxes).map(b => b.value).join('');
+
+      if (pin.length === 6) {
+        playTone('fanfare');
+        triggerConfetti();
+        closeActiveModal();
+        showToast('Security authentication verified successfully!');
+      } else {
+        const panel = document.getElementById('mfa-card-panel');
+        panel.classList.add('animate-shake');
+        setTimeout(() => panel.classList.remove('animate-shake'), 450);
+        showToast('Please enter all 6 digits of the OTP code.');
+      }
+    }
+
+    function resendMfaCode() {
+      showToast('New verification PIN dispatched to authenticator!');
+    }
+
+    // -------------------------------------------------------------
+    // ARCHETYPE 4: CANVAS ROULETTE REWARD WHEEL
+    // -------------------------------------------------------------
+    const wCanvas = document.getElementById('wheel-canvas');
+    const wCtx = wCanvas.getContext('2d');
+
+    function initWheelCanvas() {
+      drawWheel(state.wheelAngle);
+    }
+
+    function drawWheel(angle) {
+      const W = wCanvas.width;
+      const H = wCanvas.height;
+      const cx = W / 2;
+      const cy = H / 2;
+      const r = cx - 6;
+      const n = state.wheelPrizes.length;
+      const arc = (Math.PI * 2) / n;
+
+      wCtx.clearRect(0, 0, W, H);
+
+      const colors = ['#1e1b4b', '#1e293b', '#312e81', '#0f172a', '#4338ca', '#1e293b'];
+
+      for (let i = 0; i < n; i++) {
+        const start = angle + i * arc;
+        const end = start + arc;
+
+        wCtx.beginPath();
+        wCtx.fillStyle = colors[i % colors.length];
+        wCtx.moveTo(cx, cy);
+        wCtx.arc(cx, cy, r, start, end);
+        wCtx.fill();
+        wCtx.strokeStyle = '#475569';
+        wCtx.lineWidth = 2;
+        wCtx.stroke();
+
+        // Label
+        wCtx.save();
+        wCtx.translate(cx, cy);
+        wCtx.rotate(start + arc / 2);
+        wCtx.textAlign = 'right';
+        wCtx.fillStyle = '#fbbf24';
+        wCtx.font = 'bold 12px "JetBrains Mono", monospace';
+        wCtx.fillText(state.wheelPrizes[i], r - 18, 5);
+        wCtx.restore();
+      }
+
+      // Center Hub
+      wCtx.beginPath();
+      wCtx.arc(cx, cy, 22, 0, Math.PI * 2);
+      wCtx.fillStyle = '#0f172a';
+      wCtx.fill();
+      wCtx.strokeStyle = '#fbbf24';
+      wCtx.lineWidth = 3;
+      wCtx.stroke();
+    }
+
+    function spinWheel() {
+      if (state.isSpinning) return;
+      state.isSpinning = true;
+      document.getElementById('spin-wheel-btn').disabled = true;
+      document.getElementById('wheel-result-label').innerText = '';
+
+      let speed = Math.random() * 0.25 + 0.35;
+      const friction = 0.985;
+
+      function animateSpin() {
+        state.wheelAngle += speed;
+        speed *= friction;
+        drawWheel(state.wheelAngle);
+
+        if (speed > 0.002) {
+          requestAnimationFrame(animateSpin);
+        } else {
+          state.isSpinning = false;
+          document.getElementById('spin-wheel-btn').disabled = false;
+          playTone('fanfare');
+          triggerConfetti();
+          document.getElementById('wheel-result-label').innerText = '🎉 WON: 20% OFF FIRST ORDER (CODE: APEX20)';
+          showToast('Wheel reward unlocked: 20% discount applied to bag!');
+        }
+      }
+      requestAnimationFrame(animateSpin);
+    }
+
+    // -------------------------------------------------------------
+    // CELEBRATION CONFETTI ENGINE
+    // -------------------------------------------------------------
+    const cCanvas = document.getElementById('confetti-canvas');
+    const cCtx = cCanvas.getContext('2d');
+    let particles = [];
+
+    function resizeConfetti() {
+      cCanvas.width = window.innerWidth;
+      cCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeConfetti);
+    resizeConfetti();
+
+    function triggerConfetti() {
+      const colors = ['#8b5cf6', '#10b981', '#06b6d4', '#f59e0b', '#ec4899', '#ffffff'];
+      for (let i = 0; i < 60; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 9 + 4;
+        particles.push({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 3,
+          size: Math.random() * 5 + 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          decay: Math.random() * 0.02 + 0.015,
+        });
+      }
+      if (particles.length <= 60) renderConfetti();
+    }
+
+    function renderConfetti() {
+      cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.22;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        cCtx.save();
+        cCtx.globalAlpha = p.alpha;
+        cCtx.fillStyle = p.color;
+        cCtx.beginPath();
+        cCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        cCtx.fill();
+        cCtx.restore();
+      }
+      if (particles.length > 0) requestAnimationFrame(renderConfetti);
+    }
+
+    function showToast(msg) {
+      const shelf = document.getElementById('toast-shelf');
+      const t = document.createElement('div');
+      t.className = 'px-4 py-2.5 rounded-2xl bg-surface-900 border border-surface-700 text-xs text-white shadow-2xl flex items-center gap-2 transform translate-y-3 opacity-0 transition-all duration-300 pointer-events-auto backdrop-blur-xl';
+      t.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-violet-400"></i><span>${msg}</span>`;
+      shelf.appendChild(t);
+      lucide.createIcons({ root: t });
+      setTimeout(() => t.classList.remove('translate-y-3', 'opacity-0'), 10);
+      setTimeout(() => {
+        t.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => t.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
