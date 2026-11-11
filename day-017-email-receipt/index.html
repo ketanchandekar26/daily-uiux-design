@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 017: Email Receipt & Order Invoice Suite | Daily UI/UX</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+            },
+            surface: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              800: '#1e293b',
+              850: '#172033',
+              900: '#0f172a',
+              950: '#070c18',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
+          },
+          animation: {
+            'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'shimmer': 'shimmer 2s infinite linear',
+          },
+          keyframes: {
+            shimmer: {
+              '0%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(100%)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.45);
+    }
+
+    /* Print Specific Styling: Converts view into pure, crisp monochrome invoice document */
+    @media print {
+      body {
+        background: white !important;
+        color: #0f172a !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .print-shadow-none {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        background: white !important;
+      }
+      .print-text-dark {
+        color: #0f172a !important;
+      }
+      .print-border-subtle {
+        border-color: #e2e8f0 !important;
+      }
+      @page {
+        margin: 1.5cm;
+        size: letter;
+      }
+    }
+
+    /* Thermal receipt zig-zag edges */
+    .receipt-sawtooth-top {
+      background: radial-gradient(circle, transparent, transparent 50%, currentColor 50%, currentColor 100%);
+      background-size: 14px 14px;
+    }
+
+    /* 3D Flip Card Effect for Wallet Pass */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-100 min-h-screen font-sans antialiased transition-colors duration-300 selection:bg-brand-500 selection:text-white">
+
+  <!-- ========================================== -->
+  <!-- Top Global Application Control Bar (no-print) -->
+  <!-- ========================================== -->
+  <header class="no-print sticky top-0 z-40 bg-surface-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Left: Brand & Daily Challenge Badge -->
+      <div class="flex items-center space-x-3">
+        <a href="../" class="group flex items-center gap-2.5 text-slate-300 hover:text-white transition-colors" title="Back to Challenge Directory">
+          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-800 border border-slate-700/80 group-hover:border-brand-500/50 text-slate-300 group-hover:text-brand-400 transition-all shadow-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </span>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20">Day 017</span>
+              <span class="text-xs text-slate-400 font-mono">Daily UI/UX</span>
+            </div>
+            <h1 class="text-sm font-semibold text-slate-100 group-hover:text-white">Email Receipt & Order Invoice Suite</h1>
+          </div>
+        </a>
+      </div>
+
+      <!-- Center: Multi-Archetype View Switcher Tabs -->
+      <nav aria-label="Receipt archetype views" class="flex items-center bg-surface-950/80 p-1 rounded-xl border border-slate-800 shadow-inner">
+        <button id="viewTabEmail" onclick="switchView('email')" class="view-tab active flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-brand-600 text-white shadow-sm" aria-current="page">
+          <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+          <span>Email Client</span>
+        </button>
+        <button id="viewTabPortal" onclick="switchView('portal')" class="view-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200">
+          <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+          <span>Customer Portal</span>
+        </button>
+        <button id="viewTabInvoice" onclick="switchView('invoice')" class="view-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+          <span>Tax Invoice</span>
+        </button>
+        <button id="viewTabThermal" onclick="switchView('thermal')" class="view-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200">
+          <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
+          <span>Thermal POS</span>
+        </button>
+      </nav>
+
+      <!-- Right: Functional Controls (Currency, Theme, Audio, Print) -->
+      <div class="flex items-center space-x-2">
+        <!-- Currency Selector -->
+        <div class="relative">
+          <label for="currencySelect" class="sr-only">Select Currency</label>
+          <div class="flex items-center bg-surface-800 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300">
+            <i data-lucide="dollar-sign" class="w-3.5 h-3.5 mr-1 text-emerald-400"></i>
+            <select id="currencySelect" onchange="changeCurrency(this.value)" class="bg-transparent text-slate-200 text-xs font-semibold outline-none cursor-pointer pr-1">
+              <option value="USD" class="bg-surface-900 text-slate-200">USD ($)</option>
+              <option value="EUR" class="bg-surface-900 text-slate-200">EUR (€)</option>
+              <option value="GBP" class="bg-surface-900 text-slate-200">GBP (£)</option>
+              <option value="JPY" class="bg-surface-900 text-slate-200">JPY (¥)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Audio Haptics Toggle -->
+        <button id="audioToggleBtn" onclick="toggleAudio()" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700/80 text-slate-300 hover:text-white transition-colors" title="Toggle Synthesized Audio Feedback" aria-label="Toggle Sound Effects">
+          <i id="audioIcon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+        </button>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700/80 text-slate-300 hover:text-white transition-colors" title="Toggle Light/Dark Theme" aria-label="Toggle Dark/Light Mode">
+          <i id="themeIcon" data-lucide="moon" class="w-4 h-4 text-brand-400"></i>
+        </button>
+
+        <!-- Print Action Button -->
+        <button onclick="triggerPrintInvoice()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-all shadow-sm">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          <span>Print</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- Quick Actions Sticky Banner (Sub-header) -->
+  <!-- ========================================== -->
+  <section class="no-print bg-surface-900/40 border-b border-slate-800/60 py-2.5 px-4 lg:px-8 text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          Payment Confirmed
+        </span>
+        <span class="text-slate-300">Order <strong id="orderIdHeader" class="font-mono text-white">#NX-89421</strong></span>
+        <button onclick="copyOrderId()" class="hover:text-brand-400 transition-colors flex items-center gap-1" title="Copy Order ID to clipboard">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Copy</span>
+        </button>
+      </div>
+
+      <!-- Quick Interactive Buttons -->
+      <div class="flex items-center gap-2">
+        <button onclick="openModal('resendModal')" class="flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white transition-colors border border-slate-700/70">
+          <i data-lucide="send" class="w-3 h-3 text-brand-400"></i>
+          <span>Resend Receipt</span>
+        </button>
+        <button onclick="openModal('walletModal')" class="flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white transition-colors border border-slate-700/70">
+          <i data-lucide="wallet" class="w-3 h-3 text-amber-400"></i>
+          <span>Add to Wallet</span>
+        </button>
+        <button onclick="openModal('supportModal')" class="flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white transition-colors border border-slate-700/70">
+          <i data-lucide="help-circle" class="w-3 h-3 text-cyan-400"></i>
+          <span>Support Concierge</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- MAIN CONTENT CONTAINER -->
+  <!-- ========================================== -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- ======================================================== -->
+    <!-- VIEW 1: EMAIL CLIENT PREVIEW (Simulated Superhuman / Mail) -->
+    <!-- ======================================================== -->
+    <div id="viewEmailClient" class="view-panel transition-opacity duration-300">
+      
+      <!-- Simulated Email Client Shell -->
+      <div class="rounded-2xl border border-slate-800 bg-surface-900/90 shadow-2xl overflow-hidden backdrop-blur-xl">
+        
+        <!-- Mail Client Header Bar -->
+        <div class="bg-surface-950 px-5 py-3.5 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <div class="flex items-center space-x-2">
+            <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+            <span class="ml-4 font-mono text-slate-400">Inbox &rsaquo; Receipts &rsaquo; #NX-89421</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <span class="flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded text-[11px] font-medium border border-emerald-500/20">
+              <i data-lucide="shield-check" class="w-3 h-3"></i>
+              DKIM &amp; SPF Verified
+            </span>
+            <span class="text-slate-400">TLS 1.3 Encrypted</span>
+          </div>
+        </div>
+
+        <!-- Email Metadata Block -->
+        <div class="px-6 py-5 border-b border-slate-800/80 bg-surface-900/60">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+            <h2 class="text-lg md:text-xl font-bold text-white tracking-tight flex items-center gap-2">
+              <span>Order Confirmed: Aura Spatial Audio Suite is on its way!</span>
+              <span class="text-xs font-normal px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 border border-brand-500/30 font-mono">#NX-89421</span>
+            </h2>
+            <time datetime="2026-11-11T09:24:00" class="text-xs text-slate-400 font-mono">Today at 9:24 AM (38m ago)</time>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-4 text-xs">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-md">
+                A
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-slate-200">Aura Audio Technologies</span>
+                  <span class="text-slate-400">&lt;orders@aura.design&gt;</span>
+                </div>
+                <div class="text-slate-400">
+                  To: <span class="text-slate-300">Alex Rivera</span> &lt;alex.rivera@designflow.io&gt;
+                </div>
+              </div>
+            </div>
+
+            <!-- Mail Actions -->
+            <div class="flex items-center space-x-1 text-slate-400">
+              <button onclick="showToast('Receipt archived to accounting folder', 'info')" class="p-2 hover:bg-surface-800 rounded-lg hover:text-slate-200 transition-colors" title="Archive">
+                <i data-lucide="archive" class="w-4 h-4"></i>
+              </button>
+              <button onclick="showToast('Receipt marked as important', 'success')" class="p-2 hover:bg-surface-800 rounded-lg hover:text-slate-200 transition-colors" title="Star">
+                <i data-lucide="star" class="w-4 h-4"></i>
+              </button>
+              <button onclick="openModal('resendModal')" class="p-2 hover:bg-surface-800 rounded-lg hover:text-slate-200 transition-colors" title="Forward">
+                <i data-lucide="corner-up-right" class="w-4 h-4"></i>
+              </button>
+              <button onclick="triggerPrintInvoice()" class="p-2 hover:bg-surface-800 rounded-lg hover:text-slate-200 transition-colors" title="Print Email">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rendered HTML Email Body Container -->
+        <div class="p-6 md:p-10 bg-surface-950 flex justify-center">
+          
+          <!-- Inner Email Canvas (Standard 640px Max Width Safe Email Container) -->
+          <article class="w-full max-w-2xl bg-surface-900 rounded-2xl border border-slate-800/90 shadow-xl overflow-hidden text-slate-200">
+            
+            <!-- Email Top Brand Accent Bar -->
+            <div class="h-2 bg-gradient-to-r from-brand-600 via-indigo-500 to-cyan-400"></div>
+
+            <!-- Email Body Content -->
+            <div class="p-6 md:p-8 space-y-6">
+
+              <!-- Brand Header -->
+              <div class="flex items-center justify-between border-b border-slate-800/80 pb-6">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-xl bg-brand-600/20 border border-brand-500/30 flex items-center justify-center text-brand-400">
+                    <i data-lucide="headphones" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-base font-bold text-white tracking-wide uppercase">AURA AUDIO</h3>
+                    <p class="text-[11px] text-slate-400">Acoustic Precision &amp; Spatial Labs</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-mono text-slate-400">INVOICE</span>
+                  <p class="text-sm font-bold text-brand-400 font-mono">#NX-89421</p>
+                </div>
+              </div>
+
+              <!-- Emotional Post-Purchase Hero Greeting -->
+              <div class="bg-gradient-to-b from-brand-950/40 to-surface-850/30 border border-brand-500/20 rounded-xl p-5 md:p-6 text-center">
+                <div class="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-3 shadow-lg shadow-emerald-500/10">
+                  <i data-lucide="check" class="w-6 h-6 stroke-[3]"></i>
+                </div>
+                <h4 class="text-xl font-bold text-white mb-1">Thank you for your order, Alex!</h4>
+                <p class="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                  We've received your payment and our audio technicians are packaging your precision-tuned hardware with custom acoustic calibration.
+                </p>
+
+                <!-- Estimated Delivery Pill -->
+                <div class="mt-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-900 border border-slate-700/80 text-xs">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-brand-400"></i>
+                  <span class="text-slate-300">Estimated Delivery:</span>
+                  <strong class="text-white font-medium">Friday, Nov 13, 2026</strong>
+                </div>
+              </div>
+
+              <!-- Interactive Shipping Status Tracker -->
+              <div class="border border-slate-800 rounded-xl p-5 bg-surface-950/50">
+                <div class="flex items-center justify-between mb-4">
+                  <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Live Fulfillment Status</span>
+                  <span id="trackerCurrentStageLabel" class="text-xs font-medium text-brand-400 bg-brand-500/10 px-2.5 py-0.5 rounded-full border border-brand-500/20">Shipped &bull; In Transit</span>
+                </div>
+
+                <!-- Step Progress Bar -->
+                <div class="relative py-2">
+                  <div class="absolute top-1/2 left-0 w-full h-1 bg-slate-800 -translate-y-1/2 rounded-full"></div>
+                  <div id="trackerProgressBar" class="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-brand-500 to-indigo-500 -translate-y-1/2 rounded-full transition-all duration-500" style="width: 65%;"></div>
+
+                  <div class="relative flex justify-between">
+                    <!-- Step 1: Confirmed -->
+                    <button onclick="setShipmentStage(1)" class="group flex flex-col items-center focus:outline-none" title="Step 1: Order Confirmed">
+                      <span id="stepDot1" class="w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold ring-4 ring-surface-900 shadow-md">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                      </span>
+                      <span class="text-[11px] font-medium text-slate-300 mt-2">Confirmed</span>
+                    </button>
+
+                    <!-- Step 2: Processing -->
+                    <button onclick="setShipmentStage(2)" class="group flex flex-col items-center focus:outline-none" title="Step 2: Processing & QA">
+                      <span id="stepDot2" class="w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold ring-4 ring-surface-900 shadow-md">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                      </span>
+                      <span class="text-[11px] font-medium text-slate-300 mt-2">Packaged</span>
+                    </button>
+
+                    <!-- Step 3: Shipped -->
+                    <button onclick="setShipmentStage(3)" class="group flex flex-col items-center focus:outline-none" title="Step 3: Shipped">
+                      <span id="stepDot3" class="w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold ring-4 ring-surface-900 shadow-lg shadow-brand-500/30 animate-pulse">
+                        <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+                      </span>
+                      <span class="text-[11px] font-bold text-brand-400 mt-2">Shipped</span>
+                    </button>
+
+                    <!-- Step 4: Out for Delivery -->
+                    <button onclick="setShipmentStage(4)" class="group flex flex-col items-center focus:outline-none" title="Step 4: Out for Delivery">
+                      <span id="stepDot4" class="w-7 h-7 rounded-full bg-surface-800 text-slate-400 border border-slate-700 flex items-center justify-center text-xs ring-4 ring-surface-900">
+                        4
+                      </span>
+                      <span class="text-[11px] text-slate-400 mt-2">Out for Del.</span>
+                    </button>
+
+                    <!-- Step 5: Delivered -->
+                    <button onclick="setShipmentStage(5)" class="group flex flex-col items-center focus:outline-none" title="Step 5: Delivered">
+                      <span id="stepDot5" class="w-7 h-7 rounded-full bg-surface-800 text-slate-400 border border-slate-700 flex items-center justify-center text-xs ring-4 ring-surface-900">
+                        5
+                      </span>
+                      <span class="text-[11px] text-slate-400 mt-2">Delivered</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Carrier Tracking Info & Dispatch Feed -->
+                <div class="mt-5 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div class="flex items-center gap-2 text-slate-400">
+                    <span class="font-semibold text-slate-300">Carrier:</span> FedEx Priority Overnight
+                    <span class="text-slate-600">&bull;</span>
+                    <span class="font-mono text-slate-300">TRK-984029419</span>
+                  </div>
+                  <button onclick="simulateLiveDispatchPing()" class="inline-flex items-center gap-1.5 text-brand-400 hover:text-brand-300 font-medium">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                    <span>View Carrier Route &rsaquo;</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Order Items Breakdown Table -->
+              <div class="space-y-3">
+                <h5 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Ordered Items</h5>
+                
+                <div class="divide-y divide-slate-800/80 border border-slate-800 rounded-xl overflow-hidden bg-surface-950/40">
+                  
+                  <!-- Item 1: Aura Studio Hi-Fi Headphones -->
+                  <div class="p-4 flex items-center justify-between gap-4 hover:bg-surface-800/30 transition-colors">
+                    <div class="flex items-center space-x-3.5">
+                      <div class="w-14 h-14 rounded-lg bg-surface-800 border border-slate-700/80 flex items-center justify-center text-2xl flex-shrink-0">
+                        🎧
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <h6 class="text-sm font-semibold text-white">Aura Studio ANC Reference Headphones</h6>
+                          <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono">Matte Obsidian</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">Planar magnetic drivers &bull; 48-bit DSP Spatial Engine</p>
+                        <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
+                          <span>Qty: 1</span>
+                          <span>&bull;</span>
+                          <span class="text-emerald-400">2-Year Aura Care Included</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                      <div class="text-sm font-bold text-white font-mono item-price" data-usd="349.00">$349.00</div>
+                      <span class="text-[10px] text-slate-400 line-through font-mono item-compare" data-usd="399.00">$399.00</span>
+                    </div>
+                  </div>
+
+                  <!-- Item 2: Aura Braided USB-C Hi-Res Cable -->
+                  <div class="p-4 flex items-center justify-between gap-4 hover:bg-surface-800/30 transition-colors">
+                    <div class="flex items-center space-x-3.5">
+                      <div class="w-14 h-14 rounded-lg bg-surface-800 border border-slate-700/80 flex items-center justify-center text-2xl flex-shrink-0">
+                        ⚡
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <h6 class="text-sm font-semibold text-white">Aura Audiophile 240W Silver Braided Cable</h6>
+                          <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono">1.8m</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">Oxygen-free 99.99% pure silver conductor</p>
+                        <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
+                          <span>Qty: 1</span>
+                          <span>&bull;</span>
+                          <span class="text-slate-400">SKU: CBL-SLV-240</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                      <div class="text-sm font-bold text-white font-mono item-price" data-usd="49.00">$49.00</div>
+                    </div>
+                  </div>
+
+                  <!-- Item 3: Acoustic Hard-Shell Aluminum Travel Case -->
+                  <div class="p-4 flex items-center justify-between gap-4 hover:bg-surface-800/30 transition-colors">
+                    <div class="flex items-center space-x-3.5">
+                      <div class="w-14 h-14 rounded-lg bg-surface-800 border border-slate-700/80 flex items-center justify-center text-2xl flex-shrink-0">
+                        🧳
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <h6 class="text-sm font-semibold text-white">Aero Aerospace Aluminum Flight Case</h6>
+                          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-mono">Bundle Perk</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">Waterproof IP67 pressure-relief foam chamber</p>
+                        <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
+                          <span>Qty: 1</span>
+                          <span>&bull;</span>
+                          <span class="text-slate-400">SKU: ACC-FLT-IP67</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                      <div class="text-sm font-bold text-emerald-400 font-mono item-price" data-usd="0.00">FREE</div>
+                      <span class="text-[10px] text-slate-400 line-through font-mono item-compare" data-usd="79.00">$79.00</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Financial Breakdown Ledger -->
+              <div class="border border-slate-800 rounded-xl p-5 bg-surface-950/50 space-y-3">
+                <div class="flex justify-between text-xs text-slate-300">
+                  <span>Subtotal</span>
+                  <span id="subtotalVal" class="font-mono font-medium text-white">$398.00</span>
+                </div>
+                <div class="flex justify-between text-xs text-emerald-400">
+                  <span class="flex items-center gap-1.5">
+                    <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+                    <span>Promo Discount <code class="bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 text-[10px]">SOUNDMASTER20</code></span>
+                  </span>
+                  <span id="discountVal" class="font-mono font-medium">-$40.00</span>
+                </div>
+                <div class="flex justify-between text-xs text-slate-300">
+                  <span class="flex items-center gap-1">
+                    <span>Express Carbon-Neutral Shipping</span>
+                    <i data-lucide="leaf" class="w-3 h-3 text-emerald-400" title="100% Eco-offset"></i>
+                  </span>
+                  <span id="shippingVal" class="font-mono text-emerald-400 font-medium">FREE</span>
+                </div>
+                <div class="flex justify-between text-xs text-slate-300">
+                  <span>Estimated State &amp; Local Sales Tax (8.25%)</span>
+                  <span id="taxVal" class="font-mono font-medium text-white">$29.54</span>
+                </div>
+                <div class="border-t border-slate-800 pt-3 flex justify-between text-sm">
+                  <span class="font-bold text-white">Total Amount Paid</span>
+                  <div class="text-right">
+                    <span id="totalVal" class="font-bold text-brand-400 font-mono text-lg">$387.54</span>
+                    <div class="text-[11px] text-slate-400">Paid in full via Apple Pay &bull;&bull;&bull;&bull; 4242</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Shipping & Billing Logistics Cards -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <!-- Shipping Address -->
+                <div class="border border-slate-800 rounded-xl p-4 bg-surface-950/40">
+                  <div class="flex items-center gap-1.5 text-slate-300 font-semibold mb-2">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-400"></i>
+                    <span>Shipping Address</span>
+                  </div>
+                  <address class="not-italic text-slate-400 leading-relaxed space-y-0.5">
+                    <p class="font-semibold text-slate-200">Alex Rivera</p>
+                    <p>742 Evergreen Studio Suite 400</p>
+                    <p>San Francisco, CA 94107</p>
+                    <p>United States &bull; +1 (415) 555-0198</p>
+                  </address>
+                </div>
+
+                <!-- Payment Details -->
+                <div class="border border-slate-800 rounded-xl p-4 bg-surface-950/40">
+                  <div class="flex items-center gap-1.5 text-slate-300 font-semibold mb-2">
+                    <i data-lucide="credit-card" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>Payment Information</span>
+                  </div>
+                  <div class="text-slate-400 leading-relaxed space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded bg-slate-800 font-mono text-[11px] text-white">Apple Pay</span>
+                      <span class="font-mono text-slate-300">Visa ending in 4242</span>
+                    </div>
+                    <p>Auth Code: <span class="font-mono text-slate-300">#AUTH-773918-VISA</span></p>
+                    <p>Billed to: <span class="text-slate-300">alex.rivera@designflow.io</span></p>
+                    <p class="text-[11px] text-emerald-400 flex items-center gap-1 mt-1">
+                      <i data-lucide="check-circle" class="w-3 h-3"></i> 30-Day Hassle-Free Return Guarantee
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Primary Action Call-to-Actions in Email -->
+              <div class="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                <button onclick="switchView('portal')" class="w-full sm:w-1/2 py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 font-semibold text-white text-xs transition-all shadow-lg shadow-brand-600/25 flex items-center justify-center gap-2">
+                  <i data-lucide="external-link" class="w-4 h-4"></i>
+                  <span>Track Live in Customer Hub</span>
+                </button>
+                <button onclick="switchView('invoice')" class="w-full sm:w-1/2 py-3 px-4 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-200 hover:text-white font-semibold text-xs border border-slate-700 transition-all flex items-center justify-center gap-2">
+                  <i data-lucide="download" class="w-4 h-4"></i>
+                  <span>Download Tax Invoice (PDF)</span>
+                </button>
+              </div>
+
+              <!-- CAN-SPAM / Legal Footer for Email -->
+              <footer class="pt-6 border-t border-slate-800/80 text-center text-[11px] text-slate-400 space-y-2">
+                <p>Questions about your shipment? Reply directly to this email or visit our <button onclick="openModal('supportModal')" class="text-brand-400 hover:underline">Customer Support Concierge</button>.</p>
+                <p>&copy; 2026 Aura Audio Technologies Inc. 500 Howard Street, San Francisco, CA 94105.</p>
+                <div class="flex items-center justify-center gap-4 text-slate-400">
+                  <a href="#" class="hover:text-slate-300">Order Privacy</a>
+                  <span>&bull;</span>
+                  <a href="#" class="hover:text-slate-300">Warranty Registration</a>
+                  <span>&bull;</span>
+                  <a href="#" class="hover:text-slate-300">Manage Email Notifications</a>
+                </div>
+              </footer>
+
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 2: CUSTOMER WEB PORTAL & REAL-TIME DISPATCH TRACKER -->
+    <!-- ======================================================== -->
+    <div id="viewPortal" class="view-panel hidden transition-opacity duration-300 space-y-6">
+      
+      <!-- Top Overview Banner -->
+      <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-64 h-64 bg-brand-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div>
+          <div class="flex items-center gap-2.5 mb-2">
+            <span class="px-2.5 py-1 rounded-md bg-brand-500/20 text-brand-300 border border-brand-500/30 text-xs font-mono font-semibold">CUSTOMER PORTAL</span>
+            <span class="text-xs text-slate-400">Order Reference #NX-89421</span>
+          </div>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Your package is en route! 🚀</h2>
+          <p class="text-sm text-slate-400 mt-1 max-w-xl">
+            FedEx Priority Overnight package picked up in Fremont, CA. Next checkpoint arrival scheduled for San Francisco Hub.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="simulateLiveDispatchPing()" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-lg shadow-brand-600/30 transition-all flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Simulate Carrier Ping</span>
+          </button>
+          <button onclick="triggerPrintInvoice()" class="px-4 py-2.5 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700 font-semibold text-xs transition-all flex items-center gap-2">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+            <span>Print Sheet</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Interactive Map & Dispatch Log Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Interactive Carrier Route Simulation -->
+        <div class="lg:col-span-2 bg-surface-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="radar" class="w-4 h-4 text-cyan-400 animate-spin"></i>
+                <span>Real-Time Courier Telemetry</span>
+              </h3>
+              <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">GPS LOCK ACTIVE</span>
+            </div>
+
+            <!-- Simulated Visual Route Canvas -->
+            <div class="relative w-full h-48 rounded-xl bg-surface-950 border border-slate-800/80 overflow-hidden flex items-center justify-center p-4">
+              <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+              
+              <!-- Route Path SVG -->
+              <svg class="w-full h-full max-w-lg" viewBox="0 0 500 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Path Line -->
+                <path d="M 50 60 C 150 20, 250 100, 450 60" stroke="#334155" stroke-width="4" stroke-linecap="round" stroke-dasharray="8 8"/>
+                <path d="M 50 60 C 150 20, 250 100, 310 68" stroke="url(#routeGrad)" stroke-width="4" stroke-linecap="round"/>
+                
+                <defs>
+                  <linearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#8b5cf6" />
+                    <stop offset="100%" stop-color="#06b6d4" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Checkpoint 1: Origin -->
+                <circle cx="50" cy="60" r="7" fill="#8b5cf6" />
+                <text x="50" y="90" font-size="10" fill="#94a3b8" text-anchor="middle" font-family="monospace">Fremont HQ</text>
+
+                <!-- Checkpoint 2: Transit Hub -->
+                <circle cx="210" cy="55" r="7" fill="#8b5cf6" />
+                <text x="210" y="85" font-size="10" fill="#94a3b8" text-anchor="middle" font-family="monospace">Oakland Hub</text>
+
+                <!-- Moving Van Pulse -->
+                <circle cx="310" cy="68" r="14" fill="#06b6d4" fill-opacity="0.25" class="animate-ping" />
+                <circle cx="310" cy="68" r="8" fill="#06b6d4" />
+                <text x="310" y="100" font-size="11" fill="#38bdf8" font-weight="bold" text-anchor="middle" font-family="monospace">🚚 Vehicle #704</text>
+
+                <!-- Destination: Home -->
+                <circle cx="450" cy="60" r="7" fill="#475569" />
+                <text x="450" y="90" font-size="10" fill="#94a3b8" text-anchor="middle" font-family="monospace">San Francisco</text>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Dynamic Live Dispatch Log -->
+          <div class="mt-4 pt-4 border-t border-slate-800">
+            <h4 class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Carrier Activity Feed</h4>
+            <div id="dispatchFeed" class="space-y-2 text-xs font-mono max-h-36 overflow-y-auto pr-2">
+              <div class="flex items-start gap-2 text-slate-300">
+                <span class="text-brand-400">09:12 AM</span>
+                <span>&bull;</span>
+                <span>Departed Oakland Sorting Facility via Cargo Van #704.</span>
+              </div>
+              <div class="flex items-start gap-2 text-slate-400">
+                <span class="text-slate-400">06:45 AM</span>
+                <span>&bull;</span>
+                <span>Scanned at Regional Gateway Sorting Hub.</span>
+              </div>
+              <div class="flex items-start gap-2 text-slate-400">
+                <span class="text-slate-400">03:30 AM</span>
+                <span>&bull;</span>
+                <span>Shipment electronically picked up at Fremont Manufacturing Lab.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Management & Post-Purchase Concierge -->
+        <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+          <div>
+            <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+              <i data-lucide="shield" class="w-4 h-4 text-emerald-400"></i>
+              <span>Customer Protections</span>
+            </h3>
+            
+            <ul class="space-y-3 text-xs text-slate-300">
+              <li class="flex items-start gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                <span><strong>Aura 2-Year Hardware Warranty:</strong> Full replacement guarantee for drivers and electronics.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                <span><strong>30-Day Risk-Free Trial:</strong> Return for 100% refund if spatial imaging doesn't blow you away.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                <span><strong>Zero-Deductible Loss Protection:</strong> Covered against porch theft and courier transit damage.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="space-y-2 pt-4 border-t border-slate-800">
+            <button onclick="openModal('supportModal')" class="w-full py-2.5 px-3 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-200 hover:text-white font-semibold text-xs border border-slate-700 transition-colors flex items-center justify-center gap-2">
+              <i data-lucide="message-square" class="w-3.5 h-3.5 text-brand-400"></i>
+              <span>Open Concierge Chat</span>
+            </button>
+            <button onclick="openModal('walletModal')" class="w-full py-2.5 px-3 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-200 hover:text-white font-semibold text-xs border border-slate-700 transition-colors flex items-center justify-center gap-2">
+              <i data-lucide="credit-card" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Save Pass to Mobile Wallet</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 3: OFFICIAL ACCOUNTING TAX INVOICE (B2B / B2C)     -->
+    <!-- ======================================================== -->
+    <div id="viewInvoice" class="view-panel hidden transition-opacity duration-300">
+      
+      <!-- Invoice Sheet Card -->
+      <div class="max-w-4xl mx-auto bg-surface-900 border border-slate-800 rounded-2xl p-8 md:p-12 shadow-2xl print-shadow-none print-border-subtle">
+        
+        <!-- Invoice Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-8 border-b border-slate-800 print-border-subtle gap-6">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-brand-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-brand-600/30">
+              <i data-lucide="file-check-2" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-black text-white print-text-dark tracking-tight">TAX INVOICE</h2>
+              <p class="text-xs font-mono text-slate-400">INVOICE NO: <strong class="text-brand-400 font-bold">INV-2026-89421</strong></p>
+            </div>
+          </div>
+
+          <div class="text-left sm:text-right text-xs text-slate-400 print-text-dark space-y-1">
+            <p><strong class="text-slate-200 print-text-dark">Aura Technologies Inc.</strong></p>
+            <p>Tax EIN: 94-3891048 &bull; EU VAT: EU372009182</p>
+            <p>500 Howard St, Suite 1200, San Francisco, CA 94105</p>
+            <p>compliance@aura.design &bull; +1 (800) 555-AURA</p>
+          </div>
+        </div>
+
+        <!-- Invoice Metadata Columns -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 py-8 border-b border-slate-800 print-border-subtle text-xs">
+          <div>
+            <span class="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">Invoice Date</span>
+            <p class="font-bold text-white print-text-dark mt-1">Nov 11, 2026</p>
+          </div>
+          <div>
+            <span class="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">Payment Terms</span>
+            <p class="font-bold text-emerald-400 mt-1">Paid in Full (Net 0)</p>
+          </div>
+          <div>
+            <span class="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">Payment Method</span>
+            <p class="font-bold text-white print-text-dark mt-1">Apple Pay (Visa 4242)</p>
+          </div>
+          <div>
+            <span class="text-slate-400 uppercase font-semibold text-[10px] tracking-wider">PO / Reference</span>
+            <p class="font-bold text-brand-400 font-mono mt-1">#NX-89421</p>
+          </div>
+        </div>
+
+        <!-- Bill To / Ship To Addresses -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 py-8 border-b border-slate-800 print-border-subtle text-xs">
+          <div>
+            <h4 class="text-slate-400 font-semibold uppercase text-[10px] tracking-wider mb-2">Billed To (Client / Customer)</h4>
+            <div class="text-slate-300 print-text-dark space-y-1">
+              <p class="font-bold text-white print-text-dark text-sm">Alex Rivera</p>
+              <p>DesignFlow Interactive Inc.</p>
+              <p>Tax ID / Reseller ID: US-CA-8920194</p>
+              <p>742 Evergreen Studio Suite 400</p>
+              <p>San Francisco, CA 94107, USA</p>
+            </div>
+          </div>
+          <div>
+            <h4 class="text-slate-400 font-semibold uppercase text-[10px] tracking-wider mb-2">Shipped Destination</h4>
+            <div class="text-slate-300 print-text-dark space-y-1">
+              <p class="font-bold text-white print-text-dark text-sm">Alex Rivera (Receiving Dept)</p>
+              <p>742 Evergreen Studio Suite 400</p>
+              <p>San Francisco, CA 94107, USA</p>
+              <p>Carrier: FedEx Priority Overnight &bull; TRK-984029419</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formal Line Item Table -->
+        <div class="py-6 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 print-border-subtle text-slate-400 text-[10px] uppercase tracking-wider">
+                <th class="py-3 px-2 font-semibold">SKU / Item Description</th>
+                <th class="py-3 px-2 font-semibold text-center">Tax Class</th>
+                <th class="py-3 px-2 font-semibold text-center">Qty</th>
+                <th class="py-3 px-2 font-semibold text-right">Unit Price</th>
+                <th class="py-3 px-2 font-semibold text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/80 print-border-subtle text-slate-200 print-text-dark">
+              <tr>
+                <td class="py-4 px-2">
+                  <div class="font-bold text-white print-text-dark">Aura Studio ANC Reference Headphones</div>
+                  <div class="text-[11px] text-slate-400">SKU: AUR-ANC-OBS-01 &bull; Serial: #SN-9841-8910</div>
+                </td>
+                <td class="py-4 px-2 text-center font-mono text-slate-400">HTS 8518.30</td>
+                <td class="py-4 px-2 text-center font-mono">1</td>
+                <td class="py-4 px-2 text-right font-mono item-price" data-usd="349.00">$349.00</td>
+                <td class="py-4 px-2 text-right font-mono font-bold item-price" data-usd="349.00">$349.00</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-2">
+                  <div class="font-bold text-white print-text-dark">Aura Audiophile 240W Silver Braided Cable (1.8m)</div>
+                  <div class="text-[11px] text-slate-400">SKU: CBL-SLV-240 &bull; High-purity audio interconnect</div>
+                </td>
+                <td class="py-4 px-2 text-center font-mono text-slate-400">HTS 8544.42</td>
+                <td class="py-4 px-2 text-center font-mono">1</td>
+                <td class="py-4 px-2 text-right font-mono item-price" data-usd="49.00">$49.00</td>
+                <td class="py-4 px-2 text-right font-mono font-bold item-price" data-usd="49.00">$49.00</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-2">
+                  <div class="font-bold text-white print-text-dark">Aero Aerospace Aluminum Flight Case (IP67)</div>
+                  <div class="text-[11px] text-slate-400">SKU: ACC-FLT-IP67 &bull; Promotional bundle allowance</div>
+                </td>
+                <td class="py-4 px-2 text-center font-mono text-slate-400">HTS 4202.12</td>
+                <td class="py-4 px-2 text-center font-mono">1</td>
+                <td class="py-4 px-2 text-right font-mono item-price" data-usd="0.00">$0.00</td>
+                <td class="py-4 px-2 text-right font-mono font-bold item-price" data-usd="0.00">$0.00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Calculation Summary -->
+        <div class="border-t border-slate-800 print-border-subtle pt-6 flex justify-end">
+          <div class="w-full max-w-xs space-y-2.5 text-xs">
+            <div class="flex justify-between text-slate-400 print-text-dark">
+              <span>Gross Subtotal:</span>
+              <span id="invoiceSubtotal" class="font-mono font-medium text-white print-text-dark">$398.00</span>
+            </div>
+            <div class="flex justify-between text-emerald-400">
+              <span>Promotional Credit (SOUNDMASTER20):</span>
+              <span id="invoiceDiscount" class="font-mono font-medium">-$40.00</span>
+            </div>
+            <div class="flex justify-between text-slate-400 print-text-dark">
+              <span>Freight / Shipping:</span>
+              <span id="invoiceShipping" class="font-mono text-emerald-400 font-medium">FREE</span>
+            </div>
+            <div class="flex justify-between text-slate-400 print-text-dark">
+              <span>Tax (California State &amp; SF City 8.25%):</span>
+              <span id="invoiceTax" class="font-mono font-medium text-white print-text-dark">$29.54</span>
+            </div>
+            <div class="border-t border-slate-800 print-border-subtle pt-3 flex justify-between text-sm font-bold text-white print-text-dark">
+              <span>Total Invoice Amount:</span>
+              <span id="invoiceTotal" class="font-mono text-brand-400 text-lg print-text-dark">$387.54</span>
+            </div>
+            <div class="flex justify-between text-slate-400 print-text-dark text-[11px]">
+              <span>Balance Due:</span>
+              <span class="font-mono text-emerald-400 font-bold">$0.00 (PAID)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Authorized Signature & Seal Footer -->
+        <div class="mt-12 pt-6 border-t border-slate-800 print-border-subtle flex flex-col sm:flex-row items-center justify-between gap-6 text-[11px] text-slate-400 print-text-dark">
+          <div>
+            <p class="font-semibold text-slate-300 print-text-dark">Cryptographic Verification &amp; Seal</p>
+            <p class="font-mono text-[10px] text-slate-400">SHA256: 8f9b4c20d7e81a3290bbf451e9389201948572049102cba</p>
+            <p>Signed electronically by Aura Financial Controller at timestamp 2026-11-11T09:24:00Z</p>
+          </div>
+          <div class="text-center sm:text-right">
+            <div class="inline-block border-2 border-emerald-500/50 text-emerald-400 uppercase font-black tracking-widest px-4 py-1.5 rounded-lg text-xs transform -rotate-2">
+              PAID IN FULL
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 4: RETRO THERMAL MONOSPACE POS RECEIPT             -->
+    <!-- ======================================================== -->
+    <div id="viewThermal" class="view-panel hidden transition-opacity duration-300 flex justify-center py-6">
+      
+      <!-- Monospace Thermal Receipt Card -->
+      <div class="w-full max-w-sm bg-white text-zinc-900 font-mono text-xs shadow-2xl rounded-sm p-6 relative border-t-8 border-brand-600 print-shadow-none">
+        
+        <!-- Header -->
+        <div class="text-center space-y-1 pb-4 border-b-2 border-dashed border-zinc-300">
+          <div class="font-black text-lg tracking-wider">*** AURA AUDIO LABS ***</div>
+          <p class="text-[11px] text-zinc-600">SAN FRANCISCO FLAGSHIP STORE #04</p>
+          <p class="text-[10px] text-zinc-500">500 HOWARD ST &bull; CA 94105</p>
+          <p class="text-[10px] text-zinc-500">TEL: (415) 555-AURA</p>
+          <div class="pt-2 text-[11px] flex justify-between">
+            <span>REG: 03</span>
+            <span>TRAN: 89421</span>
+            <span>CASHIER: SYSTEM</span>
+          </div>
+          <div class="text-[10px] text-zinc-500 text-left">
+            DATE: 11/11/2026 09:24:00 AM PST
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="py-4 space-y-3 border-b-2 border-dashed border-zinc-300">
+          <div class="flex justify-between items-start">
+            <div class="pr-2">
+              <div class="font-bold">AURA STUDIO ANC HP</div>
+              <div class="text-[10px] text-zinc-500">SKU: AUR-ANC-OBS</div>
+            </div>
+            <div class="font-bold text-right item-price" data-usd="349.00">$349.00</div>
+          </div>
+
+          <div class="flex justify-between items-start">
+            <div class="pr-2">
+              <div class="font-bold">AUDIOPHILE CABLE 1.8M</div>
+              <div class="text-[10px] text-zinc-500">SKU: CBL-SLV-240</div>
+            </div>
+            <div class="font-bold text-right item-price" data-usd="49.00">$49.00</div>
+          </div>
+
+          <div class="flex justify-between items-start">
+            <div class="pr-2">
+              <div class="font-bold">FLIGHT CASE IP67</div>
+              <div class="text-[10px] text-zinc-500">PROMO PERK</div>
+            </div>
+            <div class="font-bold text-right item-price" data-usd="0.00">$0.00</div>
+          </div>
+        </div>
+
+        <!-- Totals -->
+        <div class="py-4 space-y-1.5 border-b-2 border-dashed border-zinc-300 text-xs">
+          <div class="flex justify-between">
+            <span>SUBTOTAL:</span>
+            <span id="thermalSubtotal" class="font-bold">$398.00</span>
+          </div>
+          <div class="flex justify-between text-zinc-600">
+            <span>DISC (20% VIP):</span>
+            <span id="thermalDiscount">-$40.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span>TAX (8.25%):</span>
+            <span id="thermalTax">$29.54</span>
+          </div>
+          <div class="flex justify-between font-black text-sm pt-2 border-t border-zinc-200">
+            <span>TOTAL:</span>
+            <span id="thermalTotal" class="text-base">$387.54</span>
+          </div>
+          <div class="pt-2 text-[10px] text-zinc-600">
+            METHOD: APPLE PAY (VISA *4242)<br>
+            AUTH: 773918-APPROVED<br>
+            CHIP: CONTACTLESS NFC
+          </div>
+        </div>
+
+        <!-- Barcode & QR Code Section -->
+        <div class="pt-4 text-center space-y-3">
+          <!-- Rendered SVG Barcode -->
+          <div class="flex justify-center">
+            <svg class="h-12 w-56" viewBox="0 0 200 40" fill="currentColor">
+              <rect x="0" y="0" width="3" height="40"/>
+              <rect x="5" y="0" width="2" height="40"/>
+              <rect x="10" y="0" width="4" height="40"/>
+              <rect x="16" y="0" width="2" height="40"/>
+              <rect x="20" y="0" width="5" height="40"/>
+              <rect x="28" y="0" width="1" height="40"/>
+              <rect x="32" y="0" width="3" height="40"/>
+              <rect x="38" y="0" width="6" height="40"/>
+              <rect x="46" y="0" width="2" height="40"/>
+              <rect x="52" y="0" width="4" height="40"/>
+              <rect x="58" y="0" width="2" height="40"/>
+              <rect x="63" y="0" width="5" height="40"/>
+              <rect x="71" y="0" width="2" height="40"/>
+              <rect x="76" y="0" width="3" height="40"/>
+              <rect x="82" y="0" width="6" height="40"/>
+              <rect x="90" y="0" width="2" height="40"/>
+              <rect x="96" y="0" width="4" height="40"/>
+              <rect x="103" y="0" width="2" height="40"/>
+              <rect x="108" y="0" width="5" height="40"/>
+              <rect x="116" y="0" width="1" height="40"/>
+              <rect x="120" y="0" width="4" height="40"/>
+              <rect x="126" y="0" width="3" height="40"/>
+              <rect x="132" y="0" width="5" height="40"/>
+              <rect x="140" y="0" width="2" height="40"/>
+              <rect x="145" y="0" width="4" height="40"/>
+              <rect x="152" y="0" width="2" height="40"/>
+              <rect x="156" y="0" width="5" height="40"/>
+              <rect x="164" y="0" width="1" height="40"/>
+              <rect x="168" y="0" width="4" height="40"/>
+              <rect x="175" y="0" width="2" height="40"/>
+              <rect x="180" y="0" width="5" height="40"/>
+              <rect x="188" y="0" width="3" height="40"/>
+              <rect x="194" y="0" width="3" height="40"/>
+            </svg>
+          </div>
+          <div class="text-[10px] text-zinc-500 font-mono tracking-widest">
+            * 8 9 4 2 1 - N X - 2 0 2 6 *
+          </div>
+
+          <p class="text-[11px] font-bold">THANK YOU FOR CHOOSING AURA!</p>
+          <p class="text-[10px] text-zinc-500">KEEP THIS RECEIPT FOR 2-YR WARRANTY</p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 1: RESEND RECEIPT TO EMAIL                         -->
+  <!-- ======================================================== -->
+  <div id="resendModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="resendModalTitle">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+      <button onclick="closeModal('resendModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-800 transition-colors" aria-label="Close dialog">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-400">
+          <i data-lucide="send" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="resendModalTitle" class="text-base font-bold text-white">Forward / Resend Receipt</h3>
+          <p class="text-xs text-slate-400">Dispatch an official copy to your finance inbox</p>
+        </div>
+      </div>
+
+      <form id="resendForm" onsubmit="handleResendReceipt(event)" class="space-y-4">
+        <div>
+          <label for="resendEmailInput" class="block text-xs font-semibold text-slate-300 mb-1.5">Recipient Email Address</label>
+          <input type="email" id="resendEmailInput" required value="alex.rivera@designflow.io" placeholder="name@company.com" class="w-full bg-surface-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-mono">
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-xs font-semibold text-slate-300">Format Inclusions</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <label class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-950 border border-slate-800 cursor-pointer hover:border-slate-700">
+              <input type="checkbox" checked class="rounded text-brand-600 focus:ring-0 bg-surface-800 border-slate-700">
+              <span class="text-slate-200">PDF Tax Invoice</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-950 border border-slate-800 cursor-pointer hover:border-slate-700">
+              <input type="checkbox" checked class="rounded text-brand-600 focus:ring-0 bg-surface-800 border-slate-700">
+              <span class="text-slate-200">CSV Expense Export</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeModal('resendModal')" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-colors">
+            Cancel
+          </button>
+          <button type="submit" id="resendSubmitBtn" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-lg shadow-brand-600/30 transition-all flex items-center gap-2">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>Send Now</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 2: APPLE / GOOGLE WALLET PASS PREVIEW              -->
+  <!-- ======================================================== -->
+  <div id="walletModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="walletModalTitle">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
+      <button onclick="closeModal('walletModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-800 transition-colors" aria-label="Close dialog">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center mb-4">
+        <h3 id="walletModalTitle" class="text-base font-bold text-white">Apple Wallet Pass</h3>
+        <p class="text-xs text-slate-400">Keep order confirmation &amp; warranty on your phone</p>
+      </div>
+
+      <!-- 3D Perspective Card Container -->
+      <div class="perspective-1000 py-2">
+        <div id="walletPassCard" class="relative w-full h-80 rounded-2xl bg-gradient-to-br from-zinc-900 via-neutral-900 to-black border border-neutral-700 text-white p-5 shadow-2xl transition-transform duration-700 transform-style-3d cursor-pointer" onclick="flipWalletCard()">
+          
+          <!-- Card Front Face -->
+          <div id="walletCardFront" class="absolute inset-0 p-5 flex flex-col justify-between backface-hidden">
+            <div>
+              <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-6 h-6 rounded bg-brand-600 flex items-center justify-center text-xs font-bold">A</span>
+                  <span class="text-xs font-bold tracking-widest uppercase">AURA AUDIO</span>
+                </div>
+                <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">VERIFIED PASS</span>
+              </div>
+              <div class="mt-4">
+                <span class="text-[10px] text-neutral-400 uppercase tracking-wider">PRODUCT</span>
+                <p class="text-sm font-bold text-white">Aura Studio ANC Reference</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-[9px] text-neutral-400 uppercase">ORDER ID</span>
+                <p class="font-mono font-bold">#NX-89421</p>
+              </div>
+              <div>
+                <span class="text-[9px] text-neutral-400 uppercase">WARRANTY EXPIRES</span>
+                <p class="font-bold text-emerald-400">Nov 2028</p>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-neutral-800 flex items-center justify-between text-[11px] text-neutral-400">
+              <span>Tap to flip for barcode &rsaquo;</span>
+              <span class="font-mono text-white font-bold" id="walletTotalFront">$387.54</span>
+            </div>
+          </div>
+
+          <!-- Card Back Face -->
+          <div id="walletCardBack" class="absolute inset-0 p-5 flex flex-col justify-between backface-hidden rotate-y-180 bg-neutral-950 rounded-2xl border border-neutral-700">
+            <div>
+              <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+                <span class="text-xs font-bold text-white">PASS SECURITY</span>
+                <span class="text-[10px] text-neutral-400">Tap to return</span>
+              </div>
+              <p class="text-[10px] text-neutral-400 mt-2 leading-relaxed">
+                Present this digital pass at any authorized Aura repair lab worldwide for express diagnostics.
+              </p>
+            </div>
+
+            <!-- Simulated QR Code -->
+            <div class="my-auto flex flex-col items-center">
+              <div class="w-24 h-24 bg-white p-1.5 rounded-lg shadow-inner flex items-center justify-center">
+                <div class="w-full h-full bg-neutral-900 flex items-center justify-center text-[10px] font-mono text-white text-center p-1">
+                  [QR-NX89421]
+                </div>
+              </div>
+              <span class="text-[9px] font-mono text-neutral-400 mt-2">UUID: 89421-NX-PASS-2026</span>
+            </div>
+
+            <div class="text-center text-[10px] text-neutral-500">
+              Aura Systems &bull; Cupertino, CA
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button onclick="savePassToDevice()" class="w-full py-2.5 rounded-xl bg-white hover:bg-slate-100 text-black font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Save to Apple Wallet</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 3: CUSTOMER SUPPORT & CONCIERGE                    -->
+  <!-- ======================================================== -->
+  <div id="supportModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="supportModalTitle">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
+      <button onclick="closeModal('supportModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-800 transition-colors" aria-label="Close dialog">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+          <i data-lucide="headphones" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="supportModalTitle" class="text-base font-bold text-white">Aura Concierge &amp; Resolution Hub</h3>
+          <p class="text-xs text-slate-400">Instant answers regarding order #NX-89421</p>
+        </div>
+      </div>
+
+      <!-- Quick Action Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+        <button onclick="showToast('Carrier redirection request submitted to FedEx', 'success'); closeModal('supportModal');" class="p-3 rounded-xl bg-surface-950 border border-slate-800 hover:border-slate-700 text-left transition-colors">
+          <i data-lucide="truck" class="w-4 h-4 text-brand-400 mb-1.5"></i>
+          <h4 class="text-xs font-semibold text-white">Redirect Delivery</h4>
+          <p class="text-[11px] text-slate-400">Hold at FedEx location or alter delivery instructions</p>
+        </button>
+
+        <button onclick="showToast('Return authorization label generated', 'info'); closeModal('supportModal');" class="p-3 rounded-xl bg-surface-950 border border-slate-800 hover:border-slate-700 text-left transition-colors">
+          <i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-400 mb-1.5"></i>
+          <h4 class="text-xs font-semibold text-white">Initiate 30-Day Return</h4>
+          <p class="text-[11px] text-slate-400">Generate prepaid QR return label instantly</p>
+        </button>
+
+        <button onclick="showToast('Tax exemption form requested for #NX-89421', 'info'); closeModal('supportModal');" class="p-3 rounded-xl bg-surface-950 border border-slate-800 hover:border-slate-700 text-left transition-colors">
+          <i data-lucide="file-text" class="w-4 h-4 text-emerald-400 mb-1.5"></i>
+          <h4 class="text-xs font-semibold text-white">Update VAT / Tax ID</h4>
+          <p class="text-[11px] text-slate-400">Add company registration or VAT number to invoice</p>
+        </button>
+
+        <button onclick="showToast('Audio Engineer connected on live channel', 'success'); closeModal('supportModal');" class="p-3 rounded-xl bg-surface-950 border border-slate-800 hover:border-slate-700 text-left transition-colors">
+          <i data-lucide="message-circle" class="w-4 h-4 text-cyan-400 mb-1.5"></i>
+          <h4 class="text-xs font-semibold text-white">Talk to Audio Specialist</h4>
+          <p class="text-[11px] text-slate-400">Get assistance with DAC pairing &amp; tuning</p>
+        </button>
+      </div>
+
+      <div class="border-t border-slate-800 pt-3 flex justify-between items-center text-xs text-slate-400">
+        <span>Average concierge response time: &lt; 2 minutes</span>
+        <button onclick="closeModal('supportModal')" class="px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-200 text-xs font-medium">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- FLOATING TOAST NOTIFICATION CONTAINER                   -->
+  <!-- ======================================================== -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none" aria-live="polite"></div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT APPLICATION CORE                             -->
+  <!-- ======================================================== -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // ----------------------------------------------------
+    // State Management & Currency Conversion Engine
+    // ----------------------------------------------------
+    const STATE = {
+      currentView: 'email',
+      currency: 'USD',
+      audioEnabled: true,
+      shipmentStage: 3, // 1: Confirmed, 2: Packaged, 3: Shipped, 4: Out for Delivery, 5: Delivered
+      isFlipped: false,
+      rates: {
+        USD: { rate: 1.0, symbol: '$', taxRate: 0.0825 },
+        EUR: { rate: 0.92, symbol: '€', taxRate: 0.20 }, // 20% European VAT standard
+        GBP: { rate: 0.79, symbol: '£', taxRate: 0.20 }, // 20% UK VAT standard
+        JPY: { rate: 154.5, symbol: '¥', taxRate: 0.10 } // 10% Japan Consumption Tax
+      },
+      baseAmounts: {
+        subtotal: 398.00,
+        discount: 40.00,
+        shipping: 0.00
+      }
+    };
+
+    // ----------------------------------------------------
+    // Web Audio API Tactile Sound Synthesizer
+    // ----------------------------------------------------
+    const audioCtx = (function() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        return new AudioContext();
+      } catch (e) {
+        return null;
+      }
+    })();
+
+    function playSound(type) {
+      if (!STATE.audioEnabled || !audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'click') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.06);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      } else if (type === 'chime' || type === 'success') {
+        // Two-tone cash register chime
+        const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C Major chord
+        frequencies.forEach((f, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + i * 0.04);
+          gain.gain.setValueAtTime(0.08, now + i * 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + i * 0.04);
+          osc.stop(now + i * 0.04 + 0.25);
+        });
+      } else if (type === 'tick') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, now);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.03);
+      } else if (type === 'print') {
+        // Simulated dot-matrix printer buzz
+        for (let j = 0; j < 4; j++) {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(140 + Math.random() * 40, now + j * 0.08);
+          gain.gain.setValueAtTime(0.06, now + j * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + j * 0.08 + 0.05);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + j * 0.08);
+          osc.stop(now + j * 0.08 + 0.05);
+        }
+      }
+    }
+
+    function toggleAudio() {
+      STATE.audioEnabled = !STATE.audioEnabled;
+      const icon = document.getElementById('audioIcon');
+      if (STATE.audioEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.classList.remove('text-slate-500');
+        icon.classList.add('text-emerald-400');
+        showToast('Sound effects enabled', 'info');
+        playSound('click');
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.classList.remove('text-emerald-400');
+        icon.classList.add('text-slate-500');
+        showToast('Sound effects muted', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // Dark / Light Theme Toggle
+    // ----------------------------------------------------
+    function toggleTheme() {
+      playSound('click');
+      const html = document.documentElement;
+      const icon = document.getElementById('themeIcon');
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        icon.setAttribute('data-lucide', 'sun');
+        icon.classList.remove('text-brand-400');
+        icon.classList.add('text-amber-500');
+        showToast('Switched to Light mode', 'info');
+      } else {
+        html.classList.add('dark');
+        icon.setAttribute('data-lucide', 'moon');
+        icon.classList.remove('text-amber-500');
+        icon.classList.add('text-brand-400');
+        showToast('Switched to Dark mode', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // Archetype View Switcher
+    // ----------------------------------------------------
+    function switchView(viewName) {
+      playSound('click');
+      STATE.currentView = viewName;
+
+      // Update Tab Styles
+      const tabs = {
+        email: document.getElementById('viewTabEmail'),
+        portal: document.getElementById('viewTabPortal'),
+        invoice: document.getElementById('viewTabInvoice'),
+        thermal: document.getElementById('viewTabThermal')
+      };
+
+      Object.keys(tabs).forEach(k => {
+        if (k === viewName) {
+          tabs[k].className = 'view-tab active flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-brand-600 text-white shadow-sm';
+          tabs[k].setAttribute('aria-current', 'page');
+        } else {
+          tabs[k].className = 'view-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200';
+          tabs[k].removeAttribute('aria-current');
+        }
+      });
+
+      // Show/Hide Panels
+      const panels = {
+        email: document.getElementById('viewEmailClient'),
+        portal: document.getElementById('viewPortal'),
+        invoice: document.getElementById('viewInvoice'),
+        thermal: document.getElementById('viewThermal')
+      };
+
+      Object.keys(panels).forEach(k => {
+        if (k === viewName) {
+          panels[k].classList.remove('hidden');
+        } else {
+          panels[k].classList.add('hidden');
+        }
+      });
+
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // Dynamic Currency & Tax Calculation Engine
+    // ----------------------------------------------------
+    function formatCurrency(valUSD, currCode) {
+      const cfg = STATE.rates[currCode];
+      const converted = valUSD * cfg.rate;
+      if (currCode === 'JPY') {
+        return `${cfg.symbol}${Math.round(converted).toLocaleString()}`;
+      }
+      return `${cfg.symbol}${converted.toFixed(2)}`;
+    }
+
+    function changeCurrency(newCode) {
+      playSound('chime');
+      STATE.currency = newCode;
+      updateCalculations();
+      showToast(`Currency updated to ${newCode} (${STATE.rates[newCode].symbol})`, 'success');
+    }
+
+    function updateCalculations() {
+      const curr = STATE.currency;
+      const cfg = STATE.rates[curr];
+
+      // Base math in USD
+      const subtotalUSD = STATE.baseAmounts.subtotal;
+      const discountUSD = STATE.baseAmounts.discount;
+      const netTaxableUSD = subtotalUSD - discountUSD;
+      const taxUSD = netTaxableUSD * cfg.taxRate;
+      const totalUSD = netTaxableUSD + taxUSD;
+
+      // Update Line item prices in tables
+      document.querySelectorAll('.item-price').forEach(el => {
+        const rawUSD = parseFloat(el.getAttribute('data-usd'));
+        if (rawUSD === 0) {
+          el.innerText = 'FREE';
+        } else {
+          el.innerText = formatCurrency(rawUSD, curr);
+        }
+      });
+
+      document.querySelectorAll('.item-compare').forEach(el => {
+        const rawUSD = parseFloat(el.getAttribute('data-usd'));
+        el.innerText = formatCurrency(rawUSD, curr);
+      });
+
+      // Format strings
+      const subtotalStr = formatCurrency(subtotalUSD, curr);
+      const discountStr = `-${formatCurrency(discountUSD, curr)}`;
+      const taxStr = formatCurrency(taxUSD, curr);
+      const totalStr = formatCurrency(totalUSD, curr);
+
+      // Email view elements
+      document.getElementById('subtotalVal').innerText = subtotalStr;
+      document.getElementById('discountVal').innerText = discountStr;
+      document.getElementById('taxVal').innerText = taxStr;
+      document.getElementById('totalVal').innerText = totalStr;
+
+      // Invoice view elements
+      document.getElementById('invoiceSubtotal').innerText = subtotalStr;
+      document.getElementById('invoiceDiscount').innerText = discountStr;
+      document.getElementById('invoiceTax').innerText = taxStr;
+      document.getElementById('invoiceTotal').innerText = totalStr;
+
+      // Thermal receipt view elements
+      document.getElementById('thermalSubtotal').innerText = subtotalStr;
+      document.getElementById('thermalDiscount').innerText = discountStr;
+      document.getElementById('thermalTax').innerText = taxStr;
+      document.getElementById('thermalTotal').innerText = totalStr;
+
+      // Wallet Front Card
+      document.getElementById('walletTotalFront').innerText = totalStr;
+    }
+
+    // ----------------------------------------------------
+    // Interactive Shipment Progress Tracker
+    // ----------------------------------------------------
+    function setShipmentStage(stageNum) {
+      playSound('tick');
+      STATE.shipmentStage = stageNum;
+
+      const stageLabels = {
+        1: 'Order Confirmed &bull; Queued',
+        2: 'Packaged &bull; Passed Sound QA',
+        3: 'Shipped &bull; In Transit',
+        4: 'Out for Delivery &bull; On Vehicle',
+        5: 'Delivered &bull; Signed by Resident'
+      };
+
+      const stageWidths = {
+        1: '15%',
+        2: '40%',
+        3: '65%',
+        4: '88%',
+        5: '100%'
+      };
+
+      document.getElementById('trackerProgressBar').style.width = stageWidths[stageNum];
+      document.getElementById('trackerCurrentStageLabel').innerHTML = stageLabels[stageNum];
+
+      for (let i = 1; i <= 5; i++) {
+        const dot = document.getElementById(`stepDot${i}`);
+        if (i <= stageNum) {
+          dot.className = 'w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold ring-4 ring-surface-900 shadow-md';
+          dot.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i>';
+        } else {
+          dot.className = 'w-7 h-7 rounded-full bg-surface-800 text-slate-400 border border-slate-700 flex items-center justify-center text-xs ring-4 ring-surface-900';
+          dot.innerHTML = `${i}`;
+        }
+      }
+
+      if (stageNum === 3) {
+        document.getElementById('stepDot3').classList.add('animate-pulse');
+      }
+
+      lucide.createIcons();
+      showToast(`Shipment status advanced to: Step ${stageNum}`, 'info');
+    }
+
+    // ----------------------------------------------------
+    // Simulate Live Carrier Ping Feed
+    // ----------------------------------------------------
+    function simulateLiveDispatchPing() {
+      playSound('chime');
+      const feed = document.getElementById('dispatchFeed');
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      
+      const pings = [
+        `Vehicle #704 passed Bay Bridge Toll Plaza &bull; Current speed 52 mph.`,
+        `FedEx Telemetry update: Estimated arrival window refined to 11:30 AM - 1:00 PM.`,
+        `Courier barcode handoff scanned at West Coast distribution facility.`,
+        `Temperature &amp; vibration sensor check: 68°F (Nominal).`
+      ];
+      const randomPing = pings[Math.floor(Math.random() * pings.length)];
+
+      const newEntry = document.createElement('div');
+      newEntry.className = 'flex items-start gap-2 text-cyan-300 animate-pulse';
+      newEntry.innerHTML = `<span class="text-cyan-400 font-bold">${time}</span><span>&bull;</span><span>${randomPing}</span>`;
+      
+      feed.insertBefore(newEntry, feed.firstChild);
+      showToast('Live telemetry ping received from carrier', 'success');
+    }
+
+    // ----------------------------------------------------
+    // Modal Helpers & Focus Trapping
+    // ----------------------------------------------------
+    function openModal(modalId) {
+      playSound('click');
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.remove('hidden');
+        const focusable = modal.querySelector('input, button:not([aria-label="Close dialog"])');
+        if (focusable) focusable.focus();
+      }
+    }
+
+    function closeModal(modalId) {
+      playSound('click');
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    // Close modal on Escape
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        ['resendModal', 'walletModal', 'supportModal'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el && !el.classList.contains('hidden')) {
+            closeModal(id);
+          }
+        });
+      }
+    });
+
+    // ----------------------------------------------------
+    // Modal Action Handlers
+    // ----------------------------------------------------
+    function handleResendReceipt(e) {
+      e.preventDefault();
+      const email = document.getElementById('resendEmailInput').value;
+      const btn = document.getElementById('resendSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="animate-spin inline-block mr-1.5">&#9696;</span> Dispatching...';
+      
+      setTimeout(() => {
+        playSound('success');
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="send" class="w-3.5 h-3.5"></i><span>Send Now</span>';
+        closeModal('resendModal');
+        showToast(`Receipt and PDF tax invoice dispatched to ${email}`, 'success');
+        lucide.createIcons();
+      }, 900);
+    }
+
+    function flipWalletCard() {
+      playSound('click');
+      const card = document.getElementById('walletPassCard');
+      STATE.isFlipped = !STATE.isFlipped;
+      if (STATE.isFlipped) {
+        card.classList.add('rotate-y-180');
+      } else {
+        card.classList.remove('rotate-y-180');
+      }
+    }
+
+    function savePassToDevice() {
+      playSound('success');
+      showToast('Apple Wallet pass (.pkpass) downloaded', 'success');
+      closeModal('walletModal');
+    }
+
+    function copyOrderId() {
+      playSound('chime');
+      navigator.clipboard.writeText('#NX-89421').then(() => {
+        showToast('Order ID #NX-89421 copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Order ID #NX-89421 copied!', 'success');
+      });
+    }
+
+    function triggerPrintInvoice() {
+      playSound('print');
+      // If not on invoice view, switch to invoice view for ideal print layout
+      if (STATE.currentView !== 'invoice') {
+        switchView('invoice');
+      }
+      setTimeout(() => {
+        window.print();
+      }, 300);
+    }
+
+    // ----------------------------------------------------
+    // Toast Notification Manager
+    // ----------------------------------------------------
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const bgColors = {
+        info: 'bg-surface-900 border-slate-700 text-slate-200',
+        success: 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200',
+        warning: 'bg-amber-950/90 border-amber-500/50 text-amber-200'
+      };
+
+      const iconColors = {
+        info: 'text-brand-400',
+        success: 'text-emerald-400',
+        warning: 'text-amber-400'
+      };
+
+      const iconNames = {
+        info: 'info',
+        success: 'check-circle-2',
+        warning: 'alert-triangle'
+      };
+
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl text-xs backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${bgColors[type] || bgColors.info}`;
+      toast.innerHTML = `
+        <i data-lucide="${iconNames[type] || 'info'}" class="w-4 h-4 ${iconColors[type] || iconColors.info}"></i>
+        <span class="font-medium">${message}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      // Trigger entry transition
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      // Auto dismiss after 3.5 seconds
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, 300);
+      }, 3500);
+    }
+
+    // Initial price computation
+    updateCalculations();
+  </script>
+</body>
+</html>
