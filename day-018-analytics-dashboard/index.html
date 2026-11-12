@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 018: Analytics Dashboard & Data Visualizer | Daily UI/UX</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            },
+            accent: {
+              cyan: '#06b6d4',
+              violet: '#8b5cf6',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+            },
+            surface: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              800: '#1e293b',
+              850: '#151f32',
+              900: '#0f172a',
+              950: '#060a12',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.45);
+    }
+
+    /* SVG Chart Transitions */
+    .chart-path {
+      transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .chart-fill {
+      transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Print Stylesheet */
+    @media print {
+      body {
+        background: white !important;
+        color: #0f172a !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-shadow-none {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        background: white !important;
+      }
+      .print-text-dark {
+        color: #0f172a !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-100 min-h-screen font-sans antialiased transition-colors duration-300 selection:bg-brand-500 selection:text-white">
+
+  <!-- ========================================== -->
+  <!-- Top Navigation & Dashboard Command Bar      -->
+  <!-- ========================================== -->
+  <header class="no-print sticky top-0 z-40 bg-surface-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Challenge ID -->
+      <div class="flex items-center space-x-3">
+        <a href="../" class="group flex items-center gap-2.5 text-slate-300 hover:text-white transition-colors" title="Back to Challenge Directory">
+          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-800 border border-slate-700/80 group-hover:border-brand-500/50 text-slate-300 group-hover:text-brand-400 transition-all shadow-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </span>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20">Day 018</span>
+              <span class="text-xs text-slate-400 font-mono">Daily UI/UX</span>
+            </div>
+            <h1 class="text-sm font-semibold text-slate-100 group-hover:text-white flex items-center gap-2">
+              <span>PulseMetrics AI &bull; SaaS Growth Intelligence</span>
+              <span class="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                LIVE WEBSOCKET
+              </span>
+            </h1>
+          </div>
+        </a>
+      </div>
+
+      <!-- Center: Timeframe Granularity Tabs -->
+      <nav aria-label="Dashboard timeframes" class="flex items-center bg-surface-950/80 p-1 rounded-xl border border-slate-800 shadow-inner">
+        <button onclick="setTimeframe('24h')" class="time-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200">24H</button>
+        <button onclick="setTimeframe('7d')" class="time-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200">7D</button>
+        <button onclick="setTimeframe('30d')" class="time-tab active flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-brand-600 text-white shadow-sm" aria-current="page">30D</button>
+        <button onclick="setTimeframe('90d')" class="time-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200">90D</button>
+        <button onclick="setTimeframe('1y')" class="time-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200">1Y</button>
+      </nav>
+
+      <!-- Right: Utility Controls (Region, Segment, Audio, Theme, Export) -->
+      <div class="flex items-center space-x-2">
+        <!-- Region Filter -->
+        <div class="relative hidden sm:block">
+          <label for="regionFilter" class="sr-only">Filter Region</label>
+          <div class="flex items-center bg-surface-800 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300">
+            <i data-lucide="globe" class="w-3.5 h-3.5 mr-1.5 text-cyan-400"></i>
+            <select id="regionFilter" onchange="handleFilterChange()" class="bg-transparent text-slate-200 text-xs font-semibold outline-none cursor-pointer">
+              <option value="global" class="bg-surface-900 text-slate-200">Global (All)</option>
+              <option value="na" class="bg-surface-900 text-slate-200">North America</option>
+              <option value="eu" class="bg-surface-900 text-slate-200">EMEA</option>
+              <option value="apac" class="bg-surface-900 text-slate-200">APAC</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Audio Haptics Toggle -->
+        <button id="audioToggleBtn" onclick="toggleAudio()" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700/80 text-slate-300 hover:text-white transition-colors" title="Toggle Sound Feedback" aria-label="Toggle Sound Effects">
+          <i id="audioIcon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+        </button>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700/80 text-slate-300 hover:text-white transition-colors" title="Toggle Light/Dark Theme" aria-label="Toggle Dark/Light Mode">
+          <i id="themeIcon" data-lucide="moon" class="w-4 h-4 text-brand-400"></i>
+        </button>
+
+        <!-- Export Modal Trigger -->
+        <button onclick="openModal('exportModal')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 font-semibold text-white text-xs transition-all shadow-lg shadow-brand-600/20">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>Export</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- MAIN DASHBOARD CONTENT                     -->
+  <!-- ========================================== -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- ======================================================== -->
+    <!-- SECTION 1: TOP EXECUTIVE KPI BENTO GRID                  -->
+    <!-- ======================================================== -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      
+      <!-- KPI Card 1: Annual Recurring Revenue (ARR) -->
+      <div class="bg-surface-900 border border-slate-800/90 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <span class="font-semibold uppercase tracking-wider">Annual Recurring (ARR)</span>
+          <span class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2 mb-2">
+          <span id="kpiArrVal" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-mono">$1,842,500</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="inline-flex items-center gap-1 text-emerald-400 font-semibold">
+            <i data-lucide="trending-up" class="w-3 h-3"></i>
+            <span id="kpiArrDelta">+18.4%</span>
+          </span>
+          <span class="text-slate-500">vs prev 30d</span>
+        </div>
+        <!-- Sparkline indicator -->
+        <div class="mt-3 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+          <div class="h-full bg-emerald-500 rounded-full w-3/4"></div>
+        </div>
+      </div>
+
+      <!-- KPI Card 2: Net Revenue Retention (NRR) -->
+      <div class="bg-surface-900 border border-slate-800/90 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <span class="font-semibold uppercase tracking-wider">Net Retention (NRR)</span>
+          <span class="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <i data-lucide="repeat" class="w-3.5 h-3.5"></i>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2 mb-2">
+          <span id="kpiNrrVal" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-mono">124.6%</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="inline-flex items-center gap-1 text-cyan-400 font-semibold">
+            <i data-lucide="shield-check" class="w-3 h-3"></i>
+            <span>Top Tier &gt;120%</span>
+          </span>
+          <span class="text-slate-500">+3.2% expansion</span>
+        </div>
+        <div class="mt-3 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+          <div class="h-full bg-cyan-500 rounded-full w-[84%]"></div>
+        </div>
+      </div>
+
+      <!-- KPI Card 3: Active Paid Seats & Expansion -->
+      <div class="bg-surface-900 border border-slate-800/90 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <span class="font-semibold uppercase tracking-wider">Active Paid Seats</span>
+          <span class="p-1.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            <i data-lucide="users" class="w-3.5 h-3.5"></i>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2 mb-2">
+          <span id="kpiSeatsVal" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-mono">14,892</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="inline-flex items-center gap-1 text-violet-400 font-semibold">
+            <i data-lucide="user-plus" class="w-3 h-3"></i>
+            <span>+842 new seats</span>
+          </span>
+          <span class="text-slate-500">Churn: 0.8%</span>
+        </div>
+        <div class="mt-3 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+          <div class="h-full bg-violet-500 rounded-full w-[70%]"></div>
+        </div>
+      </div>
+
+      <!-- KPI Card 4: Customer Acquisition Cost (CAC) -->
+      <div class="bg-surface-900 border border-slate-800/90 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <span class="font-semibold uppercase tracking-wider">CAC Payback Efficiency</span>
+          <span class="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2 mb-2">
+          <span id="kpiCacVal" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-mono">$142.00</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="inline-flex items-center gap-1 text-emerald-400 font-semibold">
+            <i data-lucide="trending-down" class="w-3 h-3"></i>
+            <span>-12.4% cost reduced</span>
+          </span>
+          <span class="text-slate-500">Payback: 4.2 mo</span>
+        </div>
+        <div class="mt-3 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+          <div class="h-full bg-amber-500 rounded-full w-[90%]"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 2: PRIMARY INTERACTIVE TIME-SERIES CHART         -->
+    <!-- ======================================================== -->
+    <section class="bg-surface-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
+      
+      <!-- Chart Controls Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg md:text-xl font-bold text-white tracking-tight">Revenue &amp; Velocity Trajectory</h2>
+            <span id="chartTimeframeBadge" class="text-xs font-mono px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">30-Day Window</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Interactive hover scrub crosshair with sub-second spline interpolation</p>
+        </div>
+
+        <!-- Series Toggles -->
+        <div class="flex items-center gap-2 text-xs">
+          <button id="toggleSeriesArr" onclick="toggleSeries('arr')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-medium transition-all">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>MRR ($)</span>
+          </button>
+          <button id="toggleSeriesUsers" onclick="toggleSeries('users')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 font-medium transition-all">
+            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+            <span>Active Users</span>
+          </button>
+          <button onclick="openModal('alertModal')" class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700 text-xs font-medium transition-colors">
+            <i data-lucide="bell" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>Set Threshold Alert</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main SVG Interactive Canvas -->
+      <div class="relative w-full h-72 sm:h-80 select-none" id="chartCanvasContainer">
+        
+        <!-- Hover Crosshair Tooltip -->
+        <div id="chartTooltip" class="absolute pointer-events-none opacity-0 transition-opacity duration-150 z-30 bg-surface-950/95 border border-slate-700 p-3 rounded-xl shadow-2xl text-xs backdrop-blur-md -translate-x-1/2 -translate-y-full mb-3 min-w-[150px]">
+          <div id="tooltipDate" class="text-[11px] font-mono text-slate-400 mb-1">Nov 10, 2026</div>
+          <div class="flex items-center justify-between gap-4 font-mono">
+            <span class="text-emerald-400 font-semibold" id="tooltipLabel1">MRR:</span>
+            <span class="text-white font-bold" id="tooltipVal1">$154,200</span>
+          </div>
+          <div class="flex items-center justify-between gap-4 font-mono mt-0.5" id="tooltipRow2">
+            <span class="text-cyan-400 font-semibold" id="tooltipLabel2">Users:</span>
+            <span class="text-white font-bold" id="tooltipVal2">14,290</span>
+          </div>
+        </div>
+
+        <!-- Vertical Crosshair Line -->
+        <div id="crosshairLine" class="absolute top-0 bottom-8 w-px bg-slate-600/60 pointer-events-none opacity-0 transition-opacity duration-150 z-20"></div>
+
+        <!-- SVG Visualizer -->
+        <svg id="mainSvgChart" class="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 300">
+          <defs>
+            <!-- Primary Revenue Gradient -->
+            <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#22c55e" stop-opacity="0.35" />
+              <stop offset="100%" stop-color="#22c55e" stop-opacity="0.0" />
+            </linearGradient>
+
+            <!-- Secondary User Growth Gradient -->
+            <linearGradient id="userGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0" />
+            </linearGradient>
+          </defs>
+
+          <!-- Horizontal Grid Lines -->
+          <g class="grid-lines stroke-slate-800/80 stroke-dasharray-[4,4]" stroke-width="1">
+            <line x1="0" y1="30" x2="1000" y2="30" />
+            <line x1="0" y1="90" x2="1000" y2="90" />
+            <line x1="0" y1="150" x2="1000" y2="150" />
+            <line x1="0" y1="210" x2="1000" y2="210" />
+            <line x1="0" y1="270" x2="1000" y2="270" />
+          </g>
+
+          <!-- Area Fills -->
+          <path id="svgAreaUsers" class="chart-fill" fill="url(#userGrad)" d="" />
+          <path id="svgAreaRevenue" class="chart-fill" fill="url(#revenueGrad)" d="" />
+
+          <!-- Stroke Lines -->
+          <path id="svgLineUsers" class="chart-path" fill="none" stroke="#06b6d4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="" />
+          <path id="svgLineRevenue" class="chart-path" fill="none" stroke="#22c55e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" d="" />
+
+          <!-- Hover Indicator Circles -->
+          <circle id="scrubDotRev" cx="-50" cy="-50" r="6" fill="#22c55e" stroke="#0f172a" stroke-width="3" class="pointer-events-none" />
+          <circle id="scrubDotUser" cx="-50" cy="-50" r="5" fill="#06b6d4" stroke="#0f172a" stroke-width="3" class="pointer-events-none" />
+        </svg>
+
+        <!-- X-Axis Labels Row -->
+        <div id="chartXLabels" class="absolute bottom-0 left-0 right-0 flex justify-between text-[11px] font-mono text-slate-500 pt-2 border-t border-slate-800">
+          <span>Day 1</span>
+          <span>Day 7</span>
+          <span>Day 14</span>
+          <span>Day 21</span>
+          <span>Day 28</span>
+          <span>Day 30</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 3: REAL-TIME TICKER & CONVERSION FUNNEL MATRIX   -->
+    <!-- ======================================================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Left: Real-Time Concurrent Telemetry (Live WebSocket Simulator) -->
+      <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+              <span>Live Concurrent Users</span>
+            </h3>
+            <button onclick="toggleLiveTicker()" id="liveTickerBtn" class="text-xs text-slate-400 hover:text-white px-2 py-0.5 rounded bg-surface-800 border border-slate-700">
+              Pause Live
+            </button>
+          </div>
+
+          <!-- Big Live Number -->
+          <div class="flex items-baseline gap-3">
+            <span id="liveActiveCount" class="text-4xl font-extrabold text-white font-mono tracking-tight">1,428</span>
+            <span class="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              +42 / min
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Real-time edge ingestion via Cloudflare Workers &bull; 14ms latency</p>
+
+          <!-- 60-Second Real-Time Sparkline Canvas -->
+          <div class="mt-4 pt-2">
+            <div class="h-24 w-full bg-surface-950 rounded-xl border border-slate-800/80 p-2 relative overflow-hidden flex items-end">
+              <svg id="liveSparklineSvg" class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 300 80">
+                <path id="liveSparkPath" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" d="" />
+              </svg>
+            </div>
+            <div class="flex justify-between text-[10px] font-mono text-slate-500 mt-1.5">
+              <span>60s ago</span>
+              <span>30s ago</span>
+              <span>Live Now</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Geo distribution pill badges -->
+        <div class="mt-6 pt-4 border-t border-slate-800 grid grid-cols-3 gap-2 text-center text-xs">
+          <div class="bg-surface-950 p-2 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-slate-400 block font-mono">US-EAST</span>
+            <strong class="text-white font-mono" id="geoUs">642</strong>
+          </div>
+          <div class="bg-surface-950 p-2 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-slate-400 block font-mono">EU-CENTRAL</span>
+            <strong class="text-white font-mono" id="geoEu">498</strong>
+          </div>
+          <div class="bg-surface-950 p-2 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-slate-400 block font-mono">APAC-SOUTH</span>
+            <strong class="text-white font-mono" id="geoApac">288</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right 2 Columns: Multi-Stage Conversion Funnel Visualizer -->
+      <div class="lg:col-span-2 bg-surface-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="filter" class="w-4 h-4 text-cyan-400"></i>
+                <span>Customer Acquisition Conversion Funnel</span>
+              </h3>
+              <p class="text-xs text-slate-400">End-to-end journey from anonymous landing visitor to recurring enterprise tier</p>
+            </div>
+            <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2.5 py-1 rounded-full border border-cyan-500/20">Overall: 6.02%</span>
+          </div>
+
+          <!-- Interactive Funnel Bars -->
+          <div class="space-y-3 pt-2">
+            
+            <!-- Stage 1: Unique Visitors -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="font-semibold text-slate-200">1. Unique Landing Visitors</span>
+                <span class="font-mono text-white font-bold">148,200</span>
+              </div>
+              <div class="h-7 w-full bg-surface-950 rounded-lg p-1 border border-slate-800 overflow-hidden flex items-center">
+                <div class="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-md transition-all duration-500 flex items-center px-2 text-[10px] font-bold text-white shadow-sm" style="width: 100%;">
+                  100% Entry
+                </div>
+              </div>
+            </div>
+
+            <!-- Stage 2: Product Views & Interactive Playground -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="font-semibold text-slate-300">2. Interactive Demo &amp; Feature Inspection</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-emerald-400 font-mono text-[11px]">43.3% retention</span>
+                  <span class="font-mono text-white font-bold">64,120</span>
+                </div>
+              </div>
+              <div class="h-7 w-full bg-surface-950 rounded-lg p-1 border border-slate-800 overflow-hidden flex items-center">
+                <div class="h-full bg-gradient-to-r from-brand-600 to-brand-400 rounded-md transition-all duration-500 flex items-center px-2 text-[10px] font-bold text-white shadow-sm" style="width: 43.3%;">
+                  43.3%
+                </div>
+              </div>
+            </div>
+
+            <!-- Stage 3: Checkout / Signup Initiated -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="font-semibold text-slate-300">3. Workspace Auth &amp; Plan Selection</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-amber-400 font-mono text-[11px]">28.8% retention</span>
+                  <span class="font-mono text-white font-bold">18,450</span>
+                </div>
+              </div>
+              <div class="h-7 w-full bg-surface-950 rounded-lg p-1 border border-slate-800 overflow-hidden flex items-center">
+                <div class="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-md transition-all duration-500 flex items-center px-2 text-[10px] font-bold text-white shadow-sm" style="width: 28.8%;">
+                  28.8%
+                </div>
+              </div>
+            </div>
+
+            <!-- Stage 4: Paid Active Conversion -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="font-semibold text-slate-300">4. Final Paid Subscription Capture</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-emerald-400 font-mono text-[11px]">48.3% stage conversion</span>
+                  <span class="font-mono text-emerald-400 font-bold">8,920</span>
+                </div>
+              </div>
+              <div class="h-7 w-full bg-surface-950 rounded-lg p-1 border border-slate-800 overflow-hidden flex items-center">
+                <div class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-md transition-all duration-500 flex items-center px-2 text-[10px] font-bold text-white shadow-sm" style="width: 14.2%;">
+                  14.2% Net
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Funnel AI Diagnostic Note -->
+        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2 text-slate-300">
+            <i data-lucide="sparkles" class="w-4 h-4 text-brand-400 flex-shrink-0"></i>
+            <span><strong>AI Optimization Insight:</strong> Simplifying step 3 (plan selection) with 1-click SSO could unlock +$34k/mo in ARR.</span>
+          </div>
+          <button onclick="showToast('Applied test variant to plan checkout A/B test', 'success')" class="text-brand-400 hover:text-brand-300 font-semibold text-xs flex-shrink-0 ml-2">
+            Run Experiment &rsaquo;
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 4: COHORT RETENTION & TRAFFIC SOURCE DONUT       -->
+    <!-- ======================================================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Traffic Sources Donut Visualization (SVG) -->
+      <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-violet-400"></i>
+              <span>Traffic Attribution</span>
+            </h3>
+            <span class="text-xs text-slate-400">30d Share</span>
+          </div>
+
+          <!-- SVG Donut Chart -->
+          <div class="relative w-44 h-44 mx-auto my-2 flex items-center justify-center">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              <!-- Background Circle -->
+              <circle cx="50" cy="50" r="38" fill="transparent" stroke="#1e293b" stroke-width="12" />
+              <!-- Slice 1: Organic (42%) -->
+              <circle cx="50" cy="50" r="38" fill="transparent" stroke="#22c55e" stroke-width="12" stroke-dasharray="100.28 238.76" stroke-dashoffset="0" class="hover:opacity-80 transition-opacity cursor-pointer" onclick="inspectChannel('Organic Search', '42%')" />
+              <!-- Slice 2: Direct (28%) -->
+              <circle cx="50" cy="50" r="38" fill="transparent" stroke="#06b6d4" stroke-width="12" stroke-dasharray="66.85 238.76" stroke-dashoffset="-100.28" class="hover:opacity-80 transition-opacity cursor-pointer" onclick="inspectChannel('Direct Brand', '28%')" />
+              <!-- Slice 3: Developer Referrals (18%) -->
+              <circle cx="50" cy="50" r="38" fill="transparent" stroke="#8b5cf6" stroke-width="12" stroke-dasharray="42.98 238.76" stroke-dashoffset="-167.13" class="hover:opacity-80 transition-opacity cursor-pointer" onclick="inspectChannel('Developer Referrals', '18%')" />
+              <!-- Slice 4: Paid Campaigns (12%) -->
+              <circle cx="50" cy="50" r="38" fill="transparent" stroke="#f59e0b" stroke-width="12" stroke-dasharray="28.65 238.76" stroke-dashoffset="-210.11" class="hover:opacity-80 transition-opacity cursor-pointer" onclick="inspectChannel('Paid Growth', '12%')" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span id="donutChannelVal" class="text-xl font-extrabold text-white font-mono">148.2k</span>
+              <span id="donutChannelName" class="text-[10px] text-slate-400 font-semibold uppercase">Total Inbound</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Legend Breakdown -->
+        <div class="mt-4 pt-3 border-t border-slate-800 space-y-2 text-xs">
+          <div class="flex items-center justify-between text-slate-300 cursor-pointer hover:text-white" onclick="inspectChannel('Organic Search', '42%')">
+            <span class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span>Organic Search (SEO)</span>
+            </span>
+            <strong class="font-mono text-white">42%</strong>
+          </div>
+          <div class="flex items-center justify-between text-slate-300 cursor-pointer hover:text-white" onclick="inspectChannel('Direct Brand', '28%')">
+            <span class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+              <span>Direct / Brand</span>
+            </span>
+            <strong class="font-mono text-white">28%</strong>
+          </div>
+          <div class="flex items-center justify-between text-slate-300 cursor-pointer hover:text-white" onclick="inspectChannel('Developer Referrals', '18%')">
+            <span class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-violet-500"></span>
+              <span>Dev Referrals &amp; GitHub</span>
+            </span>
+            <strong class="font-mono text-white">18%</strong>
+          </div>
+          <div class="flex items-center justify-between text-slate-300 cursor-pointer hover:text-white" onclick="inspectChannel('Paid Growth', '12%')">
+            <span class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+              <span>Paid Performance Ads</span>
+            </span>
+            <strong class="font-mono text-white">12%</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cohort Retention Heatmap Matrix (2 Columns) -->
+      <div class="lg:col-span-2 bg-surface-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="grid" class="w-4 h-4 text-emerald-400"></i>
+                <span>Weekly Customer Retention Cohorts</span>
+              </h3>
+              <p class="text-xs text-slate-400">Percentage of initial signup cohorts returning to active usage each subsequent week</p>
+            </div>
+            <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">W6 Avg: 62%</span>
+          </div>
+
+          <!-- Heatmap Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono">
+              <thead>
+                <tr class="text-slate-400 border-b border-slate-800 text-[10px] uppercase">
+                  <th class="py-2.5 px-3">Cohort</th>
+                  <th class="py-2.5 px-2 text-center">Users</th>
+                  <th class="py-2.5 px-2 text-center">W0</th>
+                  <th class="py-2.5 px-2 text-center">W1</th>
+                  <th class="py-2.5 px-2 text-center">W2</th>
+                  <th class="py-2.5 px-2 text-center">W3</th>
+                  <th class="py-2.5 px-2 text-center">W4</th>
+                  <th class="py-2.5 px-2 text-center">W5</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-200">
+                <!-- Oct 05 -->
+                <tr>
+                  <td class="py-2 px-3 font-semibold text-slate-300">Oct 05</td>
+                  <td class="py-2 px-2 text-center text-slate-400">2,410</td>
+                  <td class="py-2 px-2 text-center bg-emerald-500/90 text-black font-bold rounded">100%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/80 text-white rounded">84%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/70 text-white rounded">76%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/60 text-white rounded">71%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/50 text-white rounded">68%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/40 text-white rounded">65%</td>
+                </tr>
+                <!-- Oct 12 -->
+                <tr>
+                  <td class="py-2 px-3 font-semibold text-slate-300">Oct 12</td>
+                  <td class="py-2 px-2 text-center text-slate-400">2,890</td>
+                  <td class="py-2 px-2 text-center bg-emerald-500/90 text-black font-bold rounded">100%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/80 text-white rounded">86%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/70 text-white rounded">79%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/60 text-white rounded">74%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/50 text-white rounded">70%</td>
+                  <td class="py-2 px-2 text-center text-slate-600">-</td>
+                </tr>
+                <!-- Oct 19 -->
+                <tr>
+                  <td class="py-2 px-3 font-semibold text-slate-300">Oct 19</td>
+                  <td class="py-2 px-2 text-center text-slate-400">3,120</td>
+                  <td class="py-2 px-2 text-center bg-emerald-500/90 text-black font-bold rounded">100%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/80 text-white rounded">88%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/75 text-white rounded">81%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/65 text-white rounded">77%</td>
+                  <td class="py-2 px-2 text-center text-slate-600">-</td>
+                  <td class="py-2 px-2 text-center text-slate-600">-</td>
+                </tr>
+                <!-- Oct 26 -->
+                <tr>
+                  <td class="py-2 px-3 font-semibold text-slate-300">Oct 26</td>
+                  <td class="py-2 px-2 text-center text-slate-400">3,450</td>
+                  <td class="py-2 px-2 text-center bg-emerald-500/90 text-black font-bold rounded">100%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/85 text-white rounded">89%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/80 text-white rounded">83%</td>
+                  <td class="py-2 px-2 text-center text-slate-600">-</td>
+                  <td class="py-2 px-2 text-center text-slate-600">-</td>
+                  <td class="py-2 px-2 text-center text-slate-600">-</td>
+                </tr>
+                <!-- Nov 02 -->
+                <tr>
+                  <td class="py-2 px-3 font-semibold text-slate-300">Nov 02</td>
+                  <td class="py-2 px-2 text-center text-slate-400">3,890</td>
+                  <td class="py-2 px-2 text-center bg-emerald-500/90 text-black font-bold rounded">100%</td>
+                  <td class="py-2 px-2 text-center bg-emerald-600/90 text-white font-bold rounded">91%</td>
+                  <td class="py-2 px-2 text-center text-slate-600">-</td>
+                  <td class="py-2 px-2 text-center text-slate-600">-</td>
+                  <td class="py-2 px-2 text-center text-slate-600">-</td>
+                  <td class="py-2 px-2 text-center text-slate-600">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <span>Benchmark: High-Growth B2B SaaS Median = 48% at Week 6</span>
+          <span class="text-emerald-400 font-semibold font-mono">Status: Top Decile (+17%)</span>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 1: EXPORT DATASET MODAL                            -->
+  <!-- ======================================================== -->
+  <div id="exportModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+      <button onclick="closeModal('exportModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-800 transition-colors" aria-label="Close dialog">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-400">
+          <i data-lucide="download" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="exportModalTitle" class="text-base font-bold text-white">Export Analytics Snapshot</h3>
+          <p class="text-xs text-slate-400">Download formatted telemetry for external BI pipelines</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-2">Export Format</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="triggerExport('CSV')" class="p-3 rounded-xl bg-surface-950 border border-slate-800 hover:border-brand-500 text-center transition-colors">
+              <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-400 mx-auto mb-1"></i>
+              <span class="text-xs font-bold text-white block">CSV</span>
+              <span class="text-[10px] text-slate-400">Raw tabular</span>
+            </button>
+            <button onclick="triggerExport('JSON')" class="p-3 rounded-xl bg-surface-950 border border-slate-800 hover:border-brand-500 text-center transition-colors">
+              <i data-lucide="code" class="w-5 h-5 text-cyan-400 mx-auto mb-1"></i>
+              <span class="text-xs font-bold text-white block">JSON</span>
+              <span class="text-[10px] text-slate-400">REST API payload</span>
+            </button>
+            <button onclick="triggerExport('PDF')" class="p-3 rounded-xl bg-surface-950 border border-slate-800 hover:border-brand-500 text-center transition-colors">
+              <i data-lucide="file-text" class="w-5 h-5 text-violet-400 mx-auto mb-1"></i>
+              <span class="text-xs font-bold text-white block">PDF</span>
+              <span class="text-[10px] text-slate-400">Executive sheet</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="text-xs text-slate-400 space-y-1">
+          <p>&bull; Included records: Active 30-day window metrics &amp; cohort matrix.</p>
+          <p>&bull; Anonymized user telemetry conforming to GDPR &amp; SOC2 Type II.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 2: THRESHOLD ALERT CONFIGURATION MODAL             -->
+  <!-- ======================================================== -->
+  <div id="alertModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="alertModalTitle">
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+      <button onclick="closeModal('alertModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-800 transition-colors" aria-label="Close dialog">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="alertModalTitle" class="text-base font-bold text-white">Set Telemetry Anomaly Alert</h3>
+          <p class="text-xs text-slate-400">Trigger Slack &amp; PagerDuty alerts on metric deviation</p>
+        </div>
+      </div>
+
+      <form onsubmit="handleCreateAlert(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1.5">Monitored Metric</label>
+          <select class="w-full bg-surface-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 outline-none">
+            <option>Monthly Recurring Revenue (MRR) Drop &gt; 5%</option>
+            <option>Concurrent Active Sessions Spike &gt; 3,000</option>
+            <option>Funnel Drop-off at Stage 3 &gt; 35%</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1.5">Notification Webhook / Channel</label>
+          <input type="text" value="#growth-war-room" class="w-full bg-surface-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-200 font-mono outline-none">
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('alertModal')" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white font-semibold">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Create Rule</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- FLOATING TOAST NOTIFICATION CONTAINER                   -->
+  <!-- ======================================================== -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none" aria-live="polite"></div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT APPLICATION CORE                             -->
+  <!-- ======================================================== -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // ----------------------------------------------------
+    // State Management & Chart Data Engine
+    // ----------------------------------------------------
+    const STATE = {
+      timeframe: '30d',
+      region: 'global',
+      audioEnabled: true,
+      liveActive: true,
+      seriesVisible: {
+        arr: true,
+        users: true
+      },
+      liveCount: 1428,
+      liveSparkData: [28, 32, 35, 30, 42, 45, 40, 52, 48, 55, 60, 58, 62, 68, 64, 70, 75, 72, 78, 80],
+      datasets: {
+        '24h': {
+          labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+          kpis: { arr: '$1,842,500', nrr: '124.6%', seats: '14,892', cac: '$142.00' },
+          rev: [120, 115, 130, 145, 175, 190, 210],
+          users: [1100, 950, 1280, 1420, 1550, 1680, 1750]
+        },
+        '7d': {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          kpis: { arr: '$1,825,000', nrr: '123.8%', seats: '14,620', cac: '$144.50' },
+          rev: [135, 142, 148, 155, 168, 182, 195],
+          users: [1250, 1310, 1380, 1420, 1500, 1610, 1690]
+        },
+        '30d': {
+          labels: ['Day 1', 'Day 6', 'Day 12', 'Day 18', 'Day 24', 'Day 30'],
+          kpis: { arr: '$1,842,500', nrr: '124.6%', seats: '14,892', cac: '$142.00' },
+          rev: [110, 125, 138, 152, 170, 195, 218],
+          users: [980, 1120, 1240, 1360, 1490, 1640, 1780]
+        },
+        '90d': {
+          labels: ['Month 1', 'Month 2', 'Month 3'],
+          kpis: { arr: '$1,750,000', nrr: '121.2%', seats: '13,950', cac: '$149.00' },
+          rev: [95, 130, 165, 190, 220, 245],
+          users: [850, 1050, 1280, 1480, 1680, 1890]
+        },
+        '1y': {
+          labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+          kpis: { arr: '$1,520,000', nrr: '118.4%', seats: '11,400', cac: '$162.00' },
+          rev: [60, 95, 135, 175, 215, 260],
+          users: [600, 850, 1150, 1450, 1720, 2050]
+        }
+      }
+    };
+
+    // ----------------------------------------------------
+    // Web Audio API Synthesizer Engine
+    // ----------------------------------------------------
+    const audioCtx = (function() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        return new AudioContext();
+      } catch (e) {
+        return null;
+      }
+    })();
+
+    function playSound(type) {
+      if (!STATE.audioEnabled || !audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'scrub') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450 + Math.random() * 200, now);
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      } else if (type === 'click') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(580, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } else if (type === 'chime' || type === 'success') {
+        [523.25, 659.25, 783.99].forEach((f, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now + i * 0.05);
+          gain.gain.setValueAtTime(0.07, now + i * 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.2);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + i * 0.05);
+          osc.stop(now + i * 0.05 + 0.2);
+        });
+      }
+    }
+
+    function toggleAudio() {
+      STATE.audioEnabled = !STATE.audioEnabled;
+      const icon = document.getElementById('audioIcon');
+      if (STATE.audioEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.classList.remove('text-slate-500');
+        icon.classList.add('text-emerald-400');
+        showToast('Telemetry sound feedback enabled', 'info');
+        playSound('click');
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.classList.remove('text-emerald-400');
+        icon.classList.add('text-slate-500');
+        showToast('Telemetry sound feedback muted', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // Dark / Light Mode Toggle
+    // ----------------------------------------------------
+    function toggleTheme() {
+      playSound('click');
+      const html = document.documentElement;
+      const icon = document.getElementById('themeIcon');
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        icon.setAttribute('data-lucide', 'sun');
+        icon.classList.remove('text-brand-400');
+        icon.classList.add('text-amber-500');
+        showToast('Switched to Light Mode', 'info');
+      } else {
+        html.classList.add('dark');
+        icon.setAttribute('data-lucide', 'moon');
+        icon.classList.remove('text-amber-500');
+        icon.classList.add('text-brand-400');
+        showToast('Switched to Dark Obsidian Mode', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // Timeframe Selection & Chart Rendering
+    // ----------------------------------------------------
+    function setTimeframe(tf) {
+      playSound('click');
+      STATE.timeframe = tf;
+
+      // Update button styles
+      document.querySelectorAll('.time-tab').forEach(btn => {
+        if (btn.innerText.toLowerCase() === tf) {
+          btn.className = 'time-tab active flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-brand-600 text-white shadow-sm';
+          btn.setAttribute('aria-current', 'page');
+        } else {
+          btn.className = 'time-tab flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200';
+          btn.removeAttribute('aria-current');
+        }
+      });
+
+      document.getElementById('chartTimeframeBadge').innerText = `${tf.toUpperCase()} Window`;
+
+      // Update KPI figures
+      const data = STATE.datasets[tf];
+      document.getElementById('kpiArrVal').innerText = data.kpis.arr;
+      document.getElementById('kpiNrrVal').innerText = data.kpis.nrr;
+      document.getElementById('kpiSeatsVal').innerText = data.kpis.seats;
+      document.getElementById('kpiCacVal').innerText = data.kpis.cac;
+
+      // Render chart
+      renderSvgChart();
+      showToast(`Dashboard re-indexed to ${tf.toUpperCase()} window`, 'info');
+    }
+
+    // Convert numeric array into smooth SVG Bezier path
+    function buildBezierPath(points, width, height, padY = 30) {
+      if (!points || points.length === 0) return '';
+      const minVal = Math.min(...points) * 0.85;
+      const maxVal = Math.max(...points) * 1.1;
+      const stepX = width / (points.length - 1);
+
+      const coords = points.map((val, i) => {
+        const x = i * stepX;
+        const normY = (val - minVal) / (maxVal - minVal);
+        const y = height - padY - normY * (height - padY * 2);
+        return { x, y };
+      });
+
+      let d = `M ${coords[0].x} ${coords[0].y}`;
+      for (let i = 0; i < coords.length - 1; i++) {
+        const p0 = coords[i === 0 ? 0 : i - 1];
+        const p1 = coords[i];
+        const p2 = coords[i + 1];
+        const p3 = coords[i + 2] || p2;
+
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+        d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+      }
+      return { linePath: d, coords };
+    }
+
+    function renderSvgChart() {
+      const data = STATE.datasets[STATE.timeframe];
+      const width = 1000;
+      const height = 300;
+
+      // Revenue series
+      if (STATE.seriesVisible.arr) {
+        const { linePath, coords } = buildBezierPath(data.rev, width, height);
+        document.getElementById('svgLineRevenue').setAttribute('d', linePath);
+        document.getElementById('svgAreaRevenue').setAttribute('d', `${linePath} L 1000 280 L 0 280 Z`);
+      } else {
+        document.getElementById('svgLineRevenue').setAttribute('d', '');
+        document.getElementById('svgAreaRevenue').setAttribute('d', '');
+      }
+
+      // User series
+      if (STATE.seriesVisible.users) {
+        const { linePath, coords } = buildBezierPath(data.users, width, height);
+        document.getElementById('svgLineUsers').setAttribute('d', linePath);
+        document.getElementById('svgAreaUsers').setAttribute('d', `${linePath} L 1000 280 L 0 280 Z`);
+      } else {
+        document.getElementById('svgLineUsers').setAttribute('d', '');
+        document.getElementById('svgAreaUsers').setAttribute('d', '');
+      }
+
+      // Update X-axis labels
+      const xContainer = document.getElementById('chartXLabels');
+      xContainer.innerHTML = data.labels.map(lbl => `<span>${lbl}</span>`).join('');
+    }
+
+    function toggleSeries(seriesKey) {
+      playSound('click');
+      STATE.seriesVisible[seriesKey] = !STATE.seriesVisible[seriesKey];
+
+      const btnRev = document.getElementById('toggleSeriesArr');
+      const btnUsers = document.getElementById('toggleSeriesUsers');
+
+      if (seriesKey === 'arr') {
+        if (STATE.seriesVisible.arr) {
+          btnRev.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-medium transition-all';
+        } else {
+          btnRev.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-surface-800 text-slate-500 font-medium transition-all opacity-60';
+        }
+      }
+
+      if (seriesKey === 'users') {
+        if (STATE.seriesVisible.users) {
+          btnUsers.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 font-medium transition-all';
+        } else {
+          btnUsers.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-surface-800 text-slate-500 font-medium transition-all opacity-60';
+        }
+      }
+
+      renderSvgChart();
+    }
+
+    // ----------------------------------------------------
+    // Interactive Crosshair & Hover Scrubbing
+    // ----------------------------------------------------
+    const container = document.getElementById('chartCanvasContainer');
+    const tooltip = document.getElementById('chartTooltip');
+    const crosshair = document.getElementById('crosshairLine');
+    const dotRev = document.getElementById('scrubDotRev');
+    const dotUser = document.getElementById('scrubDotUser');
+
+    let lastScrubIndex = -1;
+
+    container.addEventListener('mousemove', (e) => {
+      const rect = container.getBoundingClientRect();
+      const clientX = e.clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, clientX / rect.width));
+
+      const data = STATE.datasets[STATE.timeframe];
+      const count = data.rev.length;
+      const index = Math.round(ratio * (count - 1));
+
+      if (index !== lastScrubIndex) {
+        playSound('scrub');
+        lastScrubIndex = index;
+      }
+
+      // Position crosshair
+      crosshair.style.left = `${ratio * 100}%`;
+      crosshair.style.opacity = '1';
+
+      // Tooltip content
+      tooltip.style.left = `${ratio * 100}%`;
+      tooltip.style.top = '60px';
+      tooltip.style.opacity = '1';
+
+      const label = data.labels[Math.min(index, data.labels.length - 1)] || `Point ${index}`;
+      document.getElementById('tooltipDate').innerText = label;
+      document.getElementById('tooltipVal1').innerText = `$${(data.rev[index] * 1000).toLocaleString()}`;
+      document.getElementById('tooltipVal2').innerText = `${data.users[index].toLocaleString()} seats`;
+
+      // Position scrub dots on SVG
+      const svgX = (index / (count - 1)) * 1000;
+      dotRev.setAttribute('cx', svgX);
+      dotRev.setAttribute('cy', 280 - (data.rev[index] / 260) * 220);
+
+      dotUser.setAttribute('cx', svgX);
+      dotUser.setAttribute('cy', 280 - (data.users[index] / 2200) * 220);
+    });
+
+    container.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = '0';
+      crosshair.style.opacity = '0';
+      dotRev.setAttribute('cx', -50);
+      dotUser.setAttribute('cx', -50);
+    });
+
+    // ----------------------------------------------------
+    // Real-Time 60fps Concurrent Sparkline Generator
+    // ----------------------------------------------------
+    function updateLiveSparkline() {
+      if (!STATE.liveActive) return;
+
+      // Random jitter for concurrent count
+      const delta = Math.floor(Math.random() * 9) - 4;
+      STATE.liveCount = Math.max(1200, STATE.liveCount + delta);
+      document.getElementById('liveActiveCount').innerText = STATE.liveCount.toLocaleString();
+
+      // Shift data array
+      STATE.liveSparkData.shift();
+      STATE.liveSparkData.push(Math.max(20, Math.min(85, STATE.liveSparkData[STATE.liveSparkData.length - 1] + (Math.random() * 14 - 7))));
+
+      // Render sparkline path
+      const points = STATE.liveSparkData;
+      const width = 300;
+      const height = 80;
+      const step = width / (points.length - 1);
+
+      let d = `M 0 ${height - points[0]}`;
+      for (let i = 1; i < points.length; i++) {
+        d += ` L ${i * step} ${height - points[i]}`;
+      }
+      document.getElementById('liveSparkPath').setAttribute('d', d);
+
+      // Geo numbers jitter
+      document.getElementById('geoUs').innerText = Math.round(STATE.liveCount * 0.45);
+      document.getElementById('geoEu').innerText = Math.round(STATE.liveCount * 0.35);
+      document.getElementById('geoApac').innerText = Math.round(STATE.liveCount * 0.20);
+    }
+
+    let liveInterval = setInterval(updateLiveSparkline, 2000);
+
+    function toggleLiveTicker() {
+      playSound('click');
+      STATE.liveActive = !STATE.liveActive;
+      const btn = document.getElementById('liveTickerBtn');
+      if (STATE.liveActive) {
+        btn.innerText = 'Pause Live';
+        showToast('Real-time telemetry stream resumed', 'success');
+      } else {
+        btn.innerText = 'Resume Live';
+        showToast('Real-time telemetry stream paused', 'info');
+      }
+    }
+
+    // ----------------------------------------------------
+    // Donut Channel Inspection
+    // ----------------------------------------------------
+    function inspectChannel(name, share) {
+      playSound('click');
+      document.getElementById('donutChannelName').innerText = name;
+      document.getElementById('donutChannelVal').innerText = share;
+      showToast(`Selected channel: ${name} (${share} inbound traffic)`, 'info');
+    }
+
+    function handleFilterChange() {
+      playSound('click');
+      const val = document.getElementById('regionFilter').value;
+      showToast(`Segment filtered by: ${val.toUpperCase()}`, 'info');
+    }
+
+    // ----------------------------------------------------
+    // Modal Helpers & Focus Trapping
+    // ----------------------------------------------------
+    function openModal(modalId) {
+      playSound('click');
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeModal(modalId) {
+      playSound('click');
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        ['exportModal', 'alertModal'].forEach(id => {
+          const m = document.getElementById(id);
+          if (m && !m.classList.contains('hidden')) {
+            closeModal(id);
+          }
+        });
+      }
+    });
+
+    function triggerExport(format) {
+      playSound('success');
+      closeModal('exportModal');
+      showToast(`Telemetry report exported successfully in ${format} format!`, 'success');
+    }
+
+    function handleCreateAlert(e) {
+      e.preventDefault();
+      playSound('chime');
+      closeModal('alertModal');
+      showToast('Anomaly alert rule deployed to #growth-war-room webhook', 'success');
+    }
+
+    // ----------------------------------------------------
+    // Toast Notification System
+    // ----------------------------------------------------
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+
+      const bgColors = {
+        info: 'bg-surface-900 border-slate-700 text-slate-200',
+        success: 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200',
+        warning: 'bg-amber-950/90 border-amber-500/50 text-amber-200'
+      };
+
+      const iconNames = {
+        info: 'info',
+        success: 'check-circle-2',
+        warning: 'alert-triangle'
+      };
+
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl text-xs backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${bgColors[type] || bgColors.info}`;
+      toast.innerHTML = `
+        <i data-lucide="${iconNames[type] || 'info'}" class="w-4 h-4 text-emerald-400"></i>
+        <span class="font-medium">${message}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, 300);
+      }, 3500);
+    }
+
+    // Initial render
+    renderSvgChart();
+    updateLiveSparkline();
+  </script>
+</body>
+</html>
