@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 019: Leaderboard & Gamified Ranking Arena | Daily UI/UX</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fdf4ff',
+              100: '#fae8ff',
+              200: '#f5d0fe',
+              300: '#f0abfc',
+              400: '#e879f9',
+              500: '#d946ef',
+              600: '#c026d3',
+              700: '#a21caf',
+              800: '#86198f',
+              900: '#701a75',
+            },
+            arena: {
+              gold: '#fbbf24',
+              silver: '#94a3b8',
+              bronze: '#d97706',
+              grandmaster: '#ec4899',
+              diamond: '#38bdf8',
+              platinum: '#34d399',
+            },
+            surface: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              800: '#1e293b',
+              850: '#131b2e',
+              900: '#0b1120',
+              950: '#050813',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
+          },
+          animation: {
+            'glow-pulse': 'glow 2.5s infinite ease-in-out',
+            'float-slow': 'float 4s ease-in-out infinite',
+          },
+          keyframes: {
+            glow: {
+              '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+              '50%': { opacity: '0.8', transform: 'scale(1.05)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-6px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(11, 17, 32, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.45);
+    }
+
+    /* Row Re-sorting Transition */
+    .leaderboard-row {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Print Stylesheet */
+    @media print {
+      body {
+        background: white !important;
+        color: #0f172a !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-shadow-none {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-100 min-h-screen font-sans antialiased transition-colors duration-300 selection:bg-brand-500 selection:text-white pb-24">
+
+  <!-- ========================================== -->
+  <!-- Top Command Header (no-print)              -->
+  <!-- ========================================== -->
+  <header class="no-print sticky top-0 z-40 bg-surface-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Challenge ID -->
+      <div class="flex items-center space-x-3">
+        <a href="../" class="group flex items-center gap-2.5 text-slate-300 hover:text-white transition-colors" title="Back to Challenge Directory">
+          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-800 border border-slate-700/80 group-hover:border-brand-500/50 text-slate-300 group-hover:text-brand-400 transition-all shadow-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </span>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20">Day 019</span>
+              <span class="text-xs text-slate-400 font-mono">Daily UI/UX</span>
+            </div>
+            <h1 class="text-sm font-semibold text-slate-100 group-hover:text-white flex items-center gap-2">
+              <span>Apex Arena &bull; Season 4 Global Ranking</span>
+              <span class="inline-flex items-center gap-1 text-[11px] font-mono text-fuchsia-400 bg-fuchsia-500/10 px-2 py-0.5 rounded-full border border-fuchsia-500/20">
+                <i data-lucide="zap" class="w-3 h-3 animate-pulse"></i>
+                GRANDMASTER TIER
+              </span>
+            </h1>
+          </div>
+        </a>
+      </div>
+
+      <!-- Center: Timeframe Granularity Tabs -->
+      <nav aria-label="Leaderboard timeframe" class="flex items-center bg-surface-950/80 p-1 rounded-xl border border-slate-800 shadow-inner text-xs">
+        <button onclick="setTimeframe('weekly')" class="timeframe-tab active px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-200 bg-brand-600 text-white shadow-sm" aria-current="page">Weekly Blitz</button>
+        <button onclick="setTimeframe('season')" class="timeframe-tab px-3.5 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200">Season 4</button>
+        <button onclick="setTimeframe('alltime')" class="timeframe-tab px-3.5 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200">All-Time Hall of Fame</button>
+      </nav>
+
+      <!-- Right: Utility Actions (Audio, Theme, Simulate Win) -->
+      <div class="flex items-center space-x-2">
+        <!-- Audio Feedback Toggle -->
+        <button id="audioToggleBtn" onclick="toggleAudio()" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700/80 text-slate-300 hover:text-white transition-colors" title="Toggle Sound Feedback" aria-label="Toggle Sound Effects">
+          <i id="audioIcon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+        </button>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700/80 text-slate-300 hover:text-white transition-colors" title="Toggle Light/Dark Theme" aria-label="Toggle Dark/Light Mode">
+          <i id="themeIcon" data-lucide="moon" class="w-4 h-4 text-brand-400"></i>
+        </button>
+
+        <!-- Primary Action: Simulate Match Victory (+XP) -->
+        <button onclick="simulateMatchWin()" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 font-semibold text-white text-xs transition-all shadow-lg shadow-brand-600/30">
+          <i data-lucide="swords" class="w-3.5 h-3.5"></i>
+          <span>Win Match (+350 XP)</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- MAIN ARENA CONTENT                         -->
+  <!-- ========================================== -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- ======================================================== -->
+    <!-- SECTION 1: TOP 3 PODIUM ELEVATION SHOWCASE               -->
+    <!-- ======================================================== -->
+    <section class="relative pt-6 pb-2">
+      <!-- Glow backlight backdrop -->
+      <div class="absolute inset-x-1/4 top-10 h-44 bg-brand-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="text-center mb-8">
+        <span class="text-xs font-mono uppercase tracking-widest text-brand-400 bg-brand-500/10 px-3 py-1 rounded-full border border-brand-500/20">The Vanguard</span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-2">Podium Champions of the Realm</h2>
+        <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">Top 3 competitors dominating global accuracy, execution speed, and win streaks.</p>
+      </div>
+
+      <!-- 3-Tier Podium Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end max-w-4xl mx-auto">
+        
+        <!-- ================= RANK 2: SILVER ================= -->
+        <div class="order-2 md:order-1 flex flex-col items-center">
+          <!-- Player Avatar & Badge -->
+          <div class="relative group cursor-pointer mb-3" onclick="openPlayerModal(1)">
+            <div class="w-20 h-20 rounded-2xl bg-surface-800 border-2 border-arena-silver/60 flex items-center justify-center text-3xl shadow-xl shadow-slate-900/50 group-hover:scale-105 transition-transform overflow-hidden relative">
+              <span id="podiumAvatar2">⚡</span>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+            </div>
+            <!-- Rank 2 Badge -->
+            <div class="absolute -bottom-2 -right-2 w-7 h-7 rounded-lg bg-surface-900 border-2 border-arena-silver text-arena-silver flex items-center justify-center font-black text-xs shadow-md">
+              2
+            </div>
+          </div>
+
+          <h3 id="podiumName2" class="font-bold text-white text-sm hover:text-arena-silver cursor-pointer transition-colors" onclick="openPlayerModal(1)">Cipher_Kage</h3>
+          <p id="podiumHandle2" class="text-[11px] font-mono text-slate-400">@cipherkage</p>
+          <div class="mt-1 flex items-center gap-1.5 text-xs font-mono font-bold text-arena-silver">
+            <i data-lucide="award" class="w-3.5 h-3.5"></i>
+            <span id="podiumXp2">24,850 XP</span>
+          </div>
+
+          <!-- Silver Pedestal -->
+          <div class="w-full mt-4 h-28 bg-gradient-to-b from-surface-800/90 to-surface-900 border-t-2 border-arena-silver/50 rounded-t-2xl p-4 flex flex-col items-center justify-center shadow-lg border-x border-slate-800">
+            <span class="text-xs font-bold text-slate-300 font-mono">SILVER CREST</span>
+            <span class="text-[11px] text-slate-500 font-mono mt-0.5">Win Rate: 84.2%</span>
+          </div>
+        </div>
+
+        <!-- ================= RANK 1: GOLD (Center Champion) ================= -->
+        <div class="order-1 md:order-2 flex flex-col items-center -mt-6">
+          <!-- Crown Icon -->
+          <div class="text-arena-gold mb-1 animate-bounce">
+            <i data-lucide="crown" class="w-8 h-8 fill-arena-gold"></i>
+          </div>
+
+          <!-- Player Avatar & Badge -->
+          <div class="relative group cursor-pointer mb-3" onclick="openPlayerModal(0)">
+            <div class="w-24 h-24 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-yellow-200 p-0.5 shadow-2xl shadow-amber-500/30 group-hover:scale-105 transition-transform">
+              <div class="w-full h-full bg-surface-900 rounded-[14px] flex items-center justify-center text-4xl overflow-hidden relative">
+                <span id="podiumAvatar1">👑</span>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+              </div>
+            </div>
+            <!-- Rank 1 Gold Badge -->
+            <div class="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg bg-arena-gold text-black flex items-center justify-center font-black text-sm shadow-xl ring-4 ring-surface-950">
+              1
+            </div>
+          </div>
+
+          <h3 id="podiumName1" class="font-extrabold text-white text-base hover:text-arena-gold cursor-pointer transition-colors" onclick="openPlayerModal(0)">Valkyrie_Zero</h3>
+          <p id="podiumHandle1" class="text-xs font-mono text-amber-300/80">@valkyrie_ai</p>
+          <div class="mt-1 flex items-center gap-1.5 text-sm font-mono font-black text-arena-gold">
+            <i data-lucide="flame" class="w-4 h-4 fill-arena-gold"></i>
+            <span id="podiumXp1">31,420 XP</span>
+          </div>
+
+          <!-- Gold Pedestal -->
+          <div class="w-full mt-4 h-36 bg-gradient-to-b from-amber-500/20 via-surface-850 to-surface-900 border-t-2 border-arena-gold rounded-t-2xl p-4 flex flex-col items-center justify-center shadow-2xl border-x border-amber-500/30 relative overflow-hidden">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-amber-400/10 via-transparent to-transparent pointer-events-none"></div>
+            <span class="text-xs font-black text-amber-300 font-mono tracking-wider">CHAMPION'S THRONE</span>
+            <span class="text-[11px] text-amber-400/80 font-mono mt-0.5">🔥 24 Win Streak</span>
+          </div>
+        </div>
+
+        <!-- ================= RANK 3: BRONZE ================= -->
+        <div class="order-3 flex flex-col items-center">
+          <!-- Player Avatar & Badge -->
+          <div class="relative group cursor-pointer mb-3" onclick="openPlayerModal(2)">
+            <div class="w-20 h-20 rounded-2xl bg-surface-800 border-2 border-arena-bronze/60 flex items-center justify-center text-3xl shadow-xl shadow-slate-900/50 group-hover:scale-105 transition-transform overflow-hidden relative">
+              <span id="podiumAvatar3">🛡️</span>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+            </div>
+            <!-- Rank 3 Badge -->
+            <div class="absolute -bottom-2 -right-2 w-7 h-7 rounded-lg bg-surface-900 border-2 border-arena-bronze text-arena-bronze flex items-center justify-center font-black text-xs shadow-md">
+              3
+            </div>
+          </div>
+
+          <h3 id="podiumName3" class="font-bold text-white text-sm hover:text-arena-bronze cursor-pointer transition-colors" onclick="openPlayerModal(2)">Aether_Pilot</h3>
+          <p id="podiumHandle3" class="text-[11px] font-mono text-slate-400">@aetherpilot</p>
+          <div class="mt-1 flex items-center gap-1.5 text-xs font-mono font-bold text-arena-bronze">
+            <i data-lucide="medal" class="w-3.5 h-3.5"></i>
+            <span id="podiumXp3">21,900 XP</span>
+          </div>
+
+          <!-- Bronze Pedestal -->
+          <div class="w-full mt-4 h-24 bg-gradient-to-b from-surface-800/90 to-surface-900 border-t-2 border-arena-bronze/50 rounded-t-2xl p-4 flex flex-col items-center justify-center shadow-lg border-x border-slate-800">
+            <span class="text-xs font-bold text-amber-500 font-mono">BRONZE VALOR</span>
+            <span class="text-[11px] text-slate-500 font-mono mt-0.5">Win Rate: 79.5%</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 2: LEADERBOARD SEARCH & TIER FILTER TOOLBAR      -->
+    <!-- ======================================================== -->
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Search Input -->
+      <div class="relative w-full md:w-80">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+        <input type="text" id="playerSearchInput" oninput="handleSearch(this.value)" placeholder="Search player name or handle..." class="w-full bg-surface-950 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
+      </div>
+
+      <!-- Tier Filters -->
+      <div class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 text-xs">
+        <button onclick="filterTier('all')" class="tier-tab active px-3 py-1.5 rounded-lg font-semibold bg-brand-600 text-white transition-colors">All Tiers</button>
+        <button onclick="filterTier('grandmaster')" class="tier-tab px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-pink-400 transition-colors">Grandmaster</button>
+        <button onclick="filterTier('diamond')" class="tier-tab px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-sky-400 transition-colors">Diamond</button>
+        <button onclick="filterTier('platinum')" class="tier-tab px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-emerald-400 transition-colors">Platinum</button>
+      </div>
+
+      <!-- Jump to My Rank Button -->
+      <button onclick="scrollToMyRank()" class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-colors">
+        <i data-lucide="locate" class="w-3.5 h-3.5 text-brand-400"></i>
+        <span>Find My Rank (#8)</span>
+      </button>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 3: FULL COMPETITIVE LEADERBOARD TABLE             -->
+    <!-- ======================================================== -->
+    <div class="bg-surface-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      
+      <!-- Table Header -->
+      <div class="grid grid-cols-12 gap-4 px-6 py-3.5 bg-surface-950 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider font-mono">
+        <div class="col-span-1 text-center">Rank</div>
+        <div class="col-span-5 sm:col-span-4">Competitor</div>
+        <div class="col-span-3 sm:col-span-2 text-center">Tier &amp; Division</div>
+        <div class="hidden sm:block sm:col-span-2 text-center">Win Streak</div>
+        <div class="col-span-3 text-right">Score (XP)</div>
+      </div>
+
+      <!-- Dynamic Rows Container -->
+      <div id="leaderboardList" class="divide-y divide-slate-800/80">
+        <!-- Rendered via JavaScript -->
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- STICKY BOTTOM USER STATUS DOCK (My Rank Bar)             -->
+  <!-- ======================================================== -->
+  <aside id="stickyUserDock" class="no-print fixed bottom-0 inset-x-0 z-40 bg-surface-900/95 backdrop-blur-lg border-t border-brand-500/30 px-4 sm:px-8 py-3 shadow-2xl transition-all">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      
+      <!-- User Identification & Current Rank -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 p-0.5 shadow-lg shadow-brand-500/20">
+          <div class="w-full h-full bg-surface-900 rounded-[10px] flex items-center justify-center text-xl">
+            🚀
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-white">Alex Rivera (You)</span>
+            <span class="text-[10px] bg-brand-500/20 text-brand-300 border border-brand-500/30 px-2 py-0.2 rounded-full font-mono font-semibold">DIAMOND I</span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-mono">
+            Current Rank: <strong id="dockRankVal" class="text-brand-400">#8</strong> &bull; <span id="dockXpVal" class="text-white font-bold">18,420 XP</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Progress toward Next Rank Bar -->
+      <div class="w-full sm:w-80 flex flex-col gap-1 text-xs">
+        <div class="flex justify-between text-[11px] font-mono">
+          <span class="text-slate-400" id="dockDistanceLabel">240 XP to pass #7 @nova_dev</span>
+          <span class="text-emerald-400 font-semibold" id="dockProgressPct">76%</span>
+        </div>
+        <div class="h-2 w-full bg-surface-950 rounded-full overflow-hidden border border-slate-800">
+          <div id="dockProgressBar" class="h-full bg-gradient-to-r from-brand-500 to-cyan-400 rounded-full transition-all duration-500" style="width: 76%;"></div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2">
+        <button onclick="simulateMatchWin()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 font-bold text-white text-xs shadow-lg shadow-brand-600/30 transition-all flex items-center gap-1.5">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          <span>Play Match (+350 XP)</span>
+        </button>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: COMPETITOR BATTLE CARD PROFILE                    -->
+  <!-- ======================================================== -->
+  <div id="playerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="modalPlayerName">
+    <div class="bg-surface-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+      <!-- Glow accent -->
+      <div class="absolute -right-16 -top-16 w-52 h-52 bg-brand-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+      <button onclick="closePlayerModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-800 transition-colors" aria-label="Close dialog">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Player Header -->
+      <div class="flex items-center gap-4 mb-6">
+        <div class="w-16 h-16 rounded-2xl bg-surface-800 border-2 border-slate-700 flex items-center justify-center text-3xl shadow-xl overflow-hidden flex-shrink-0" id="modalPlayerAvatar">
+          👑
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="modalPlayerName" class="text-lg font-bold text-white">Player Name</h3>
+            <span id="modalPlayerTierBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30 font-semibold">DIAMOND</span>
+          </div>
+          <p id="modalPlayerHandle" class="text-xs font-mono text-slate-400">@handle</p>
+          <div class="mt-1 flex items-center gap-2 text-xs">
+            <span class="text-slate-400">Global Rank:</span>
+            <strong id="modalPlayerRank" class="text-brand-400 font-mono font-bold">#1</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player Stats Grid -->
+      <div class="grid grid-cols-3 gap-3 mb-6 text-center text-xs">
+        <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+          <span class="text-[10px] text-slate-400 block font-mono">TOTAL XP</span>
+          <strong id="modalPlayerXp" class="text-white font-mono text-sm block mt-0.5">31,420</strong>
+        </div>
+        <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+          <span class="text-[10px] text-slate-400 block font-mono">WIN RATE</span>
+          <strong id="modalPlayerWinRate" class="text-emerald-400 font-mono text-sm block mt-0.5">88.4%</strong>
+        </div>
+        <div class="bg-surface-950 p-3 rounded-xl border border-slate-800">
+          <span class="text-[10px] text-slate-400 block font-mono">ACTIVE STREAK</span>
+          <strong id="modalPlayerStreak" class="text-amber-400 font-mono text-sm block mt-0.5">🔥 24 W</strong>
+        </div>
+      </div>
+
+      <!-- Earned Mastery Badges -->
+      <div class="mb-6">
+        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2.5">Battle Achievements &amp; Badges</h4>
+        <div class="flex flex-wrap gap-2 text-xs" id="modalPlayerBadges">
+          <!-- Badges dynamically rendered -->
+        </div>
+      </div>
+
+      <!-- Head-to-Head Comparison Bar vs You -->
+      <div class="bg-surface-950 p-4 rounded-xl border border-slate-800 text-xs space-y-2">
+        <div class="flex justify-between text-slate-300">
+          <span>Head-to-Head XP Delta vs You (Alex):</span>
+          <span id="modalHeadToHeadDelta" class="font-mono font-bold text-amber-400">+13,000 XP</span>
+        </div>
+        <div class="text-[11px] text-slate-400 leading-relaxed">
+          Matches needed to overtake this rival: <strong class="text-white font-mono" id="modalMatchesNeeded">38 consecutive victories</strong>.
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button onclick="closePlayerModal()" class="px-5 py-2.5 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-200 font-semibold text-xs transition-colors">
+          Dismiss
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- FLOATING CELEBRATION CONFETTI CANVAS       -->
+  <!-- ========================================== -->
+  <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+  <!-- ========================================== -->
+  <!-- FLOATING TOAST CONTAINER                   -->
+  <!-- ========================================== -->
+  <div id="toastContainer" class="fixed bottom-24 right-6 z-50 flex flex-col space-y-2 pointer-events-none" aria-live="polite"></div>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT LOGIC CORE                      -->
+  <!-- ========================================== -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // ----------------------------------------------------
+    // Arena Dataset & Initial State
+    // ----------------------------------------------------
+    const PLAYERS = [
+      { id: 1, name: 'Valkyrie_Zero', handle: '@valkyrie_ai', avatar: '👑', xp: 31420, tier: 'Grandmaster', winRate: '88.4%', streak: 24, badges: ['Flawless Streak', 'Code Architect', 'Titan IV'], isUser: false },
+      { id: 2, name: 'Cipher_Kage', handle: '@cipherkage', avatar: '⚡', xp: 24850, tier: 'Grandmaster', winRate: '84.2%', streak: 16, badges: ['Algorithm Speedster', 'Night Owl', 'Overdrive'], isUser: false },
+      { id: 3, name: 'Aether_Pilot', handle: '@aetherpilot', avatar: '🛡️', xp: 21900, tier: 'Grandmaster', winRate: '79.5%', streak: 12, badges: ['Iron Defender', 'Precisionist'], isUser: false },
+      { id: 4, name: 'Seraph_99', handle: '@seraph99', avatar: '🔮', xp: 20450, tier: 'Diamond', winRate: '76.1%', streak: 9, badges: ['Oracle Insight', 'Bug Hunter'], isUser: false },
+      { id: 5, name: 'NeonPulse', handle: '@neonpulse', avatar: '🏎️', xp: 19800, tier: 'Diamond', winRate: '74.8%', streak: 8, badges: ['Sub-Second Ping', 'Velocity Master'], isUser: false },
+      { id: 6, name: 'KronoForge', handle: '@kronoforge', avatar: '⚙️', xp: 19120, tier: 'Diamond', winRate: '72.0%', streak: 6, badges: ['Heavy Refactor', 'System Core'], isUser: false },
+      { id: 7, name: 'Nova_Dev', handle: '@nova_dev', avatar: '🌟', xp: 18660, tier: 'Diamond', winRate: '70.5%', streak: 5, badges: ['Star Contributor', 'Clean Architecture'], isUser: false },
+      { id: 8, name: 'Alex Rivera', handle: '@arivera_design', avatar: '🚀', xp: 18420, tier: 'Diamond', winRate: '68.9%', streak: 7, badges: ['UI Precision', 'Accessibility Hawk', 'Full-Stack Lead'], isUser: true },
+      { id: 9, name: 'ShadowByte', handle: '@shadowbyte', avatar: '🥷', xp: 17950, tier: 'Platinum', winRate: '66.4%', streak: 4, badges: ['Stealth Merge', 'Zero Regressions'], isUser: false },
+      { id: 10, name: 'Luna_Aura', handle: '@luna_aura', avatar: '🌙', xp: 17200, tier: 'Platinum', winRate: '65.2%', streak: 3, badges: ['Night Shift', 'API Artisan'], isUser: false },
+      { id: 11, name: 'EchoRebel', handle: '@echorebel', avatar: '🎯', xp: 16500, tier: 'Platinum', winRate: '63.8%', streak: 2, badges: ['Sharp Focus', 'Test Suite Champion'], isUser: false },
+      { id: 12, name: 'Vortex_X', handle: '@vortex_x', avatar: '🌪️', xp: 15890, tier: 'Platinum', winRate: '61.5%', streak: 1, badges: ['Rapid Iteration'], isUser: false }
+    ];
+
+    const STATE = {
+      players: [...PLAYERS],
+      filter: 'all',
+      search: '',
+      timeframe: 'weekly',
+      audioEnabled: true
+    };
+
+    // ----------------------------------------------------
+    // Web Audio API Sound Synthesizer
+    // ----------------------------------------------------
+    const audioCtx = (function() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        return new AudioContext();
+      } catch (e) {
+        return null;
+      }
+    })();
+
+    function playSound(type) {
+      if (!STATE.audioEnabled || !audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'click') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } else if (type === 'win') {
+        // Grand victory fanfare arpeggio (C5 -> E5 -> G5 -> C6)
+        [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now + i * 0.08);
+          gain.gain.setValueAtTime(0.12, now + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + i * 0.08);
+          osc.stop(now + i * 0.08 + 0.35);
+        });
+      } else if (type === 'rankup') {
+        // Dramatic rising pitch whoosh
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.3);
+        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+    }
+
+    function toggleAudio() {
+      STATE.audioEnabled = !STATE.audioEnabled;
+      const icon = document.getElementById('audioIcon');
+      if (STATE.audioEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.classList.remove('text-slate-500');
+        icon.classList.add('text-emerald-400');
+        showToast('Arena battle sound feedback enabled', 'info');
+        playSound('click');
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.classList.remove('text-emerald-400');
+        icon.classList.add('text-slate-500');
+        showToast('Arena battle sound feedback muted', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // Theme Switcher
+    // ----------------------------------------------------
+    function toggleTheme() {
+      playSound('click');
+      const html = document.documentElement;
+      const icon = document.getElementById('themeIcon');
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        icon.setAttribute('data-lucide', 'sun');
+        icon.classList.remove('text-brand-400');
+        icon.classList.add('text-amber-500');
+        showToast('Switched to Arena Light Mode', 'info');
+      } else {
+        html.classList.add('dark');
+        icon.setAttribute('data-lucide', 'moon');
+        icon.classList.remove('text-amber-500');
+        icon.classList.add('text-brand-400');
+        showToast('Switched to Cyber Obsidian Mode', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // Render Leaderboard Rows & Podium
+    // ----------------------------------------------------
+    function renderLeaderboard() {
+      // Sort players by XP descending
+      STATE.players.sort((a, b) => b.xp - a.xp);
+
+      // Update Podium (Top 3)
+      if (STATE.players.length >= 3) {
+        // Rank 1
+        const p1 = STATE.players[0];
+        document.getElementById('podiumAvatar1').innerText = p1.avatar;
+        document.getElementById('podiumName1').innerText = p1.name;
+        document.getElementById('podiumHandle1').innerText = p1.handle;
+        document.getElementById('podiumXp1').innerText = `${p1.xp.toLocaleString()} XP`;
+
+        // Rank 2
+        const p2 = STATE.players[1];
+        document.getElementById('podiumAvatar2').innerText = p2.avatar;
+        document.getElementById('podiumName2').innerText = p2.name;
+        document.getElementById('podiumHandle2').innerText = p2.handle;
+        document.getElementById('podiumXp2').innerText = `${p2.xp.toLocaleString()} XP`;
+
+        // Rank 3
+        const p3 = STATE.players[2];
+        document.getElementById('podiumAvatar3').innerText = p3.avatar;
+        document.getElementById('podiumName3').innerText = p3.name;
+        document.getElementById('podiumHandle3').innerText = p3.handle;
+        document.getElementById('podiumXp3').innerText = `${p3.xp.toLocaleString()} XP`;
+      }
+
+      // Filter rows
+      let filtered = STATE.players.filter(p => {
+        const matchesTier = STATE.filter === 'all' || p.tier.toLowerCase() === STATE.filter.toLowerCase();
+        const matchesSearch = p.name.toLowerCase().includes(STATE.search.toLowerCase()) || p.handle.toLowerCase().includes(STATE.search.toLowerCase());
+        return matchesTier && matchesSearch;
+      });
+
+      const listContainer = document.getElementById('leaderboardList');
+      listContainer.innerHTML = '';
+
+      filtered.forEach((player, idx) => {
+        const actualRank = STATE.players.findIndex(p => p.id === player.id) + 1;
+        const row = document.createElement('div');
+        
+        let rankBadge = '';
+        if (actualRank === 1) {
+          rankBadge = '<span class="w-6 h-6 rounded-md bg-amber-400 text-black font-black flex items-center justify-center text-xs">1</span>';
+        } else if (actualRank === 2) {
+          rankBadge = '<span class="w-6 h-6 rounded-md bg-slate-400 text-black font-black flex items-center justify-center text-xs">2</span>';
+        } else if (actualRank === 3) {
+          rankBadge = '<span class="w-6 h-6 rounded-md bg-amber-600 text-white font-black flex items-center justify-center text-xs">3</span>';
+        } else {
+          rankBadge = `<span class="font-mono text-slate-400 font-bold text-xs">#${actualRank}</span>`;
+        }
+
+        let tierColor = 'text-sky-400 bg-sky-500/10 border-sky-500/20';
+        if (player.tier === 'Grandmaster') tierColor = 'text-pink-400 bg-pink-500/10 border-pink-500/20';
+        if (player.tier === 'Platinum') tierColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+
+        const isUserClass = player.isUser 
+          ? 'bg-brand-950/40 border-l-4 border-l-brand-500 hover:bg-brand-900/30' 
+          : 'hover:bg-surface-800/40';
+
+        row.className = `leaderboard-row grid grid-cols-12 gap-4 px-6 py-4 items-center cursor-pointer transition-colors ${isUserClass}`;
+        row.id = `playerRow-${player.id}`;
+        row.onclick = () => openPlayerModal(actualRank - 1);
+
+        row.innerHTML = `
+          <div class="col-span-1 flex justify-center items-center">
+            ${rankBadge}
+          </div>
+          <div class="col-span-5 sm:col-span-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-surface-800 border border-slate-700/80 flex items-center justify-center text-lg shadow-sm flex-shrink-0">
+              ${player.avatar}
+            </div>
+            <div class="truncate">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-bold text-white truncate">${player.name}</span>
+                ${player.isUser ? '<span class="text-[9px] bg-brand-500 text-white px-1.5 py-0.2 rounded font-bold uppercase">YOU</span>' : ''}
+              </div>
+              <p class="text-[11px] font-mono text-slate-400 truncate">${player.handle}</p>
+            </div>
+          </div>
+          <div class="col-span-3 sm:col-span-2 text-center">
+            <span class="text-[10px] font-mono uppercase px-2.5 py-1 rounded-full border ${tierColor} font-semibold inline-block">
+              ${player.tier}
+            </span>
+          </div>
+          <div class="hidden sm:flex sm:col-span-2 items-center justify-center gap-1 text-xs text-amber-400 font-mono">
+            <i data-lucide="flame" class="w-3.5 h-3.5 fill-amber-400"></i>
+            <span>${player.streak} Streak</span>
+          </div>
+          <div class="col-span-3 text-right">
+            <span class="text-sm font-extrabold text-white font-mono">${player.xp.toLocaleString()}</span>
+            <span class="text-[10px] text-slate-400 block font-mono">XP</span>
+          </div>
+        `;
+
+        listContainer.appendChild(row);
+      });
+
+      // Update User Dock Info
+      updateUserDock();
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // User Dock Dynamic Metrics
+    // ----------------------------------------------------
+    function updateUserDock() {
+      const userIndex = STATE.players.findIndex(p => p.isUser);
+      if (userIndex === -1) return;
+
+      const user = STATE.players[userIndex];
+      const rank = userIndex + 1;
+
+      document.getElementById('dockRankVal').innerText = `#${rank}`;
+      document.getElementById('dockXpVal').innerText = `${user.xp.toLocaleString()} XP`;
+
+      if (userIndex > 0) {
+        const rivalAbove = STATE.players[userIndex - 1];
+        const gap = rivalAbove.xp - user.xp;
+        document.getElementById('dockDistanceLabel').innerText = `${gap.toLocaleString()} XP to pass #${userIndex} ${rivalAbove.handle}`;
+        
+        // Progress toward passing the rival (normalized)
+        const progress = Math.min(95, Math.max(15, Math.round(((user.xp % 1000) / 1000) * 100)));
+        document.getElementById('dockProgressBar').style.width = `${progress}%`;
+        document.getElementById('dockProgressPct').innerText = `${progress}%`;
+      } else {
+        document.getElementById('dockDistanceLabel').innerText = '🎉 Champion! You hold #1 Grandmaster Throne!';
+        document.getElementById('dockProgressBar').style.width = '100%';
+        document.getElementById('dockProgressPct').innerText = 'MAX';
+      }
+    }
+
+    // ----------------------------------------------------
+    // Simulate Match Victory (+XP and Rank Shift)
+    // ----------------------------------------------------
+    function simulateMatchWin() {
+      const userIndex = STATE.players.findIndex(p => p.isUser);
+      if (userIndex === -1) return;
+
+      const prevRank = userIndex + 1;
+      const user = STATE.players[userIndex];
+      
+      // Award XP
+      user.xp += 350;
+      user.streak += 1;
+
+      // Check if rank changes
+      STATE.players.sort((a, b) => b.xp - a.xp);
+      const newRank = STATE.players.findIndex(p => p.isUser) + 1;
+
+      if (newRank < prevRank) {
+        // Rank improved!
+        playSound('rankup');
+        fireConfetti();
+        showToast(`🔥 RANK UP! You ascended from #${prevRank} to #${newRank}!`, 'success');
+      } else {
+        playSound('win');
+        showToast(`⚔️ Victory! +350 XP earned! (${user.xp.toLocaleString()} XP)`, 'success');
+      }
+
+      renderLeaderboard();
+      
+      // Highlight user row
+      const userRow = document.getElementById(`playerRow-${user.id}`);
+      if (userRow) {
+        userRow.classList.add('ring-2', 'ring-brand-400');
+        setTimeout(() => userRow.classList.remove('ring-2', 'ring-brand-400'), 1500);
+      }
+    }
+
+    // ----------------------------------------------------
+    // Search & Filter Handlers
+    // ----------------------------------------------------
+    function handleSearch(val) {
+      STATE.search = val;
+      renderLeaderboard();
+    }
+
+    function filterTier(tier) {
+      playSound('click');
+      STATE.filter = tier;
+
+      document.querySelectorAll('.tier-tab').forEach(btn => {
+        if (btn.innerText.toLowerCase().includes(tier)) {
+          btn.className = 'tier-tab active px-3 py-1.5 rounded-lg font-semibold bg-brand-600 text-white transition-colors';
+        } else {
+          btn.className = 'tier-tab px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition-colors';
+        }
+      });
+
+      renderLeaderboard();
+    }
+
+    function setTimeframe(tf) {
+      playSound('click');
+      STATE.timeframe = tf;
+
+      document.querySelectorAll('.timeframe-tab').forEach(btn => {
+        if (btn.getAttribute('onclick').includes(tf)) {
+          btn.className = 'timeframe-tab active px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-200 bg-brand-600 text-white shadow-sm';
+          btn.setAttribute('aria-current', 'page');
+        } else {
+          btn.className = 'timeframe-tab px-3.5 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition-all duration-200';
+          btn.removeAttribute('aria-current');
+        }
+      });
+
+      showToast(`Switched view to: ${tf.toUpperCase()}`, 'info');
+    }
+
+    function scrollToMyRank() {
+      playSound('click');
+      const userRow = document.querySelector('[id*="playerRow-8"]');
+      if (userRow) {
+        userRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        userRow.classList.add('ring-2', 'ring-brand-400');
+        setTimeout(() => userRow.classList.remove('ring-2', 'ring-brand-400'), 1500);
+      }
+    }
+
+    // ----------------------------------------------------
+    // Competitor Profile Modal
+    // ----------------------------------------------------
+    function openPlayerModal(index) {
+      playSound('click');
+      const p = STATE.players[index];
+      if (!p) return;
+
+      document.getElementById('modalPlayerAvatar').innerText = p.avatar;
+      document.getElementById('modalPlayerName').innerText = p.name;
+      document.getElementById('modalPlayerHandle').innerText = p.handle;
+      document.getElementById('modalPlayerRank').innerText = `#${index + 1}`;
+      document.getElementById('modalPlayerTierBadge').innerText = p.tier.toUpperCase();
+      document.getElementById('modalPlayerXp').innerText = p.xp.toLocaleString();
+      document.getElementById('modalPlayerWinRate').innerText = p.winRate;
+      document.getElementById('modalPlayerStreak').innerText = `🔥 ${p.streak} W`;
+
+      // Render Badges
+      const badgeBox = document.getElementById('modalPlayerBadges');
+      badgeBox.innerHTML = p.badges.map(b => `
+        <span class="px-2.5 py-1 rounded-lg bg-surface-950 border border-slate-700/80 text-slate-200 text-xs flex items-center gap-1 font-medium">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-brand-400"></i>
+          <span>${b}</span>
+        </span>
+      `).join('');
+
+      // Head to Head delta
+      const user = STATE.players.find(x => x.isUser);
+      const delta = p.xp - user.xp;
+      const deltaEl = document.getElementById('modalHeadToHeadDelta');
+      const matchesEl = document.getElementById('modalMatchesNeeded');
+
+      if (delta > 0) {
+        deltaEl.innerText = `+${delta.toLocaleString()} XP (Ahead of you)`;
+        deltaEl.className = 'font-mono font-bold text-amber-400';
+        matchesEl.innerText = `${Math.ceil(delta / 350)} consecutive wins`;
+      } else if (delta < 0) {
+        deltaEl.innerText = `${delta.toLocaleString()} XP (Behind you)`;
+        deltaEl.className = 'font-mono font-bold text-emerald-400';
+        matchesEl.innerText = 'You hold the lead!';
+      } else {
+        deltaEl.innerText = 'Tied with you!';
+        deltaEl.className = 'font-mono font-bold text-cyan-400';
+        matchesEl.innerText = '1 win to take the lead!';
+      }
+
+      document.getElementById('playerModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closePlayerModal() {
+      playSound('click');
+      document.getElementById('playerModal').classList.add('hidden');
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closePlayerModal();
+      }
+    });
+
+    // ----------------------------------------------------
+    // Confetti Physics Generator
+    // ----------------------------------------------------
+    function fireConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ['#f43f5e', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
+
+      for (let i = 0; i < 90; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height * 0.4,
+          r: Math.random() * 6 + 3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 16,
+          vy: (Math.random() - 0.7) * 16,
+          gravity: 0.35,
+          alpha: 1
+        });
+      }
+
+      function renderParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.alpha -= 0.012;
+
+          if (p.alpha > 0) {
+            active = true;
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        });
+
+        if (active) {
+          requestAnimationFrame(renderParticles);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      renderParticles();
+    }
+
+    // ----------------------------------------------------
+    // Toast Notification Manager
+    // ----------------------------------------------------
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+
+      const bgColors = {
+        info: 'bg-surface-900 border-slate-700 text-slate-200',
+        success: 'bg-brand-950/90 border-brand-500/50 text-brand-200',
+        warning: 'bg-amber-950/90 border-amber-500/50 text-amber-200'
+      };
+
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl text-xs backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${bgColors[type] || bgColors.info}`;
+      toast.innerHTML = `
+        <i data-lucide="zap" class="w-4 h-4 text-brand-400"></i>
+        <span class="font-medium">${message}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, 300);
+      }, 3500);
+    }
+
+    // Initial render
+    renderLeaderboard();
+  </script>
+</body>
+</html>

@@ -37,7 +37,8 @@ Every daily challenge is executed under four core engineering pillars:
 | **016** | **Pop-Up Overlay & Modal Studio** | Overlays / Growth | [Day 016 Prototype](./day-016-popup-overlay/index.html) | ✅ Completed |
 | **017** | **Email Receipt & Order Invoice Suite** | E-Commerce / Billing | [Day 017 Prototype](./day-017-email-receipt/index.html) | ✅ Completed |
 | **018** | **Analytics Dashboard & Data Visualizer** | Analytics / SaaS | [Day 018 Prototype](./day-018-analytics-dashboard/index.html) | ✅ Completed |
-| **019** | Leaderboard & Gamified Ranking Arena | Gaming / Social | *Upcoming* | ⏳ Queued |
+| **019** | **Leaderboard & Gamified Ranking Arena** | Gaming / Social | [Day 019 Prototype](./day-019-leaderboard/index.html) | ✅ Completed |
+| **020** | Location Tracker & Geospatial Map Suite | Travel / Maps | *Upcoming* | ⏳ Queued |
 
 ---
 
