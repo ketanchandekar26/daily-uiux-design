@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 021: Home Automation & Smart IoT Hub | Daily UI/UX</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              300: '#fdba74',
+              400: '#fb923c',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+              800: '#9a3412',
+              900: '#7c2d12',
+            },
+            iot: {
+              amber: '#f59e0b',
+              emerald: '#10b981',
+              cyan: '#06b6d4',
+              violet: '#8b5cf6',
+              rose: '#f43f5e',
+            },
+            surface: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              800: '#1e293b',
+              850: '#131b2e',
+              900: '#0b1120',
+              950: '#060a14',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(11, 17, 32, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.45);
+    }
+
+    /* Print Stylesheet */
+    @media print {
+      body {
+        background: white !important;
+        color: #0f172a !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-shadow-none {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-100 min-h-screen font-sans antialiased transition-colors duration-300 selection:bg-brand-500 selection:text-white pb-16">
+
+  <!-- ========================================== -->
+  <!-- Top Command Header (no-print)              -->
+  <!-- ========================================== -->
+  <header class="no-print sticky top-0 z-40 bg-surface-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Challenge ID -->
+      <div class="flex items-center space-x-3">
+        <a href="../" class="group flex items-center gap-2.5 text-slate-300 hover:text-white transition-colors" title="Back to Challenge Directory">
+          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-800 border border-slate-700/80 group-hover:border-brand-500/50 text-slate-300 group-hover:text-brand-400 transition-all shadow-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </span>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">Day 021</span>
+              <span class="text-xs text-slate-400 font-mono">Daily UI/UX</span>
+            </div>
+            <h1 class="text-sm font-semibold text-slate-100 group-hover:text-white flex items-center gap-2">
+              <span>AetherHome OS &bull; Ambient IoT Intelligence</span>
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                THREAD / MATTER MESH ONLINE (28 NODES)
+              </span>
+            </h1>
+          </div>
+        </a>
+      </div>
+
+      <!-- Quick Room Pills Selector -->
+      <nav aria-label="Room selection" class="flex items-center bg-surface-950/80 p-1 rounded-xl border border-slate-800 shadow-inner text-xs overflow-x-auto">
+        <button onclick="filterRoom('all')" class="room-tab active px-3 py-1.5 rounded-lg font-semibold bg-brand-600 text-white shadow-sm transition-all" aria-current="page">All Rooms</button>
+        <button onclick="filterRoom('living')" class="room-tab px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition-all">Living Room</button>
+        <button onclick="filterRoom('bedroom')" class="room-tab px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition-all">Master Suite</button>
+        <button onclick="filterRoom('studio')" class="room-tab px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition-all">Studio</button>
+        <button onclick="filterRoom('patio')" class="room-tab px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition-all">Patio</button>
+      </nav>
+
+      <!-- Right: Utility Controls (Audio, Theme, Master Security) -->
+      <div class="flex items-center space-x-2">
+        <!-- Audio Haptics Toggle -->
+        <button id="audioToggleBtn" onclick="toggleAudio()" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700/80 text-slate-300 hover:text-white transition-colors" title="Toggle IoT Relay Audio" aria-label="Toggle Sound Effects">
+          <i id="audioIcon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+        </button>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 rounded-lg bg-surface-800 hover:bg-surface-700 border border-slate-700/80 text-slate-300 hover:text-white transition-colors" title="Toggle Light/Dark Theme" aria-label="Toggle Dark/Light Mode">
+          <i id="themeIcon" data-lucide="moon" class="w-4 h-4 text-brand-400"></i>
+        </button>
+
+        <!-- Master Lockdown Action -->
+        <button onclick="triggerMasterLockdown()" id="masterLockBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-all">
+          <i data-lucide="lock" class="w-3.5 h-3.5 text-emerald-400" id="masterLockIcon"></i>
+          <span id="masterLockText">Perimeter Secured</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- MAIN WORKSPACE CONTAINER                   -->
+  <!-- ========================================== -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- ======================================================== -->
+    <!-- SECTION 1: AMBIENT SCENE QUICK-PRESET SELECTOR           -->
+    <!-- ======================================================== -->
+    <section class="bg-surface-900 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-brand-400 font-semibold">Ambient Automation</span>
+          <h2 class="text-lg font-bold text-white tracking-tight mt-0.5">Whole-Home Environmental Scenes</h2>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400 font-mono">
+          <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+          <span>Outdoor: 64°F &bull; Air Quality: AQI 22 (Optimal)</span>
+        </div>
+      </div>
+
+      <!-- 4 Quick Scene Buttons -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        
+        <!-- Scene 1: Morning Routine -->
+        <button onclick="activateScene('morning')" id="sceneBtn-morning" class="scene-card p-4 rounded-2xl border border-slate-800 bg-surface-950 hover:border-amber-500/50 text-left transition-all group flex flex-col justify-between h-28">
+          <div class="flex items-center justify-between">
+            <span class="p-2 rounded-xl bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform">
+              <i data-lucide="sunrise" class="w-5 h-5"></i>
+            </span>
+            <span class="text-[10px] font-mono text-slate-500 group-hover:text-amber-400">7:00 AM</span>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-white group-hover:text-amber-300">Morning Glow</h3>
+            <p class="text-[11px] text-slate-400">3200K Warm &bull; Blinds 80%</p>
+          </div>
+        </button>
+
+        <!-- Scene 2: Deep Focus / Work (Active Default) -->
+        <button onclick="activateScene('focus')" id="sceneBtn-focus" class="scene-card p-4 rounded-2xl border-2 border-brand-500 bg-brand-950/20 text-left transition-all group flex flex-col justify-between h-28 shadow-lg shadow-brand-500/10">
+          <div class="flex items-center justify-between">
+            <span class="p-2 rounded-xl bg-brand-500/20 text-brand-400 group-hover:scale-110 transition-transform">
+              <i data-lucide="laptop" class="w-5 h-5"></i>
+            </span>
+            <span class="text-[10px] font-mono text-brand-400 font-bold">ACTIVE NOW</span>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-white">Focus &amp; Studio</h3>
+            <p class="text-[11px] text-slate-400">5000K Daylight &bull; 68°F &bull; ANC</p>
+          </div>
+        </button>
+
+        <!-- Scene 3: Cinema Obsidian -->
+        <button onclick="activateScene('cinema')" id="sceneBtn-cinema" class="scene-card p-4 rounded-2xl border border-slate-800 bg-surface-950 hover:border-violet-500/50 text-left transition-all group flex flex-col justify-between h-28">
+          <div class="flex items-center justify-between">
+            <span class="p-2 rounded-xl bg-violet-500/10 text-violet-400 group-hover:scale-110 transition-transform">
+              <i data-lucide="film" class="w-5 h-5"></i>
+            </span>
+            <span class="text-[10px] font-mono text-slate-500 group-hover:text-violet-400">Evening</span>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-white group-hover:text-violet-300">Cinema Night</h3>
+            <p class="text-[11px] text-slate-400">Ambient Amber 10% &bull; Dark</p>
+          </div>
+        </button>
+
+        <!-- Scene 4: Night / Away Lockdown -->
+        <button onclick="activateScene('night')" id="sceneBtn-night" class="scene-card p-4 rounded-2xl border border-slate-800 bg-surface-950 hover:border-emerald-500/50 text-left transition-all group flex flex-col justify-between h-28">
+          <div class="flex items-center justify-between">
+            <span class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
+              <i data-lucide="moon" class="w-5 h-5"></i>
+            </span>
+            <span class="text-[10px] font-mono text-slate-500 group-hover:text-emerald-400">Eco 0.4kW</span>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-white group-hover:text-emerald-300">Sleep &amp; Guard</h3>
+            <p class="text-[11px] text-slate-400">All Doors Bolted &bull; 66°F</p>
+          </div>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 2: CLIMATE REGULATION DIAL & ENERGY TELEMETRY    -->
+    <!-- ======================================================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Interactive Circular Thermostat Dial (Left 5 Cols) -->
+      <section class="lg:col-span-5 bg-surface-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between items-center text-center relative overflow-hidden">
+        <div class="w-full flex items-center justify-between mb-4">
+          <div class="text-left">
+            <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Dual-Zone HVAC</span>
+            <h3 class="text-sm font-bold text-white">Smart Climate Dial</h3>
+          </div>
+          <span id="climateStatusBadge" class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">COOLING TO SETPOINT</span>
+        </div>
+
+        <!-- SVG Circular Thermostat Ring -->
+        <div class="relative w-64 h-64 my-2 flex items-center justify-center">
+          <svg class="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+            <!-- Background Ring -->
+            <circle cx="100" cy="100" r="80" fill="transparent" stroke="#1e293b" stroke-width="14" stroke-dasharray="376 126" stroke-linecap="round" />
+            <!-- Active Temperature Arc -->
+            <circle id="thermostatArc" cx="100" cy="100" r="80" fill="transparent" stroke="#06b6d4" stroke-width="14" stroke-dasharray="240 502" stroke-linecap="round" class="transition-all duration-300" />
+          </svg>
+
+          <!-- Center Temperature Readout -->
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="text-xs font-mono text-slate-400">CURRENT: 72°F</span>
+            <div class="flex items-baseline">
+              <span id="targetTempText" class="text-5xl font-black text-white font-mono tracking-tight">68</span>
+              <span class="text-2xl font-bold text-cyan-400">°F</span>
+            </div>
+            <span class="text-xs text-slate-400 mt-1 flex items-center gap-1 font-mono">
+              <i data-lucide="droplets" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Humidity: 46%</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Temperature Controls (+ / -) -->
+        <div class="flex items-center gap-4 mt-2 mb-4">
+          <button onclick="adjustTemp(-1)" class="w-12 h-12 rounded-2xl bg-surface-950 border border-slate-700/80 hover:border-cyan-400 text-white flex items-center justify-center text-xl font-bold shadow-lg transition-transform active:scale-95" title="Decrease temperature">
+            <i data-lucide="minus" class="w-5 h-5"></i>
+          </button>
+          
+          <div class="flex items-center bg-surface-950 p-1 rounded-xl border border-slate-800 text-xs font-mono">
+            <button onclick="setClimateMode('cool')" id="modeBtn-cool" class="px-3 py-1.5 rounded-lg font-bold bg-cyan-600 text-white">Cool</button>
+            <button onclick="setClimateMode('heat')" id="modeBtn-heat" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">Heat</button>
+            <button onclick="setClimateMode('eco')" id="modeBtn-eco" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white">Eco</button>
+          </div>
+
+          <button onclick="adjustTemp(1)" class="w-12 h-12 rounded-2xl bg-surface-950 border border-slate-700/80 hover:border-cyan-400 text-white flex items-center justify-center text-xl font-bold shadow-lg transition-transform active:scale-95" title="Increase temperature">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Fan Speed Selector -->
+        <div class="w-full pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <span>Air Circulation:</span>
+          <div class="flex items-center gap-1">
+            <button onclick="setFanSpeed(1)" class="fan-btn px-2 py-0.5 rounded bg-surface-950 border border-slate-800 text-slate-400 text-[10px] font-mono">L1</button>
+            <button onclick="setFanSpeed(2)" class="fan-btn px-2 py-0.5 rounded bg-brand-600 text-white text-[10px] font-mono font-bold">L2</button>
+            <button onclick="setFanSpeed(3)" class="fan-btn px-2 py-0.5 rounded bg-surface-950 border border-slate-800 text-slate-400 text-[10px] font-mono">L3</button>
+            <button onclick="setFanSpeed('auto')" class="fan-btn px-2 py-0.5 rounded bg-surface-950 border border-slate-800 text-slate-400 text-[10px] font-mono">AUTO</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Energy Grid & Powerwall Bento (Right 7 Cols) -->
+      <section class="lg:col-span-7 bg-surface-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Smart Microgrid</span>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i>
+                <span>Tesla Powerwall &amp; Rooftop Solar Array</span>
+              </h3>
+            </div>
+            <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-bold">NET ENERGY EXPORTER</span>
+          </div>
+
+          <!-- Energy Telemetry Metric Tiles -->
+          <div class="grid grid-cols-3 gap-3 mb-5 text-xs font-mono">
+            <div class="bg-surface-950 p-3.5 rounded-2xl border border-slate-800">
+              <span class="text-[10px] text-slate-500 block">SOLAR INVERTER</span>
+              <strong class="text-emerald-400 text-base block mt-0.5">4.8 kW</strong>
+              <span class="text-[10px] text-slate-400 mt-1 block">Peak Daylight</span>
+            </div>
+            <div class="bg-surface-950 p-3.5 rounded-2xl border border-slate-800">
+              <span class="text-[10px] text-slate-500 block">HOME DEMAND</span>
+              <strong class="text-amber-400 text-base block mt-0.5">1.9 kW</strong>
+              <span class="text-[10px] text-slate-400 mt-1 block">HVAC + Lighting</span>
+            </div>
+            <div class="bg-surface-950 p-3.5 rounded-2xl border border-slate-800">
+              <span class="text-[10px] text-slate-500 block">GRID SURPLUS</span>
+              <strong class="text-cyan-400 text-base block mt-0.5">+2.9 kW</strong>
+              <span class="text-[10px] text-emerald-400 mt-1 block">Selling to Grid</span>
+            </div>
+          </div>
+
+          <!-- Powerwall Battery Level Bar -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <span class="font-semibold text-slate-300">Powerwall Energy Storage Buffer</span>
+              <span class="font-mono text-emerald-400 font-bold">88% (11.8 kWh Remaining)</span>
+            </div>
+            <div class="h-3 w-full bg-surface-950 rounded-full border border-slate-800 overflow-hidden p-0.5">
+              <div class="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 rounded-full w-[88%] shadow-sm"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Video Doorbell Intercom Snapshot Card -->
+        <div class="mt-6 pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-16 h-12 rounded-xl bg-surface-950 border border-slate-800 flex items-center justify-center text-xl relative overflow-hidden flex-shrink-0">
+              <span class="animate-pulse">📹</span>
+              <div class="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+                <span>Front Porch Cam #01</span>
+                <span class="text-[9px] font-mono text-rose-400 bg-rose-500/10 px-1.5 py-0.2 rounded">LIVE 4K</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Motion verified &bull; Delivery driver approaching door</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="openModal('intercomModal')" class="px-3.5 py-2 rounded-xl bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+              <i data-lucide="mic" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>2-Way Talk</span>
+            </button>
+            <button onclick="toggleDevice('lock')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors">
+              <i data-lucide="unlock" class="w-3.5 h-3.5"></i>
+              <span>Unlock Door</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SECTION 3: INTERACTIVE SMART DEVICE APPLIANCE MATRIX     -->
+    <!-- ======================================================== -->
+    <section>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4 text-brand-400"></i>
+          <span>Connected Smart Hardware</span>
+        </h3>
+        <span class="text-xs text-slate-400 font-mono">6 Connected Nodes</span>
+      </div>
+
+      <!-- Device Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="devicesContainer">
+        
+        <!-- Device 1: Ambient Studio Light Ribbon -->
+        <div class="device-card bg-surface-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4" data-room="studio">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div id="lightIconBox" class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
+                💡
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">Philips Hue Ambient Gradient</h4>
+                <p class="text-[10px] font-mono text-slate-400">Studio &bull; Zigbee 3.0</p>
+              </div>
+            </div>
+            <!-- Toggle Switch -->
+            <button onclick="toggleDevice('light')" id="lightToggleBtn" class="w-12 h-6 rounded-full bg-brand-600 p-0.5 transition-colors" role="switch" aria-checked="true">
+              <span id="lightToggleThumb" class="block w-5 h-5 rounded-full bg-white shadow-md transform translate-x-6 transition-transform"></span>
+            </button>
+          </div>
+
+          <!-- Brightness Slider -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-400">Brightness</span>
+              <span id="lightBrightnessText" class="font-mono text-white font-bold">85%</span>
+            </div>
+            <input type="range" id="lightBrightnessSlider" min="0" max="100" value="85" oninput="handleLightBrightness(this.value)" class="w-full h-2 bg-surface-950 rounded-lg appearance-none cursor-pointer accent-brand-500 border border-slate-800">
+          </div>
+
+          <!-- Warmth Preset Pills -->
+          <div class="flex items-center gap-1.5 pt-1">
+            <button onclick="setLightWarmth('2700K', 'Sunset Gold')" class="px-2 py-1 rounded bg-amber-500/10 text-amber-300 text-[10px] font-mono border border-amber-500/20">2700K Warm</button>
+            <button onclick="setLightWarmth('4000K', 'Neutral Studio')" class="px-2 py-1 rounded bg-surface-950 text-slate-300 text-[10px] font-mono border border-slate-800">4000K</button>
+            <button onclick="setLightWarmth('6500K', 'Cold Daylight')" class="px-2 py-1 rounded bg-surface-950 text-slate-300 text-[10px] font-mono border border-slate-800">6500K</button>
+          </div>
+        </div>
+
+        <!-- Device 2: Smart Deadbolt Lock -->
+        <div class="device-card bg-surface-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4" data-room="living">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div id="lockIconBox" class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                🔒
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">August Smart Lock Pro</h4>
+                <p class="text-[10px] font-mono text-slate-400">Main Entrance &bull; Bluetooth + Wi-Fi</p>
+              </div>
+            </div>
+            <!-- Lock Toggle Button -->
+            <button onclick="toggleDevice('lock')" id="lockToggleBtn" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs shadow-md transition-colors">
+              Locked
+            </button>
+          </div>
+
+          <div class="bg-surface-950 p-2.5 rounded-xl border border-slate-800 text-xs flex justify-between items-center text-slate-400">
+            <span>Auto-Lock Timer: 60s</span>
+            <button onclick="openModal('guestPinModal')" class="text-brand-400 hover:underline text-[11px] font-mono">Create Guest PIN &rsaquo;</button>
+          </div>
+        </div>
+
+        <!-- Device 3: Motorized Blackout Blinds -->
+        <div class="device-card bg-surface-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4" data-room="bedroom">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg">
+                🪟
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">IKEA Fyrtur Smart Blinds</h4>
+                <p class="text-[10px] font-mono text-slate-400">Master Suite &bull; Motorized</p>
+              </div>
+            </div>
+            <span id="blindsStatusBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">40% OPEN</span>
+          </div>
+
+          <!-- Blinds Position Slider -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-400">Blind Elevation</span>
+              <span id="blindsText" class="font-mono text-white font-bold">40%</span>
+            </div>
+            <input type="range" id="blindsSlider" min="0" max="100" value="40" oninput="handleBlinds(this.value)" class="w-full h-2 bg-surface-950 rounded-lg appearance-none cursor-pointer accent-cyan-400 border border-slate-800">
+          </div>
+        </div>
+
+        <!-- Device 4: Sonos Spatial Multi-Room Audio -->
+        <div class="device-card bg-surface-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4" data-room="living">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-violet-500/20 text-violet-400 flex items-center justify-center text-lg">
+                🎵
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">Sonos Era 300 Spatial Pair</h4>
+                <p class="text-[10px] font-mono text-slate-400">Living Room &bull; AirPlay 2</p>
+              </div>
+            </div>
+            <button onclick="toggleAudioPlayback()" id="audioPlayBtn" class="p-2 rounded-lg bg-surface-950 border border-slate-800 text-slate-300 hover:text-white transition-colors">
+              <i data-lucide="play" class="w-4 h-4" id="audioPlayIcon"></i>
+            </button>
+          </div>
+
+          <div class="text-xs text-slate-300">
+            <span class="text-[10px] text-slate-500 block uppercase font-mono">NOW STREAMING</span>
+            <strong class="text-white truncate block">Tycho &bull; A Walk (Lossless 96kHz)</strong>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-400">Volume</span>
+              <span id="audioVolText" class="font-mono text-white font-bold">62%</span>
+            </div>
+            <input type="range" min="0" max="100" value="62" oninput="handleAudioVolume(this.value)" class="w-full h-2 bg-surface-950 rounded-lg appearance-none cursor-pointer accent-violet-400 border border-slate-800">
+          </div>
+        </div>
+
+        <!-- Device 5: Dyson HEPA Air Purifier -->
+        <div class="device-card bg-surface-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4" data-room="studio">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                🍃
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">Dyson Purifier Hot+Cool</h4>
+                <p class="text-[10px] font-mono text-slate-400">Studio &bull; HEPA H13 Filter</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">AQI 14 &bull; EXCELLENT</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+            <div class="bg-surface-950 p-2 rounded-lg border border-slate-800">
+              <span class="text-[9px] text-slate-500 block">PM2.5 DENSITY</span>
+              <strong class="text-white">1.8 &mu;g/m³</strong>
+            </div>
+            <div class="bg-surface-950 p-2 rounded-lg border border-slate-800">
+              <span class="text-[9px] text-slate-500 block">FILTER LIFE</span>
+              <strong class="text-emerald-400">92% (280 days)</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Device 6: Smart Garden Drip Irrigation -->
+        <div class="device-card bg-surface-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4" data-room="patio">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg">
+                🪴
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">Rachio Smart Soil Irrigation</h4>
+                <p class="text-[10px] font-mono text-slate-400">Patio &bull; Rain Sensor</p>
+              </div>
+            </div>
+            <button onclick="triggerWaterCycle()" class="px-3 py-1.5 rounded-lg bg-surface-950 hover:bg-surface-800 border border-slate-700 text-xs text-cyan-300 font-semibold transition-colors">
+              Water 5m
+            </button>
+          </div>
+
+          <div class="text-xs text-slate-400 flex justify-between items-center">
+            <span>Soil Moisture: 68% (Optimal)</span>
+            <span class="text-[10px] font-mono text-slate-500">Scheduled: 8:00 PM</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: TWO-WAY INTERCOM DOORBELL                         -->
+  <!-- ======================================================== -->
+  <div id="intercomModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="intercomTitle">
+    <div class="bg-surface-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
+      <button onclick="closeModal('intercomModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-800 transition-colors" aria-label="Close dialog">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+          <i data-lucide="video" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="intercomTitle" class="text-base font-bold text-white">Front Door Intercom Audio</h3>
+          <p class="text-xs text-slate-400">Live 2-Way Full Duplex Audio Feed</p>
+        </div>
+      </div>
+
+      <!-- Simulated Video Feed -->
+      <div class="w-full h-44 rounded-2xl bg-surface-950 border border-slate-800 flex flex-col items-center justify-center relative overflow-hidden mb-4">
+        <span class="text-4xl animate-bounce">📦</span>
+        <span class="text-xs font-mono text-slate-400 mt-2">Driver detected with package</span>
+        <div class="absolute bottom-2 left-2 text-[10px] font-mono text-rose-400 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+          RECORDING CLOUD ENCRYPTED
+        </div>
+      </div>
+
+      <!-- Push to Talk Button -->
+      <div class="flex items-center gap-3">
+        <button onclick="simulatePushToTalk()" id="pttBtn" class="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 transition-all">
+          <i data-lucide="mic" class="w-4 h-4"></i>
+          <span>Hold to Speak to Visitor</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: GUEST PIN CODE GENERATOR                          -->
+  <!-- ======================================================== -->
+  <div id="guestPinModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="guestPinTitle">
+    <div class="bg-surface-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
+      <button onclick="closeModal('guestPinModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-800 transition-colors" aria-label="Close dialog">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+          <i data-lucide="key" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="guestPinTitle" class="text-base font-bold text-white">Generate Guest Access PIN</h3>
+          <p class="text-xs text-slate-400">Temporary keycode for cleaner or dog-walker</p>
+        </div>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div class="text-center py-4 bg-surface-950 rounded-2xl border border-slate-800">
+          <span class="text-[10px] text-slate-500 uppercase font-mono block">ONE-TIME PASSCODE</span>
+          <strong class="text-3xl font-black text-white font-mono tracking-widest mt-1 block">8 9 2 4 #</strong>
+          <span class="text-[10px] text-emerald-400 mt-1 block">Valid for 3 hours</span>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button onclick="closeModal('guestPinModal')" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white font-semibold">
+            Done
+          </button>
+          <button onclick="copyGuestPin()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition-all">
+            Copy PIN
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- FLOATING TOAST NOTIFICATION CONTAINER                   -->
+  <!-- ======================================================== -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none" aria-live="polite"></div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT LOGIC CORE                                    -->
+  <!-- ======================================================== -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // ----------------------------------------------------
+    // State Management
+    // ----------------------------------------------------
+    const STATE = {
+      targetTemp: 68,
+      currentTemp: 72,
+      climateMode: 'cool',
+      audioPlaying: false,
+      isLocked: true,
+      lightOn: true,
+      audioEnabled: true,
+      activeScene: 'focus'
+    };
+
+    // ----------------------------------------------------
+    // Web Audio API Acoustic Sound Synthesizer
+    // ----------------------------------------------------
+    const audioCtx = (function() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        return new AudioContext();
+      } catch (e) {
+        return null;
+      }
+    })();
+
+    function playSound(type) {
+      if (!STATE.audioEnabled || !audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'click') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520, now);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      } else if (type === 'relay') {
+        // Physical tactile relay snap
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(280, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.03);
+      } else if (type === 'scene') {
+        // Ambient chord sweep
+        [440, 554.37, 659.25].forEach((f, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now + i * 0.06);
+          gain.gain.setValueAtTime(0.08, now + i * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + i * 0.06);
+          osc.stop(now + i * 0.06 + 0.25);
+        });
+      } else if (type === 'lock') {
+        // Heavy metallic deadbolt slide
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(90, now + 0.12);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      }
+    }
+
+    function toggleAudio() {
+      STATE.audioEnabled = !STATE.audioEnabled;
+      const icon = document.getElementById('audioIcon');
+      if (STATE.audioEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.classList.remove('text-slate-500');
+        icon.classList.add('text-emerald-400');
+        showToast('IoT relay sound feedback enabled', 'info');
+        playSound('relay');
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.classList.remove('text-emerald-400');
+        icon.classList.add('text-slate-500');
+        showToast('IoT audio muted', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // Theme Switcher
+    // ----------------------------------------------------
+    function toggleTheme() {
+      playSound('click');
+      const html = document.documentElement;
+      const icon = document.getElementById('themeIcon');
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        icon.setAttribute('data-lucide', 'sun');
+        icon.classList.remove('text-brand-400');
+        icon.classList.add('text-amber-500');
+        showToast('Switched to Daylight Interior Mode', 'info');
+      } else {
+        html.classList.add('dark');
+        icon.setAttribute('data-lucide', 'moon');
+        icon.classList.remove('text-amber-500');
+        icon.classList.add('text-brand-400');
+        showToast('Switched to Cyber Obsidian Mode', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // Ambient Scene Automation
+    // ----------------------------------------------------
+    function activateScene(sceneName) {
+      playSound('scene');
+      STATE.activeScene = sceneName;
+
+      // Update button highlights
+      ['morning', 'focus', 'cinema', 'night'].forEach(s => {
+        const btn = document.getElementById(`sceneBtn-${s}`);
+        if (s === sceneName) {
+          btn.className = 'scene-card p-4 rounded-2xl border-2 border-brand-500 bg-brand-950/20 text-left transition-all shadow-lg shadow-brand-500/10';
+        } else {
+          btn.className = 'scene-card p-4 rounded-2xl border border-slate-800 bg-surface-950 hover:border-slate-700 text-left transition-all';
+        }
+      });
+
+      if (sceneName === 'morning') {
+        STATE.targetTemp = 71;
+        handleLightBrightness(70);
+        handleBlinds(80);
+        showToast('Scene triggered: Morning Glow (71°F, Blinds 80%)', 'success');
+      } else if (sceneName === 'focus') {
+        STATE.targetTemp = 68;
+        handleLightBrightness(85);
+        handleBlinds(40);
+        showToast('Scene triggered: Deep Work & Focus (68°F, 5000K)', 'success');
+      } else if (sceneName === 'cinema') {
+        STATE.targetTemp = 69;
+        handleLightBrightness(12);
+        handleBlinds(0);
+        showToast('Scene triggered: Cinema Night (Ambient 12%, Blinds 0%)', 'success');
+      } else if (sceneName === 'night') {
+        STATE.targetTemp = 66;
+        handleLightBrightness(0);
+        handleBlinds(0);
+        if (!STATE.isLocked) toggleDevice('lock');
+        showToast('Scene triggered: Sleep & Guard (Doors Bolted, 66°F)', 'success');
+      }
+
+      updateThermostatDisplay();
+    }
+
+    // ----------------------------------------------------
+    // Thermostat Dial Interaction
+    // ----------------------------------------------------
+    function adjustTemp(delta) {
+      playSound('click');
+      STATE.targetTemp = Math.max(60, Math.min(85, STATE.targetTemp + delta));
+      updateThermostatDisplay();
+    }
+
+    function setClimateMode(mode) {
+      playSound('click');
+      STATE.climateMode = mode;
+      
+      const btnCool = document.getElementById('modeBtn-cool');
+      const btnHeat = document.getElementById('modeBtn-heat');
+      const btnEco = document.getElementById('modeBtn-eco');
+
+      [btnCool, btnHeat, btnEco].forEach(b => b.className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white');
+
+      if (mode === 'cool') {
+        btnCool.className = 'px-3 py-1.5 rounded-lg font-bold bg-cyan-600 text-white';
+        document.getElementById('thermostatArc').setAttribute('stroke', '#06b6d4');
+      } else if (mode === 'heat') {
+        btnHeat.className = 'px-3 py-1.5 rounded-lg font-bold bg-amber-600 text-white';
+        document.getElementById('thermostatArc').setAttribute('stroke', '#f59e0b');
+      } else if (mode === 'eco') {
+        btnEco.className = 'px-3 py-1.5 rounded-lg font-bold bg-emerald-600 text-white';
+        document.getElementById('thermostatArc').setAttribute('stroke', '#10b981');
+      }
+
+      showToast(`Climate mode set to: ${mode.toUpperCase()}`, 'info');
+    }
+
+    function updateThermostatDisplay() {
+      document.getElementById('targetTempText').innerText = STATE.targetTemp;
+      // Arc fill calculation (60° to 85°)
+      const ratio = (STATE.targetTemp - 60) / 25;
+      const arcLen = Math.round(ratio * 376);
+      document.getElementById('thermostatArc').setAttribute('stroke-dasharray', `${arcLen} 502`);
+    }
+
+    function setFanSpeed(spd) {
+      playSound('click');
+      showToast(`Air Circulation fan set to: ${spd}`, 'info');
+    }
+
+    // ----------------------------------------------------
+    // Device Toggles & Sliders
+    // ----------------------------------------------------
+    function toggleDevice(dev) {
+      if (dev === 'light') {
+        playSound('relay');
+        STATE.lightOn = !STATE.lightOn;
+        const btn = document.getElementById('lightToggleBtn');
+        const thumb = document.getElementById('lightToggleThumb');
+        const box = document.getElementById('lightIconBox');
+
+        if (STATE.lightOn) {
+          btn.className = 'w-12 h-6 rounded-full bg-brand-600 p-0.5 transition-colors';
+          thumb.className = 'block w-5 h-5 rounded-full bg-white shadow-md transform translate-x-6 transition-transform';
+          box.className = 'w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg';
+          showToast('Studio Ambient Lights turned ON', 'info');
+        } else {
+          btn.className = 'w-12 h-6 rounded-full bg-surface-800 p-0.5 transition-colors';
+          thumb.className = 'block w-5 h-5 rounded-full bg-slate-400 shadow-md transform translate-x-0 transition-transform';
+          box.className = 'w-10 h-10 rounded-xl bg-surface-950 text-slate-500 flex items-center justify-center text-lg';
+          showToast('Studio Ambient Lights turned OFF', 'info');
+        }
+      } else if (dev === 'lock') {
+        playSound('lock');
+        STATE.isLocked = !STATE.isLocked;
+        const lockBtn = document.getElementById('lockToggleBtn');
+        const lockBox = document.getElementById('lockIconBox');
+
+        if (STATE.isLocked) {
+          lockBtn.className = 'px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs shadow-md transition-colors';
+          lockBtn.innerText = 'Locked';
+          lockBox.className = 'w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg';
+          showToast('Main Entrance Deadbolt ENGAGED', 'success');
+        } else {
+          lockBtn.className = 'px-3 py-1.5 rounded-lg bg-rose-600 text-white font-bold text-xs shadow-md transition-colors';
+          lockBtn.innerText = 'Unlocked';
+          lockBox.className = 'w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-lg';
+          showToast('Main Entrance Deadbolt UNLOCKED', 'warning');
+        }
+      }
+    }
+
+    function handleLightBrightness(val) {
+      document.getElementById('lightBrightnessText').innerText = `${val}%`;
+      if (!STATE.lightOn && val > 0) toggleDevice('light');
+    }
+
+    function setLightWarmth(temp, name) {
+      playSound('click');
+      showToast(`Light spectrum calibrated to ${temp} (${name})`, 'info');
+    }
+
+    function handleBlinds(val) {
+      document.getElementById('blindsText').innerText = `${val}%`;
+      document.getElementById('blindsStatusBadge').innerText = `${val}% OPEN`;
+    }
+
+    function toggleAudioPlayback() {
+      playSound('click');
+      STATE.audioPlaying = !STATE.audioPlaying;
+      const icon = document.getElementById('audioPlayIcon');
+      if (STATE.audioPlaying) {
+        icon.setAttribute('data-lucide', 'pause');
+        showToast('Spatial Audio streaming to Sonos Era 300', 'success');
+      } else {
+        icon.setAttribute('data-lucide', 'play');
+        showToast('Spatial Audio paused', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    function handleAudioVolume(val) {
+      document.getElementById('audioVolText').innerText = `${val}%`;
+    }
+
+    function triggerWaterCycle() {
+      playSound('relay');
+      showToast('Patio irrigation solenoids open for 5 minutes', 'info');
+    }
+
+    function triggerMasterLockdown() {
+      playSound('lock');
+      STATE.isLocked = true;
+      const btn = document.getElementById('masterLockBtn');
+      const text = document.getElementById('masterLockText');
+      const icon = document.getElementById('masterLockIcon');
+
+      btn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold shadow-md';
+      text.innerText = 'Perimeter Bolted';
+      icon.setAttribute('data-lucide', 'shield-check');
+      showToast('Master Security Lockdown Activated &bull; All Doors Secured', 'success');
+      lucide.createIcons();
+    }
+
+    function filterRoom(room) {
+      playSound('click');
+      document.querySelectorAll('.room-tab').forEach(b => {
+        if (b.getAttribute('onclick').includes(room)) {
+          b.className = 'room-tab active px-3 py-1.5 rounded-lg font-semibold bg-brand-600 text-white shadow-sm transition-all';
+          b.setAttribute('aria-current', 'page');
+        } else {
+          b.className = 'room-tab px-3 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition-all';
+          b.removeAttribute('aria-current');
+        }
+      });
+
+      document.querySelectorAll('.device-card').forEach(card => {
+        if (room === 'all' || card.getAttribute('data-room') === room) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      showToast(`Showing devices for: ${room.toUpperCase()}`, 'info');
+    }
+
+    // ----------------------------------------------------
+    // Modal Helpers
+    // ----------------------------------------------------
+    function openModal(id) {
+      playSound('click');
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      playSound('click');
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function simulatePushToTalk() {
+      playSound('scene');
+      showToast('Audio transmitting to Front Porch Intercom speaker', 'info');
+    }
+
+    function copyGuestPin() {
+      playSound('click');
+      navigator.clipboard.writeText('8924#');
+      showToast('Guest PIN 8924# copied to clipboard', 'success');
+      closeModal('guestPinModal');
+    }
+
+    // ----------------------------------------------------
+    // Toast Notification System
+    // ----------------------------------------------------
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+
+      const bgColors = {
+        info: 'bg-surface-900 border-slate-700 text-slate-200',
+        success: 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200',
+        warning: 'bg-amber-950/90 border-amber-500/50 text-amber-200'
+      };
+
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl text-xs backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${bgColors[type] || bgColors.info}`;
+      toast.innerHTML = `
+        <i data-lucide="zap" class="w-4 h-4 text-brand-400"></i>
+        <span class="font-medium">${message}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, 300);
+      }, 3500);
+    }
+
+    // Initial setup
+    updateThermostatDisplay();
+  </script>
+</body>
+</html>
