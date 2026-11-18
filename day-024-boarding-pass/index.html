@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 024: Boarding Pass & Airline Travel Hub | Daily UI/UX</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Space Grotesk, Inter, JetBrains Mono, Syne -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            travel: {
+              gold: '#E5B869',
+              goldLight: '#F5D799',
+              navy: '#0B1528',
+              navyLight: '#152442',
+              midnight: '#050B14',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              crimson: '#EF4444',
+              sky: '#0EA5E9',
+              cardBg: '#0F1A2E'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          animation: {
+            'laser-sweep': 'laserSweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+            'radar-pulse': 'radarPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+            'shimmer': 'shimmer 3s ease-in-out infinite',
+            'float-slow': 'floatSlow 4s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            laserSweep: {
+              '0%': { top: '0%', opacity: '0.9' },
+              '50%': { top: '92%', opacity: '1' },
+              '100%': { top: '0%', opacity: '0.9' }
+            },
+            radarPulse: {
+              '0%': { transform: 'scale(0.95)', opacity: '0.8' },
+              '50%': { transform: 'scale(1.25)', opacity: '0.2' },
+              '100%': { transform: 'scale(1.4)', opacity: '0' }
+            },
+            shimmer: {
+              '0%, 100%': { opacity: '0.3', transform: 'translateX(-100%)' },
+              '50%': { opacity: '0.8', transform: 'translateX(100%)' }
+            },
+            floatSlow: {
+              '0%': { transform: 'translateY(0px)' },
+              '100%': { transform: 'translateY(-6px)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* 3D Transform & Card Flip Preserves */
+    .perspective-1000 {
+      perspective: 1200px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+
+    /* Holographic / Foil Reflection Shimmer */
+    .foil-shimmer {
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.08) 25%,
+        rgba(229, 184, 105, 0.25) 50%,
+        rgba(255, 255, 255, 0.12) 75%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      background-size: 200% 200%;
+      pointer-events: none;
+    }
+
+    /* Perforated Notches & Dotted Cut-Line */
+    .perforation-divider {
+      position: relative;
+    }
+    .perforation-divider::before,
+    .perforation-divider::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: #060B14; /* Matches body background */
+      z-index: 20;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .perforation-divider::before {
+      left: -12px;
+      box-shadow: inset -2px 0 3px rgba(0,0,0,0.4);
+    }
+    .perforation-divider::after {
+      right: -12px;
+      box-shadow: inset 2px 0 3px rgba(0,0,0,0.4);
+    }
+
+    /* Horizontal Tear Separator Line */
+    .dotted-cut-line {
+      background-image: linear-gradient(to right, rgba(229, 184, 105, 0.3) 50%, rgba(255, 255, 255, 0) 0%);
+      background-position: bottom;
+      background-size: 10px 1px;
+      background-repeat: repeat-x;
+    }
+
+    /* Custom Scrollbar for Smooth UI */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(11, 21, 40, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(229, 184, 105, 0.25);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(229, 184, 105, 0.5);
+    }
+
+    /* Screen Reader Only Utility */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
+</head>
+<body class="bg-[#060B14] text-slate-100 min-h-screen font-sans selection:bg-travel-gold selection:text-travel-navy antialiased overflow-x-hidden">
+
+  <!-- A11y Live Announcer for Screen Readers -->
+  <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Top Global Navigation & Travel Hub Header -->
+  <header class="border-b border-slate-800/80 bg-travel-midnight/90 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Airline Brand & Hub Indicator -->
+      <div class="flex items-center space-x-3.5">
+        <a href="../index.html" class="flex items-center space-x-2 text-slate-400 hover:text-white transition-colors" title="Back to Challenge Master Hub">
+          <div class="w-8 h-8 rounded-lg bg-travel-navy border border-slate-700/60 flex items-center justify-center text-travel-gold">
+            <i data-lucide="plane-takeoff" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200 hidden sm:inline">Daily UI #024</span>
+        </a>
+        <div class="h-4 w-px bg-slate-800"></div>
+        <div class="flex items-center space-x-2">
+          <span class="font-display font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-travel-gold to-amber-200 bg-clip-text text-transparent">
+            AEROLUX SKYSTREAM
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest bg-travel-gold/15 text-travel-gold border border-travel-gold/30">
+            FIRST CLASS
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Control Action Bar -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Audio Acoustic Chime Toggle -->
+        <button id="toggle-audio-btn" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-travel-gold hover:border-travel-gold/40 transition-all text-xs flex items-center space-x-1.5" title="Toggle Airport Chimes & Scans (M)">
+          <i data-lucide="volume-2" id="audio-icon" class="w-4 h-4 text-travel-gold"></i>
+          <span class="hidden md:inline text-xs font-mono">Sound: ON</span>
+        </button>
+
+        <!-- Cabin Class Switcher Dropdown / Pill -->
+        <div class="hidden sm:flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-medium">
+          <button onclick="setFlightClass('first')" id="class-btn-first" class="px-3 py-1 rounded-lg bg-travel-gold text-travel-navy font-bold shadow-sm transition-all">First Suite</button>
+          <button onclick="setFlightClass('business')" id="class-btn-business" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-all">Business</button>
+          <button onclick="setFlightClass('premium')" id="class-btn-premium" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-all">Prem Econ</button>
+        </div>
+
+        <!-- Viewport Mode Switcher: Mobile Wallet vs Full Travel Terminal -->
+        <button id="toggle-view-btn" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition-all text-xs flex items-center space-x-1.5" title="Toggle Mobile Pass / Expanded Hub View">
+          <i data-lucide="smartphone" id="view-icon" class="w-4 h-4 text-sky-400"></i>
+          <span class="text-xs font-mono font-medium hidden sm:inline" id="view-mode-label">Mobile Wallet</span>
+        </button>
+
+        <!-- Help / Keybindings Modal Trigger -->
+        <button onclick="openKeybindingsModal()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors" title="Keyboard Shortcuts (?)">
+          <i data-lucide="keyboard" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Live Flight Alert Ribbon (Dynamic Real-time Notifications) -->
+  <div id="flight-status-banner" class="bg-gradient-to-r from-travel-navy via-slate-900 to-travel-navy border-b border-travel-gold/25 px-4 py-2 text-xs transition-all duration-300">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        </span>
+        <span id="banner-flight-badge" class="font-mono font-bold text-travel-gold">FLIGHT AL-808</span>
+        <span class="text-slate-400 hidden sm:inline">|</span>
+        <span id="banner-status-text" class="text-slate-200 font-medium">Tokyo Haneda (HND) &rarr; San Francisco (SFO) &bull; <strong class="text-emerald-400">Gate G14 Boarding in 28 mins</strong></span>
+      </div>
+      <div class="flex items-center space-x-3 text-slate-400 text-[11px] font-mono">
+        <span class="hidden md:inline"><i data-lucide="clock" class="inline w-3 h-3 text-travel-gold mr-1"></i>Departure: 22:05 JST</span>
+        <button onclick="triggerGateAlertSim()" class="text-travel-gold hover:underline font-sans font-semibold">Simulate Gate Change</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Showcase Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+
+    <!-- Interactive Simulator Toolbar: Control States -->
+    <section class="mb-8 p-4 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-md">
+      <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        
+        <!-- Flight Phase Telemetry Selector -->
+        <div>
+          <span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-1.5">
+            <i data-lucide="sliders" class="w-3.5 h-3.5 text-travel-gold"></i>
+            Live Travel Lifecycle Stage (Interactive Demo)
+          </span>
+          <div class="flex flex-wrap gap-1.5 text-xs font-medium">
+            <button onclick="setFlightStage('scheduled')" id="stage-btn-scheduled" class="px-3 py-1.5 rounded-lg bg-travel-navy border border-slate-700 hover:border-travel-gold text-slate-200 transition-all">
+              1. Scheduled / On-Time
+            </button>
+            <button onclick="setFlightStage('boarding')" id="stage-btn-boarding" class="px-3 py-1.5 rounded-lg bg-travel-gold/20 border border-travel-gold text-travel-gold font-bold transition-all shadow-sm">
+              2. Boarding Group 1
+            </button>
+            <button onclick="setFlightStage('gate-change')" id="stage-btn-gate-change" class="px-3 py-1.5 rounded-lg bg-travel-navy border border-slate-700 hover:border-amber-400 text-slate-200 transition-all">
+              3. Gate Change Alert
+            </button>
+            <button onclick="setFlightStage('inflight')" id="stage-btn-inflight" class="px-3 py-1.5 rounded-lg bg-travel-navy border border-slate-700 hover:border-sky-400 text-slate-200 transition-all">
+              4. In-Flight Cruising
+            </button>
+            <button onclick="setFlightStage('landed')" id="stage-btn-landed" class="px-3 py-1.5 rounded-lg bg-travel-navy border border-slate-700 hover:border-emerald-400 text-slate-200 transition-all">
+              5. Landed & Baggage
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Action Trigger Buttons -->
+        <div class="flex flex-wrap items-center gap-2 self-end lg:self-auto">
+          <!-- Flip Pass Button -->
+          <button onclick="flipBoardingPass()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-sm">
+            <i data-lucide="rotate-3d" class="w-4 h-4 text-travel-gold"></i>
+            <span>Flip Pass (Front/Back)</span>
+          </button>
+
+          <!-- Tear Stub Simulation Button -->
+          <button id="tear-stub-btn" onclick="toggleTearStub()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-sm">
+            <i data-lucide="scissors" class="w-4 h-4 text-amber-400"></i>
+            <span id="tear-btn-text">Tear Boarding Stub</span>
+          </button>
+
+          <!-- Brightness Scanner Boost -->
+          <button onclick="toggleScannerBrightness()" id="scanner-boost-btn" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-sm">
+            <i data-lucide="sun-medium" class="w-4 h-4 text-travel-gold"></i>
+            <span id="boost-btn-text">Boost for Scanner</span>
+          </button>
+
+          <!-- Gate Turnstile Scanner Simulation -->
+          <button onclick="simulateGateScan()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-travel-gold to-amber-500 hover:from-amber-400 hover:to-travel-gold text-travel-navy font-bold transition-all text-xs flex items-center space-x-1.5 shadow-lg shadow-travel-gold/20">
+            <i data-lucide="scan-line" class="w-4 h-4"></i>
+            <span>Test Gate Scan</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Main Workspace Grid: Dynamic Viewports (Mobile Pass vs Expanded Travel Hub) -->
+    <div id="main-content-layout" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+      <!-- Left / Center Column: The Realistic Boarding Pass (Perspective Container) -->
+      <div id="pass-column" class="lg:col-span-7 flex flex-col items-center justify-center">
+
+        <!-- Mobile Phone Housing Simulation (When in Mobile Wallet Mode) -->
+        <div id="phone-frame-wrapper" class="w-full max-w-[420px] transition-all duration-500">
+          
+          <!-- Outer Phone Bezel -->
+          <div class="relative rounded-[48px] p-3.5 bg-gradient-to-b from-slate-700/80 via-slate-800/90 to-slate-950 border-[3px] border-slate-700/50 shadow-2xl shadow-black/80">
+            
+            <!-- Dynamic Island / Top Speaker Notch -->
+            <div class="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-full z-40 flex items-center justify-between px-2.5">
+              <div class="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800"></div>
+              <div class="flex items-center space-x-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <i data-lucide="plane" class="w-3 h-3 text-travel-gold"></i>
+              </div>
+            </div>
+
+            <!-- Phone Screen Viewport -->
+            <div id="phone-screen" class="relative rounded-[38px] bg-slate-950 overflow-hidden pt-10 pb-6 px-3.5 sm:px-4 border border-slate-800/80 min-h-[720px] flex flex-col justify-between transition-colors duration-300">
+              
+              <!-- Screen Ambient Glow -->
+              <div class="absolute -top-32 -left-32 w-64 h-64 bg-travel-gold/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div class="absolute -bottom-32 -right-32 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+              <!-- Top Status Indicators (Apple Wallet Header Style) -->
+              <div class="relative z-10 flex items-center justify-between px-2 mb-3">
+                <div class="flex items-center space-x-1 text-xs text-slate-400 font-medium">
+                  <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                  <span>Boarding Passes</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <button onclick="openSeatModal()" class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:border-travel-gold transition-colors flex items-center gap-1">
+                    <i data-lucide="armchair" class="w-3 h-3 text-travel-gold"></i>
+                    <span id="phone-header-seat">Seat 2A</span>
+                  </button>
+                  <button onclick="openSharePassModal()" class="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 hover:text-white transition-colors">
+                    <i data-lucide="share" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3D Perspective Card Wrapper -->
+              <div class="perspective-1000 w-full my-auto py-2">
+                
+                <!-- Flip Container -->
+                <div id="boarding-card-flipper" class="transform-style-3d relative w-full cursor-pointer select-none" onclick="handleCardClick(event)">
+                  
+                  <!-- ================= FRONT OF BOARDING PASS ================= -->
+                  <div id="card-front" class="backface-hidden w-full rounded-3xl bg-gradient-to-br from-[#0F1E36] via-[#0B1527] to-[#070D18] border border-slate-700/80 shadow-2xl overflow-hidden relative transition-all duration-300">
+                    
+                    <!-- Holographic Foil Sheen Overlay (Active on mousemove/tilt) -->
+                    <div id="foil-sheen" class="foil-shimmer absolute inset-0 z-20 opacity-40 transition-opacity pointer-events-none"></div>
+
+                    <!-- Watermark Logo Pattern in Background -->
+                    <div class="absolute right-0 top-0 bottom-0 w-1/2 opacity-5 pointer-events-none flex items-center justify-center">
+                      <i data-lucide="plane" class="w-72 h-72 text-white stroke-[1]"></i>
+                    </div>
+
+                    <!-- PASS HEADER: Airline & Tier -->
+                    <div id="pass-header-strip" class="p-5 pb-4 border-b border-slate-800/80 bg-gradient-to-r from-travel-navyLight via-travel-navy to-[#0F1E36] flex items-center justify-between relative z-10">
+                      <div class="flex items-center space-x-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-travel-gold/20 border border-travel-gold/40 flex items-center justify-center text-travel-gold shadow-inner">
+                          <i data-lucide="plane-takeoff" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                          <h2 class="font-display font-black text-sm tracking-wide text-white uppercase">AeroLux Airways</h2>
+                          <p id="card-tier-label" class="text-[10px] font-mono tracking-widest text-travel-gold font-bold">FIRST SUITE &bull; SKYELITE DIAMOND</p>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <span id="card-flight-code" class="font-mono font-black text-base tracking-wider text-travel-gold">AL 808</span>
+                        <p class="text-[10px] text-slate-400 font-mono">NON-STOP</p>
+                      </div>
+                    </div>
+
+                    <!-- AIRPORT ORIGIN & DESTINATION CODES -->
+                    <div class="p-5 relative z-10">
+                      <div class="flex items-center justify-between">
+                        
+                        <!-- Origin Airport (Tokyo Haneda) -->
+                        <div class="text-left">
+                          <div class="font-display font-black text-3xl sm:text-4xl text-white tracking-tight">HND</div>
+                          <div class="text-xs text-slate-300 font-medium">Tokyo Haneda</div>
+                          <div class="text-[11px] font-mono text-travel-gold mt-1 font-semibold">Terminal 3</div>
+                        </div>
+
+                        <!-- Flight Route Graphic & Vector Arrow -->
+                        <div class="flex-1 px-4 flex flex-col items-center">
+                          <span class="text-[10px] font-mono text-slate-400 mb-1" id="flight-duration-badge">9h 45m</span>
+                          <div class="relative w-full flex items-center justify-center">
+                            <div class="w-full h-px bg-slate-700"></div>
+                            <div class="absolute w-2 h-2 rounded-full bg-travel-gold -left-1"></div>
+                            <div class="absolute p-1 rounded-full bg-travel-navy border border-travel-gold/50 text-travel-gold">
+                              <i data-lucide="plane" class="w-3.5 h-3.5 rotate-90"></i>
+                            </div>
+                            <div class="absolute w-2 h-2 rounded-full bg-sky-400 -right-1"></div>
+                          </div>
+                          <span class="text-[10px] text-emerald-400 font-mono mt-1 flex items-center gap-1 font-medium">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Boeing 777-300ER
+                          </span>
+                        </div>
+
+                        <!-- Destination Airport (San Francisco) -->
+                        <div class="text-right">
+                          <div class="font-display font-black text-3xl sm:text-4xl text-white tracking-tight">SFO</div>
+                          <div class="text-xs text-slate-300 font-medium">San Francisco</div>
+                          <div class="text-[11px] font-mono text-sky-400 mt-1 font-semibold">Intl Concourse G</div>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    <!-- FLIGHT ESSENTIALS MATRIX (Grid: Dep, Boarding, Gate, Seat) -->
+                    <div class="px-5 pb-5 grid grid-cols-4 gap-2 border-b border-slate-800/80 relative z-10">
+                      
+                      <!-- Boarding Time -->
+                      <div class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/80 text-left">
+                        <span class="text-[9px] uppercase tracking-wider font-mono text-slate-400 block">Boarding</span>
+                        <span id="pass-boarding-time" class="font-mono font-extrabold text-sm sm:text-base text-travel-gold">21:25</span>
+                        <span class="text-[9px] text-slate-500 font-mono block">JST</span>
+                      </div>
+
+                      <!-- Departure Time -->
+                      <div class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/80 text-left">
+                        <span class="text-[9px] uppercase tracking-wider font-mono text-slate-400 block">Departs</span>
+                        <span id="pass-dep-time" class="font-mono font-extrabold text-sm sm:text-base text-white">22:05</span>
+                        <span class="text-[9px] text-slate-500 font-mono block">On Time</span>
+                      </div>
+
+                      <!-- Gate with animated radar beacon -->
+                      <div id="gate-box" class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/80 text-left relative overflow-hidden transition-colors">
+                        <span class="text-[9px] uppercase tracking-wider font-mono text-slate-400 block flex items-center justify-between">
+                          Gate
+                          <span id="gate-radar" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        </span>
+                        <span id="pass-gate-num" class="font-mono font-extrabold text-sm sm:text-base text-emerald-400">G14</span>
+                        <span class="text-[9px] text-slate-500 font-mono block">Zone 1</span>
+                      </div>
+
+                      <!-- Seat Selection Quick Trigger -->
+                      <div onclick="openSeatModal(); event.stopPropagation();" class="p-2.5 rounded-xl bg-travel-gold/10 border border-travel-gold/30 hover:border-travel-gold text-left cursor-pointer transition-colors group">
+                        <span class="text-[9px] uppercase tracking-wider font-mono text-travel-gold block flex items-center justify-between">
+                          Seat
+                          <i data-lucide="edit-3" class="w-2.5 h-2.5 text-travel-gold opacity-60 group-hover:opacity-100"></i>
+                        </span>
+                        <span id="pass-seat-num" class="font-mono font-extrabold text-sm sm:text-base text-travel-gold">2A</span>
+                        <span class="text-[9px] text-travel-gold/80 font-mono block">Suite</span>
+                      </div>
+
+                    </div>
+
+                    <!-- PASSENGER DETAILS & CLASS SPECIFICATION -->
+                    <div class="p-5 flex items-center justify-between text-xs relative z-10">
+                      <div>
+                        <span class="text-[9px] uppercase font-mono text-slate-400 tracking-wider block">Passenger Name</span>
+                        <span class="font-bold text-white text-sm tracking-wide">KETAN CHANDEKAR</span>
+                        <span class="text-[10px] text-slate-400 font-mono block">ETKT: 088-2940192841</span>
+                      </div>
+                      <div class="text-right">
+                        <span class="text-[9px] uppercase font-mono text-slate-400 tracking-wider block">Boarding Group</span>
+                        <span id="pass-group-badge" class="inline-block px-2.5 py-0.5 rounded-md bg-travel-gold text-travel-navy font-mono font-black text-xs">GROUP 1</span>
+                        <span class="text-[10px] text-travel-gold/80 font-mono block mt-0.5">Priority Lane</span>
+                      </div>
+                    </div>
+
+                    <!-- ================= PERFORATED TEAR-OFF LINE ================= -->
+                    <div class="perforation-divider py-1 relative z-20">
+                      <div class="dotted-cut-line h-px w-full"></div>
+                    </div>
+
+                    <!-- ================= BOARDING PASS STUB (TEARABLE) ================= -->
+                    <div id="pass-stub-section" class="p-5 pt-4 bg-[#08101E] relative z-10 transition-all duration-500">
+                      
+                      <!-- Barcode Scanner Frame & High-Definition Aztec / PDF417 Code -->
+                      <div class="flex flex-col items-center justify-center">
+                        
+                        <!-- Real-time Rolling Timestamp for Anti-Fraud Verification -->
+                        <div class="w-full flex items-center justify-between text-[10px] font-mono text-slate-400 mb-2">
+                          <span class="flex items-center gap-1">
+                            <i data-lucide="shield-check" class="w-3 h-3 text-travel-gold"></i>
+                            <span id="anti-fraud-hash">SEC-TOKEN: 8A4F-29B1</span>
+                          </span>
+                          <span id="live-scanner-clock" class="text-emerald-400 font-bold">21:14:32 JST</span>
+                        </div>
+
+                        <!-- Barcode Visual Area (High Contrast Container) -->
+                        <div id="barcode-display-box" class="relative w-full bg-white p-3.5 rounded-2xl shadow-inner flex flex-col items-center justify-center overflow-hidden transition-all duration-300">
+                          
+                          <!-- Interactive Scanning Laser Beam Animation -->
+                          <div id="laser-beam" class="absolute left-0 right-0 h-1 bg-red-500 shadow-[0_0_12px_#EF4444] z-30 animate-laser-sweep pointer-events-none"></div>
+
+                          <!-- SVG High Density 2D Aztec Barcode Matrix -->
+                          <svg id="aztec-svg" class="w-56 h-28 max-w-full text-slate-900" viewBox="0 0 280 120" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Aztec Target Bullseye Core -->
+                            <rect x="120" y="40" width="40" height="40" fill="currentColor"/>
+                            <rect x="126" y="46" width="28" height="28" fill="#FFFFFF"/>
+                            <rect x="132" y="52" width="16" height="16" fill="currentColor"/>
+                            <rect x="137" y="57" width="6" height="6" fill="#FFFFFF"/>
+
+                            <!-- Pseudo-random Aztec Barcode Data Matrix Blocks -->
+                            <!-- Column Bands -->
+                            <g fill="currentColor">
+                              <rect x="15" y="10" width="4" height="100"/>
+                              <rect x="23" y="10" width="8" height="100"/>
+                              <rect x="35" y="10" width="3" height="100"/>
+                              <rect x="42" y="10" width="6" height="100"/>
+                              <rect x="52" y="10" width="10" height="100"/>
+                              <rect x="66" y="10" width="4" height="100"/>
+                              <rect x="74" y="10" width="7" height="100"/>
+                              <rect x="85" y="10" width="4" height="100"/>
+                              <rect x="93" y="10" width="9" height="100"/>
+                              <rect x="106" y="10" width="5" height="100"/>
+
+                              <!-- Right Column Bands -->
+                              <rect x="170" y="10" width="6" height="100"/>
+                              <rect x="180" y="10" width="3" height="100"/>
+                              <rect x="187" y="10" width="8" height="100"/>
+                              <rect x="199" y="10" width="4" height="100"/>
+                              <rect x="207" y="10" width="11" height="100"/>
+                              <rect x="222" y="10" width="5" height="100"/>
+                              <rect x="231" y="10" width="7" height="100"/>
+                              <rect x="242" y="10" width="4" height="100"/>
+                              <rect x="250" y="10" width="9" height="100"/>
+                              <rect x="263" y="10" width="3" height="100"/>
+
+                              <!-- Matrix Dot Overlays for Authenticity -->
+                              <rect x="114" y="15" width="6" height="6"/>
+                              <rect x="114" y="27" width="6" height="6"/>
+                              <rect x="114" y="87" width="6" height="6"/>
+                              <rect x="114" y="99" width="6" height="6"/>
+                              <rect x="160" y="15" width="6" height="6"/>
+                              <rect x="160" y="27" width="6" height="6"/>
+                              <rect x="160" y="87" width="6" height="6"/>
+                              <rect x="160" y="99" width="6" height="6"/>
+                            </g>
+                          </svg>
+
+                          <!-- Alphanumeric IATA Pass Code -->
+                          <div class="mt-2 text-center">
+                            <span class="font-mono text-[10px] tracking-[0.25em] text-slate-800 font-bold">M1CHANDEKAR/KETAN EAL808 248Y002A0014 100</span>
+                          </div>
+
+                        </div>
+
+                        <!-- Tap to Expand / Hint -->
+                        <div class="mt-2.5 flex items-center justify-between w-full text-[10px] text-slate-400 font-mono">
+                          <span class="flex items-center gap-1">
+                            <i data-lucide="smartphone-charging" class="w-3 h-3 text-travel-gold"></i>
+                            Apple Wallet Ready
+                          </span>
+                          <span class="text-travel-gold hover:underline cursor-pointer" onclick="openQrModal(); event.stopPropagation();">Tap to enlarge code &rarr;</span>
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+                  <!-- ================= END FRONT OF BOARDING PASS ================= -->
+
+
+                  <!-- ================= BACK OF BOARDING PASS (FLIPPED) ================= -->
+                  <div id="card-back" class="rotate-y-180 backface-hidden absolute inset-0 w-full rounded-3xl bg-gradient-to-br from-[#0F1E36] via-[#091120] to-[#050912] border border-slate-700/80 shadow-2xl overflow-hidden p-6 flex flex-col justify-between">
+                    
+                    <div>
+                      <!-- Card Back Header -->
+                      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                        <div class="flex items-center space-x-2">
+                          <div class="w-8 h-8 rounded-lg bg-travel-gold/20 flex items-center justify-center text-travel-gold">
+                            <i data-lucide="plane" class="w-4 h-4"></i>
+                          </div>
+                          <div>
+                            <h3 class="font-display font-bold text-sm text-white">Flight AL-808 Travel Dossier</h3>
+                            <p class="text-[10px] font-mono text-travel-gold">CONCIERGE &amp; CABIN AMENITIES</p>
+                          </div>
+                        </div>
+                        <button onclick="flipBoardingPass(); event.stopPropagation();" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-mono">
+                          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Flip
+                        </button>
+                      </div>
+
+                      <!-- Baggage Tracking Section -->
+                      <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 mb-3">
+                        <div class="flex items-center justify-between mb-2">
+                          <span class="text-xs font-semibold text-white flex items-center gap-1.5">
+                            <i data-lucide="luggage" class="w-4 h-4 text-travel-gold"></i> Checked Luggage (2 Pieces)
+                          </span>
+                          <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Loaded on AL-808</span>
+                        </div>
+                        <div class="text-[11px] font-mono text-slate-400 space-y-1">
+                          <div class="flex justify-between">
+                            <span>Tag #008-HND-992144 (Rimowa Trunk)</span>
+                            <span class="text-slate-200">28.4 kg</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span>Tag #008-HND-992145 (Tumi Garment)</span>
+                            <span class="text-slate-200">16.2 kg</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- In-Flight Dining Preorder -->
+                      <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 mb-3">
+                        <div class="flex items-center justify-between mb-1">
+                          <span class="text-xs font-semibold text-white flex items-center gap-1.5">
+                            <i data-lucide="utensils" class="w-4 h-4 text-travel-gold"></i> Dining Service
+                          </span>
+                          <span class="text-[10px] font-mono text-travel-gold">Course 1 Reserved</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 font-sans">Kobe Wagyu Kaiseki &bull; Hibiki 21 Signature Pairing</p>
+                        <p class="text-[10px] text-slate-500 font-mono mt-0.5">Special Request: Gluten-Free &bull; Served after climb</p>
+                      </div>
+
+                      <!-- In-Flight High-Speed Wi-Fi Credential -->
+                      <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 mb-3">
+                        <div class="flex items-center justify-between mb-1">
+                          <span class="text-xs font-semibold text-white flex items-center gap-1.5">
+                            <i data-lucide="wifi" class="w-4 h-4 text-sky-400"></i> Starlink Satellite In-Flight Wi-Fi
+                          </span>
+                          <span class="text-[10px] font-mono text-emerald-400">Complimentary</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 bg-slate-950 p-2 rounded-xl mt-1">
+                          <span>SSID: <strong>AeroLux-First-WiFi</strong></span>
+                          <span>PASS: <strong class="text-travel-gold">SKY-2A-FIRST</strong></span>
+                        </div>
+                      </div>
+
+                      <!-- Lounge Access Card -->
+                      <div class="p-3 rounded-xl bg-travel-gold/10 border border-travel-gold/20 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                          <i data-lucide="gem" class="w-4 h-4 text-travel-gold"></i>
+                          <span class="text-xs text-white font-medium">Sakura Diamond First Lounge</span>
+                        </div>
+                        <span class="text-[10px] font-mono text-travel-gold font-bold">Terminal 3, Gate 114</span>
+                      </div>
+                    </div>
+
+                    <!-- Bottom Bar: Apple / Google Wallet Buttons -->
+                    <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+                      <button onclick="simulateWalletAdd('apple'); event.stopPropagation();" class="px-3 py-2 rounded-xl bg-black hover:bg-slate-900 text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                        <i data-lucide="smartphone" class="w-3.5 h-3.5 text-slate-300"></i>
+                        <span>Add to Apple Wallet</span>
+                      </button>
+                      <button onclick="simulateWalletAdd('google'); event.stopPropagation();" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                        <i data-lucide="wallet" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        <span>Google Wallet</span>
+                      </button>
+                    </div>
+
+                  </div>
+                  <!-- ================= END BACK OF BOARDING PASS ================= -->
+
+                </div>
+
+              </div>
+
+              <!-- Phone Bottom Action Bar -->
+              <div class="relative z-10 pt-2 flex items-center justify-between text-xs text-slate-400 px-2">
+                <span class="font-mono text-[10px]">Tap pass to flip</span>
+                <!-- Home Indicator Bar -->
+                <div class="w-32 h-1 bg-slate-700 rounded-full mx-auto"></div>
+                <span class="font-mono text-[10px]">HND &bull; SFO</span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Flight Telemetry, Baggage Live Tracker & Interactive Wayfinding Hub -->
+      <div id="telemetry-column" class="lg:col-span-5 space-y-6">
+
+        <!-- Card 1: Real-Time Flight Path & Dynamic Aircraft Telemetry -->
+        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-md">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                <i data-lucide="navigation" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="font-display font-bold text-base text-white">Live Route Telemetry</h3>
+                <p class="text-[11px] font-mono text-slate-400">Pacific Trans-Oceanic Flight Corridor</p>
+              </div>
+            </div>
+            <span id="telemetry-status-badge" class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              BOARDING
+            </span>
+          </div>
+
+          <!-- Progress Route Line -->
+          <div class="space-y-2 mb-4">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+              <span>HND 22:05</span>
+              <span id="route-distance-label" class="text-travel-gold font-bold">5,142 nm remaining</span>
+              <span>SFO 15:20 PDT</span>
+            </div>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden relative">
+              <div id="route-progress-bar" class="bg-gradient-to-r from-travel-gold to-sky-400 h-full w-[12%] rounded-full transition-all duration-700"></div>
+            </div>
+          </div>
+
+          <!-- Telemetry Numerical Metrics Bento -->
+          <div class="grid grid-cols-3 gap-2.5 text-center font-mono">
+            <div class="p-2.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
+              <span class="text-[10px] text-slate-400 block uppercase">Altitude</span>
+              <span id="tele-alt" class="font-black text-sm text-white">0 ft</span>
+              <span class="text-[9px] text-slate-500 block">Ground Hold</span>
+            </div>
+            <div class="p-2.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
+              <span class="text-[10px] text-slate-400 block uppercase">Speed</span>
+              <span id="tele-spd" class="font-black text-sm text-white">0 kts</span>
+              <span class="text-[9px] text-slate-500 block">Taxi: 12 kts</span>
+            </div>
+            <div class="p-2.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
+              <span class="text-[10px] text-slate-400 block uppercase">Arrival Temp</span>
+              <span class="font-black text-sm text-sky-400">18&deg;C</span>
+              <span class="text-[9px] text-slate-500 block">SFO Clear</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Airport Terminal Indoor Wayfinding & Walking Estimate -->
+        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-md">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-xl bg-travel-gold/15 border border-travel-gold/30 flex items-center justify-center text-travel-gold">
+                <i data-lucide="map-pin" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="font-display font-bold text-base text-white">Terminal 3 Wayfinding</h3>
+                <p class="text-[11px] font-mono text-slate-400">Step-by-Step Gate Navigation</p>
+              </div>
+            </div>
+            <span class="text-xs font-mono text-travel-gold font-bold">~7 min walk</span>
+          </div>
+
+          <!-- Step Progression Timeline -->
+          <div class="space-y-3 relative pl-6 before:content-[''] before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
+            
+            <!-- Step 1: Security -->
+            <div class="relative">
+              <div class="absolute -left-6 top-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950">
+                <i data-lucide="check" class="w-2.5 h-2.5 stroke-[3]"></i>
+              </div>
+              <div class="text-xs">
+                <span class="font-bold text-white">Priority Security Checkpoint 3</span>
+                <p class="text-[11px] text-slate-400">Biometric facial scan cleared &bull; Fast Track</p>
+              </div>
+            </div>
+
+            <!-- Step 2: Sakura Lounge -->
+            <div class="relative">
+              <div class="absolute -left-6 top-1 w-4 h-4 rounded-full bg-travel-gold flex items-center justify-center text-travel-navy">
+                <i data-lucide="coffee" class="w-2.5 h-2.5 stroke-[3]"></i>
+              </div>
+              <div class="text-xs">
+                <span class="font-bold text-travel-gold">Sakura Diamond Lounge</span>
+                <p class="text-[11px] text-slate-400">4th Floor Concourse &bull; Direct Elevator Access</p>
+              </div>
+            </div>
+
+            <!-- Step 3: Departure Gate -->
+            <div class="relative">
+              <div id="waypoint-gate-icon" class="absolute -left-6 top-1 w-4 h-4 rounded-full bg-slate-700 flex items-center justify-center text-slate-300">
+                <i data-lucide="door-open" class="w-2.5 h-2.5 stroke-[3]"></i>
+              </div>
+              <div class="text-xs">
+                <span id="waypoint-gate-title" class="font-bold text-slate-200">Gate G14 (Boarding Lounge)</span>
+                <p class="text-[11px] text-slate-400">350 meters ahead &bull; Jetbridge Gate</p>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+            <span class="text-slate-400">Accessibility Assistance</span>
+            <button onclick="requestWheelchairSim()" class="text-travel-gold hover:underline font-medium">Request Golf Cart / Escort &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Card 3: Interactive Suite / Seat Map Preview -->
+        <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl backdrop-blur-md">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                <i data-lucide="armchair" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="font-display font-bold text-base text-white">Your Suite: <span id="hub-seat-label" class="text-travel-gold">2A (Window)</span></h3>
+                <p class="text-[11px] font-mono text-slate-400">Airbus A350-900 ULH Private Suite</p>
+              </div>
+            </div>
+            <button onclick="openSeatModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-travel-gold border border-slate-700 text-xs font-semibold flex items-center gap-1 transition-colors">
+              <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Change Seat
+            </button>
+          </div>
+
+          <!-- Suite Specs Pills -->
+          <div class="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-300">
+            <div class="p-2 rounded-xl bg-slate-950 flex items-center gap-2">
+              <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-travel-gold"></i>
+              <span>82" Full Flat Bed</span>
+            </div>
+            <div class="p-2 rounded-xl bg-slate-950 flex items-center gap-2">
+              <i data-lucide="tv" class="w-3.5 h-3.5 text-travel-gold"></i>
+              <span>32" 4K OLED IFE</span>
+            </div>
+            <div class="p-2 rounded-xl bg-slate-950 flex items-center gap-2">
+              <i data-lucide="lock" class="w-3.5 h-3.5 text-travel-gold"></i>
+              <span>Sliding Privacy Door</span>
+            </div>
+            <div class="p-2 rounded-xl bg-slate-950 flex items-center gap-2">
+              <i data-lucide="battery-charging" class="w-3.5 h-3.5 text-travel-gold"></i>
+              <span>65W USB-C &amp; AC</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= MODALS & OVERLAYS ================= -->
+
+  <!-- Modal 1: Interactive Seat Map & Suite Picker -->
+  <div id="seat-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="armchair" class="w-5 h-5 text-travel-gold"></i>
+          <h3 class="font-display font-bold text-lg text-white">Select First Class Suite</h3>
+        </div>
+        <button onclick="closeSeatModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 mb-4">Airbus A350-900 First Class 1-2-1 Enclosed Suite Layout. Select an available suite to reassign your boarding pass in real time.</p>
+
+      <!-- Aircraft Fuselage Shell -->
+      <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 mb-5">
+        <div class="text-center font-mono text-[10px] text-slate-500 uppercase tracking-widest mb-3">&uarr; Cockpit / Front of Aircraft &uarr;</div>
+        
+        <!-- Row 1 -->
+        <div class="grid grid-cols-4 gap-3 text-center mb-3">
+          <button onclick="selectSeat('1A', 'Suite (Window Left)')" class="seat-option p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono font-bold text-white transition-all flex flex-col items-center gap-1">
+            <i data-lucide="armchair" class="w-4 h-4 text-travel-gold"></i>
+            <span>1A</span>
+            <span class="text-[9px] text-emerald-400">Available</span>
+          </button>
+          <button disabled class="p-2.5 rounded-xl bg-slate-900/50 border border-slate-800 text-xs font-mono text-slate-600 flex flex-col items-center gap-1 cursor-not-allowed">
+            <i data-lucide="user-x" class="w-4 h-4"></i>
+            <span>1D</span>
+            <span class="text-[9px] text-slate-600">Occupied</span>
+          </button>
+          <button onclick="selectSeat('1G', 'Suite (Center Right)')" class="seat-option p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono font-bold text-white transition-all flex flex-col items-center gap-1">
+            <i data-lucide="armchair" class="w-4 h-4 text-travel-gold"></i>
+            <span>1G</span>
+            <span class="text-[9px] text-emerald-400">Available</span>
+          </button>
+          <button onclick="selectSeat('1K', 'Suite (Window Right)')" class="seat-option p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono font-bold text-white transition-all flex flex-col items-center gap-1">
+            <i data-lucide="armchair" class="w-4 h-4 text-travel-gold"></i>
+            <span>1K</span>
+            <span class="text-[9px] text-emerald-400">Available</span>
+          </button>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="grid grid-cols-4 gap-3 text-center">
+          <button onclick="selectSeat('2A', 'Suite (Window Left)')" class="seat-option active-seat p-2.5 rounded-xl bg-travel-gold text-travel-navy border border-travel-gold text-xs font-mono font-bold transition-all flex flex-col items-center gap-1 shadow-lg shadow-travel-gold/20">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>2A</span>
+            <span class="text-[9px] font-bold">Current</span>
+          </button>
+          <button onclick="selectSeat('2D', 'Suite (Center Left)')" class="seat-option p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono font-bold text-white transition-all flex flex-col items-center gap-1">
+            <i data-lucide="armchair" class="w-4 h-4 text-travel-gold"></i>
+            <span>2D</span>
+            <span class="text-[9px] text-emerald-400">Available</span>
+          </button>
+          <button disabled class="p-2.5 rounded-xl bg-slate-900/50 border border-slate-800 text-xs font-mono text-slate-600 flex flex-col items-center gap-1 cursor-not-allowed">
+            <i data-lucide="user-x" class="w-4 h-4"></i>
+            <span>2G</span>
+            <span class="text-[9px] text-slate-600">Occupied</span>
+          </button>
+          <button onclick="selectSeat('2K', 'Suite (Window Right)')" class="seat-option p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono font-bold text-white transition-all flex flex-col items-center gap-1">
+            <i data-lucide="armchair" class="w-4 h-4 text-travel-gold"></i>
+            <span>2K</span>
+            <span class="text-[9px] text-emerald-400">Available</span>
+          </button>
+        </div>
+
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-slate-400 font-mono">No change fee for First Class passengers.</span>
+        <button onclick="closeSeatModal()" class="px-5 py-2 rounded-xl bg-travel-gold text-travel-navy font-bold text-xs hover:bg-amber-400 transition-colors">
+          Confirm Selection
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Enlarge Barcode & Airport Scanner Boost Overlay -->
+  <div id="qr-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-white text-slate-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative flex flex-col items-center text-center">
+      <button onclick="closeQrModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-800 p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-travel-navy mb-2">
+        <i data-lucide="qr-code" class="w-5 h-5"></i>
+      </div>
+      <h3 class="font-display font-black text-xl tracking-tight">Airport Scanner Mode</h3>
+      <p class="text-xs text-slate-500 font-mono mb-4">Hold device steady against the optical scanner glass</p>
+
+      <!-- High-res QR Display -->
+      <div class="p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl w-full flex items-center justify-center relative overflow-hidden">
+        <svg class="w-64 h-64" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- Outer border box -->
+          <rect width="200" height="200" fill="#ffffff"/>
+          <!-- Position Marks (Top Left, Top Right, Bottom Left) -->
+          <rect x="20" y="20" width="50" height="50" fill="#000000"/>
+          <rect x="28" y="28" width="34" height="34" fill="#ffffff"/>
+          <rect x="36" y="36" width="18" height="18" fill="#000000"/>
+
+          <rect x="130" y="20" width="50" height="50" fill="#000000"/>
+          <rect x="138" y="28" width="34" height="34" fill="#ffffff"/>
+          <rect x="146" y="36" width="18" height="18" fill="#000000"/>
+
+          <rect x="20" y="130" width="50" height="50" fill="#000000"/>
+          <rect x="28" y="138" width="34" height="34" fill="#ffffff"/>
+          <rect x="36" y="146" width="18" height="18" fill="#000000"/>
+
+          <!-- High-density QR Data matrix pattern -->
+          <g fill="#000000">
+            <rect x="80" y="20" width="10" height="10"/>
+            <rect x="100" y="20" width="10" height="10"/>
+            <rect x="80" y="40" width="10" height="20"/>
+            <rect x="100" y="50" width="20" height="10"/>
+            <rect x="20" y="80" width="20" height="10"/>
+            <rect x="50" y="80" width="10" height="20"/>
+            <rect x="70" y="80" width="60" height="10"/>
+            <rect x="80" y="100" width="20" height="20"/>
+            <rect x="110" y="90" width="20" height="30"/>
+            <rect x="140" y="80" width="40" height="10"/>
+            <rect x="150" y="100" width="10" height="30"/>
+            <rect x="170" y="110" width="10" height="20"/>
+            <rect x="80" y="130" width="20" height="10"/>
+            <rect x="110" y="140" width="30" height="10"/>
+            <rect x="80" y="150" width="10" height="30"/>
+            <rect x="100" y="160" width="40" height="10"/>
+            <rect x="150" y="140" width="30" height="40"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="mt-4 font-mono text-xs text-slate-600">
+        PASSENGER: <strong class="text-black">CHANDEKAR / KETAN</strong> &bull; SEAT: <strong id="modal-qr-seat" class="text-black">2A</strong>
+      </div>
+      <button onclick="simulateGateScan(); closeQrModal();" class="mt-4 w-full py-2.5 rounded-xl bg-travel-navy text-white font-bold text-xs hover:bg-slate-800 transition-colors">
+        Trigger Scanner Simulation
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 3: Keyboard Shortcuts Guide -->
+  <div id="keybindings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="keyboard" class="w-5 h-5 text-travel-gold"></i>
+          <h3 class="font-display font-bold text-lg text-white">Keyboard Hotkeys</h3>
+        </div>
+        <button onclick="closeKeybindingsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2.5 text-xs font-mono">
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Flip Boarding Pass</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-travel-gold border border-slate-700">F</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Test Gate Scan</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-travel-gold border border-slate-700">Space</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Tear / Reattach Stub</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-travel-gold border border-slate-700">T</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle Scanner Brightness Boost</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-travel-gold border border-slate-700">B</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle Mute / Audio Chime</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-travel-gold border border-slate-700">M</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Open Seat Map</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-travel-gold border border-slate-700">S</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Close Modals / Overlays</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-travel-gold border border-slate-700">Esc</kbd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulated Airport Gate Turnstile Audio / Notification Toast -->
+  <div id="gate-scan-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border-2 border-emerald-500 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-3.5 transition-all duration-300 translate-y-32 opacity-0">
+    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-emerald-400">
+      <i data-lucide="check" class="w-6 h-6 stroke-[3]"></i>
+    </div>
+    <div>
+      <div class="font-display font-extrabold text-sm text-emerald-400">BOARDING PASS VERIFIED &bull; CLEARED</div>
+      <div id="toast-scan-detail" class="text-xs text-slate-300 font-mono">Seat 2A &bull; First Class Suite &bull; Welcome Aboard, Mr. Chandekar</div>
+    </div>
+  </div>
+
+  <!-- Vanilla JavaScript & Web Audio API Acoustic Engine -->
+  <script>
+    // State Management Architecture
+    const state = {
+      isFlipped: false,
+      isStubTorn: false,
+      isBoosted: false,
+      isAudioEnabled: true,
+      currentSeat: '2A',
+      currentSeatType: 'First Suite (Window Left)',
+      currentGate: 'G14',
+      currentStage: 'boarding',
+      flightClass: 'first',
+      isMobileView: true,
+      audioCtx: null
+    };
+
+    // A11y Live Announcer
+    function announceA11y(message) {
+      const el = document.getElementById('a11y-announcer');
+      if (el) {
+        el.textContent = message;
+      }
+    }
+
+    // ================= WEB AUDIO API SYNTHESIZER =================
+    function initAudioContext() {
+      if (!state.audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        state.audioCtx = new AudioContext();
+      }
+      if (state.audioCtx.state === 'suspended') {
+        state.audioCtx.resume();
+      }
+    }
+
+    // Sound 1: Airport PA Two-Tone Announcement Chime (Ding-Dong)
+    function playAirportChime() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+
+        // Note 1: High Bell (F#5 - ~740 Hz)
+        const osc1 = state.audioCtx.createOscillator();
+        const gain1 = state.audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(740, now);
+        gain1.gain.setValueAtTime(0.2, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        osc1.connect(gain1);
+        gain1.connect(state.audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.8);
+
+        // Note 2: Low Bell (C#5 - ~554 Hz)
+        const osc2 = state.audioCtx.createOscillator();
+        const gain2 = state.audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(554, now + 0.35);
+        gain2.gain.setValueAtTime(0.2, now + 0.35);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+        osc2.connect(gain2);
+        gain2.connect(state.audioCtx.destination);
+        osc2.start(now + 0.35);
+        osc2.stop(now + 1.2);
+      } catch (e) {
+        console.warn('Audio not available', e);
+      }
+    }
+
+    // Sound 2: Barcode Scanner Beep-Ding
+    function playScannerSound() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1250, now);
+        osc.frequency.setValueAtTime(1750, now + 0.08);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Sound 3: Paper Tear / Snap
+    function playTearSound() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+
+        // White noise burst for paper rip
+        const bufferSize = state.audioCtx.sampleRate * 0.15;
+        const buffer = state.audioCtx.createBuffer(1, bufferSize, state.audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = state.audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = state.audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1800;
+
+        const gain = state.audioCtx.createGain();
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        noise.start(now);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Sound 4: Card Flip Mechanical Whoosh
+    function playFlipSound() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(120, now + 0.2);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Sound Toggle Button Handler
+    document.getElementById('toggle-audio-btn').addEventListener('click', () => {
+      state.isAudioEnabled = !state.isAudioEnabled;
+      const btn = document.getElementById('toggle-audio-btn');
+      const icon = document.getElementById('audio-icon');
+      if (state.isAudioEnabled) {
+        btn.querySelector('span').textContent = 'Sound: ON';
+        icon.classList.remove('text-slate-500');
+        icon.classList.add('text-travel-gold');
+        announceA11y('Acoustic chimes and audio feedback enabled');
+        playAirportChime();
+      } else {
+        btn.querySelector('span').textContent = 'Sound: OFF';
+        icon.classList.remove('text-travel-gold');
+        icon.classList.add('text-slate-500');
+        announceA11y('Audio feedback muted');
+      }
+    });
+
+    // ================= 3D CARD FLIP & TILT =================
+    function flipBoardingPass() {
+      state.isFlipped = !state.isFlipped;
+      const flipper = document.getElementById('boarding-card-flipper');
+      if (state.isFlipped) {
+        flipper.classList.add('rotate-y-180');
+        announceA11y('Boarding pass flipped to back side showing baggage tags and dining preferences');
+      } else {
+        flipper.classList.remove('rotate-y-180');
+        announceA11y('Boarding pass flipped to front side showing flight itinerary and gate barcode');
+      }
+      playFlipSound();
+    }
+
+    function handleCardClick(event) {
+      // Avoid flipping if user clicks on specific action buttons inside the card
+      if (event.target.closest('button') || event.target.closest('[onclick*="Modal"]') || event.target.closest('#barcode-display-box')) {
+        return;
+      }
+      flipBoardingPass();
+    }
+
+    // Holographic Foil Mouse Move Physics
+    const cardFront = document.getElementById('card-front');
+    const foilSheen = document.getElementById('foil-sheen');
+
+    if (cardFront && foilSheen) {
+      cardFront.addEventListener('mousemove', (e) => {
+        const rect = cardFront.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const xPercent = (x / rect.width) * 100;
+        const yPercent = (y / rect.height) * 100;
+
+        foilSheen.style.backgroundPosition = `${xPercent}% ${yPercent}%`;
+        foilSheen.style.opacity = '0.6';
+      });
+
+      cardFront.addEventListener('mouseleave', () => {
+        foilSheen.style.opacity = '0.3';
+      });
+    }
+
+    // ================= TEAR STUB INTERACTION =================
+    function toggleTearStub() {
+      state.isStubTorn = !state.isStubTorn;
+      const stub = document.getElementById('pass-stub-section');
+      const btnText = document.getElementById('tear-btn-text');
+
+      if (state.isStubTorn) {
+        stub.style.transform = 'translateY(16px) rotate(1deg)';
+        stub.style.opacity = '0.85';
+        stub.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.7)';
+        btnText.textContent = 'Reattach Stub';
+        announceA11y('Boarding pass stub torn off along perforation');
+        playTearSound();
+      } else {
+        stub.style.transform = 'translateY(0) rotate(0deg)';
+        stub.style.opacity = '1';
+        stub.style.boxShadow = 'none';
+        btnText.textContent = 'Tear Boarding Stub';
+        announceA11y('Boarding pass stub reattached');
+        playFlipSound();
+      }
+    }
+
+    // ================= SCANNER BRIGHTNESS BOOST =================
+    function toggleScannerBrightness() {
+      state.isBoosted = !state.isBoosted;
+      const screen = document.getElementById('phone-screen');
+      const barcodeBox = document.getElementById('barcode-display-box');
+      const boostText = document.getElementById('boost-btn-text');
+
+      if (state.isBoosted) {
+        screen.style.boxShadow = '0 0 70px 15px rgba(255, 255, 255, 0.4)';
+        barcodeBox.style.filter = 'contrast(1.4) brightness(1.2)';
+        boostText.textContent = 'Restore Normal Display';
+        announceA11y('Screen brightness maximized to 100% for optical barcode reader');
+        playAirportChime();
+      } else {
+        screen.style.boxShadow = 'none';
+        barcodeBox.style.filter = 'none';
+        boostText.textContent = 'Boost for Scanner';
+        announceA11y('Screen brightness restored to normal');
+      }
+    }
+
+    // ================= GATE TURNSTILE SCAN SIMULATION =================
+    function simulateGateScan() {
+      playScannerSound();
+      announceA11y('Barcode successfully scanned at gate G14. Turnstile unlocked.');
+
+      const toast = document.getElementById('gate-scan-toast');
+      const toastDetail = document.getElementById('toast-scan-detail');
+      toastDetail.textContent = `Seat ${state.currentSeat} • ${state.currentSeatType} • Welcome Aboard, Mr. Chandekar`;
+
+      toast.classList.remove('translate-y-32', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-32', 'opacity-0');
+      }, 4200);
+    }
+
+    // ================= FLIGHT STAGE TELEMETRY STATE MACHINE =================
+    function setFlightStage(stage) {
+      state.currentStage = stage;
+      playAirportChime();
+
+      // Clear button styles
+      ['scheduled', 'boarding', 'gate-change', 'inflight', 'landed'].forEach(s => {
+        const btn = document.getElementById(`stage-btn-${s}`);
+        if (btn) {
+          btn.className = 'px-3 py-1.5 rounded-lg bg-travel-navy border border-slate-700 hover:border-travel-gold text-slate-200 transition-all';
+        }
+      });
+      const activeBtn = document.getElementById(`stage-btn-${stage}`);
+      if (activeBtn) {
+        activeBtn.className = 'px-3 py-1.5 rounded-lg bg-travel-gold text-travel-navy font-bold transition-all shadow-sm';
+      }
+
+      const bannerText = document.getElementById('banner-status-text');
+      const teleBadge = document.getElementById('telemetry-status-badge');
+      const progressBar = document.getElementById('route-progress-bar');
+      const altLabel = document.getElementById('tele-alt');
+      const spdLabel = document.getElementById('tele-spd');
+      const gateNum = document.getElementById('pass-gate-num');
+      const gateRadar = document.getElementById('gate-radar');
+
+      switch (stage) {
+        case 'scheduled':
+          bannerText.innerHTML = 'Tokyo Haneda (HND) &rarr; San Francisco (SFO) &bull; <strong class="text-slate-300">Scheduled Departure: 22:05 JST</strong>';
+          teleBadge.textContent = 'SCHEDULED';
+          teleBadge.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700';
+          progressBar.style.width = '0%';
+          altLabel.textContent = '0 ft';
+          spdLabel.textContent = '0 kts';
+          gateNum.textContent = 'G14';
+          gateRadar.className = 'w-2 h-2 rounded-full bg-slate-500';
+          announceA11y('Flight stage set to Scheduled. Departure in 51 minutes.');
+          break;
+
+        case 'boarding':
+          bannerText.innerHTML = 'Tokyo Haneda (HND) &rarr; San Francisco (SFO) &bull; <strong class="text-emerald-400">Gate G14 Boarding Group 1 Now</strong>';
+          teleBadge.textContent = 'BOARDING';
+          teleBadge.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+          progressBar.style.width = '12%';
+          altLabel.textContent = '0 ft';
+          spdLabel.textContent = '0 kts';
+          gateNum.textContent = 'G14';
+          gateRadar.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+          announceA11y('Flight stage set to Boarding Group 1 at Gate G14.');
+          break;
+
+        case 'gate-change':
+          bannerText.innerHTML = 'Tokyo Haneda (HND) &rarr; San Francisco (SFO) &bull; <strong class="text-amber-400">ALERT: Gate Changed to H22</strong>';
+          teleBadge.textContent = 'GATE CHANGED';
+          teleBadge.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30';
+          gateNum.textContent = 'H22';
+          gateRadar.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+          document.getElementById('waypoint-gate-title').innerHTML = '<span class="text-amber-400">Gate H22 (New Gate Assignment)</span>';
+          announceA11y('Urgent alert: Departure gate has been updated from G14 to H22.');
+          break;
+
+        case 'inflight':
+          bannerText.innerHTML = 'Cruising over Pacific Ocean &bull; <strong class="text-sky-400">Altitude 39,000 ft &bull; Speed 578 kts &bull; Headwind 42 kts</strong>';
+          teleBadge.textContent = 'CRUISING';
+          teleBadge.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30';
+          progressBar.style.width = '68%';
+          altLabel.textContent = '39,000 ft';
+          spdLabel.textContent = '578 kts';
+          gateRadar.className = 'hidden';
+          announceA11y('Flight stage set to Cruising at 39,000 feet.');
+          break;
+
+        case 'landed':
+          bannerText.innerHTML = 'San Francisco Intl (SFO) &bull; <strong class="text-emerald-400">Arrived at Gate G98 &bull; Baggage at Carousel 7</strong>';
+          teleBadge.textContent = 'ARRIVED';
+          teleBadge.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+          progressBar.style.width = '100%';
+          altLabel.textContent = '13 ft';
+          spdLabel.textContent = '0 kts';
+          gateNum.textContent = 'G98';
+          gateRadar.className = 'hidden';
+          announceA11y('Flight stage set to Landed at San Francisco. Baggage available at Carousel 7.');
+          break;
+      }
+    }
+
+    function triggerGateAlertSim() {
+      setFlightStage('gate-change');
+    }
+
+    // ================= CABIN CLASS SWITCHER =================
+    function setFlightClass(tier) {
+      state.flightClass = tier;
+      playFlipSound();
+
+      // Update button highlights
+      ['first', 'business', 'premium'].forEach(t => {
+        const btn = document.getElementById(`class-btn-${t}`);
+        if (btn) {
+          btn.className = 'px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-all';
+        }
+      });
+      document.getElementById(`class-btn-${tier}`).className = 'px-3 py-1 rounded-lg bg-travel-gold text-travel-navy font-bold shadow-sm transition-all';
+
+      const tierLabel = document.getElementById('card-tier-label');
+      const groupBadge = document.getElementById('pass-group-badge');
+      const seatBox = document.getElementById('pass-seat-num');
+      const hubSeatLabel = document.getElementById('hub-seat-label');
+
+      if (tier === 'first') {
+        tierLabel.textContent = 'FIRST SUITE • SKYELITE DIAMOND';
+        groupBadge.textContent = 'GROUP 1';
+        groupBadge.className = 'inline-block px-2.5 py-0.5 rounded-md bg-travel-gold text-travel-navy font-mono font-black text-xs';
+        state.currentSeat = '2A';
+        state.currentSeatType = 'First Suite (Window)';
+      } else if (tier === 'business') {
+        tierLabel.textContent = 'BUSINESS Q-SUITE • SAPPHIRE';
+        groupBadge.textContent = 'GROUP 2';
+        groupBadge.className = 'inline-block px-2.5 py-0.5 rounded-md bg-sky-500 text-white font-mono font-black text-xs';
+        state.currentSeat = '8K';
+        state.currentSeatType = 'Business Q-Suite';
+      } else {
+        tierLabel.textContent = 'PREMIUM COMFORT • EMERALD';
+        groupBadge.textContent = 'GROUP 3';
+        groupBadge.className = 'inline-block px-2.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 font-mono font-black text-xs';
+        state.currentSeat = '21A';
+        state.currentSeatType = 'Premium Economy Extra Legroom';
+      }
+
+      seatBox.textContent = state.currentSeat;
+      hubSeatLabel.textContent = `${state.currentSeat} (${state.currentSeatType})`;
+      document.getElementById('phone-header-seat').textContent = `Seat ${state.currentSeat}`;
+      announceA11y(`Class switched to ${tier.toUpperCase()}. Assigned seat ${state.currentSeat}.`);
+    }
+
+    // ================= SEAT MAP MODAL & RE-ASSIGNMENT =================
+    function openSeatModal() {
+      document.getElementById('seat-modal').classList.remove('hidden');
+      announceA11y('Opened cabin seat map modal');
+    }
+
+    function closeSeatModal() {
+      document.getElementById('seat-modal').classList.add('hidden');
+    }
+
+    function selectSeat(seatCode, seatDesc) {
+      state.currentSeat = seatCode;
+      state.currentSeatType = seatDesc;
+      playAirportChime();
+
+      document.getElementById('pass-seat-num').textContent = seatCode;
+      document.getElementById('hub-seat-label').textContent = `${seatCode} (${seatDesc})`;
+      document.getElementById('phone-header-seat').textContent = `Seat ${seatCode}`;
+      document.getElementById('modal-qr-seat').textContent = seatCode;
+
+      // Update active seat styling in modal
+      document.querySelectorAll('.seat-option').forEach(btn => {
+        btn.classList.remove('bg-travel-gold', 'text-travel-navy', 'active-seat');
+        btn.classList.add('bg-slate-800', 'text-white');
+      });
+
+      closeSeatModal();
+      announceA11y(`Seat reassigned to ${seatCode} ${seatDesc}. Boarding pass updated.`);
+    }
+
+    // ================= BARCODE / QR MODAL =================
+    function openQrModal() {
+      document.getElementById('qr-modal').classList.remove('hidden');
+      playAirportChime();
+      announceA11y('Opened full-screen barcode view for airport scanner');
+    }
+
+    function closeQrModal() {
+      document.getElementById('qr-modal').classList.add('hidden');
+    }
+
+    // ================= KEYBINDINGS MODAL =================
+    function openKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.remove('hidden');
+    }
+
+    function closeKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.add('hidden');
+    }
+
+    // ================= VIEWPORT SWITCHER (MOBILE WALLET VS HUB) =================
+    document.getElementById('toggle-view-btn').addEventListener('click', () => {
+      state.isMobileView = !state.isMobileView;
+      const phoneWrapper = document.getElementById('phone-frame-wrapper');
+      const passCol = document.getElementById('pass-column');
+      const teleCol = document.getElementById('telemetry-column');
+      const viewIcon = document.getElementById('view-icon');
+      const viewLabel = document.getElementById('view-mode-label');
+
+      if (state.isMobileView) {
+        phoneWrapper.className = 'w-full max-w-[420px] transition-all duration-500';
+        passCol.className = 'lg:col-span-7 flex flex-col items-center justify-center';
+        teleCol.className = 'lg:col-span-5 space-y-6';
+        viewIcon.setAttribute('data-lucide', 'smartphone');
+        viewLabel.textContent = 'Mobile Wallet';
+        announceA11y('View mode switched to Mobile Wallet');
+      } else {
+        phoneWrapper.className = 'w-full max-w-full transition-all duration-500';
+        passCol.className = 'lg:col-span-6 flex flex-col items-center justify-center';
+        teleCol.className = 'lg:col-span-6 space-y-6';
+        viewIcon.setAttribute('data-lucide', 'monitor');
+        viewLabel.textContent = 'Expanded Console';
+        announceA11y('View mode switched to Expanded Flight Console');
+      }
+      lucide.createIcons();
+    });
+
+    // ================= WALLET INTEGRATION SIMULATOR =================
+    function simulateWalletAdd(type) {
+      playScannerSound();
+      alert(`✅ Pass successfully bundled into ${type === 'apple' ? 'Apple Wallet' : 'Google Wallet'}.\n\nPass notifications for Gate G14 and Flight AL-808 are now pinned to your lock screen.`);
+    }
+
+    function requestWheelchairSim() {
+      playAirportChime();
+      alert(`♿ Airport Special Assistance Confirmed!\n\nA designated Sakura Concierge and electric transport cart have been dispatched to Sakura Lounge for passenger Ketan Chandekar.`);
+    }
+
+    function openSharePassModal() {
+      if (navigator.share) {
+        navigator.share({
+          title: 'Boarding Pass - Flight AL-808 (HND -> SFO)',
+          text: 'AeroLux Flight AL-808 Boarding Pass for Ketan Chandekar (Seat 2A)',
+          url: window.location.href,
+        }).catch(console.warn);
+      } else {
+        navigator.clipboard.writeText(window.location.href);
+        alert('📋 Boarding Pass link copied to clipboard!');
+      }
+    }
+
+    // ================= LIVE FRAUD CLOCK & ROLLING WATERMARK =================
+    setInterval(() => {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('ja-JP', { hour12: false, timeZone: 'Asia/Tokyo' }) + ' JST';
+      const clockEl = document.getElementById('live-scanner-clock');
+      if (clockEl) {
+        clockEl.textContent = timeStr;
+      }
+    }, 1000);
+
+    // ================= KEYBOARD ACCESSIBILITY LISTENERS =================
+    window.addEventListener('keydown', (e) => {
+      // Don't intercept if user is typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'Escape') {
+        closeSeatModal();
+        closeQrModal();
+        closeKeybindingsModal();
+      } else if (e.key.toLowerCase() === 'f') {
+        flipBoardingPass();
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        simulateGateScan();
+      } else if (e.key.toLowerCase() === 't') {
+        toggleTearStub();
+      } else if (e.key.toLowerCase() === 'b') {
+        toggleScannerBrightness();
+      } else if (e.key.toLowerCase() === 'm') {
+        document.getElementById('toggle-audio-btn').click();
+      } else if (e.key.toLowerCase() === 's') {
+        openSeatModal();
+      } else if (e.key === '?') {
+        openKeybindingsModal();
+      }
+    });
+
+    // Initialize Lucide Icons on Load
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+
+</body>
+</html>

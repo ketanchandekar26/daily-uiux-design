@@ -42,7 +42,8 @@ Every daily challenge is executed under four core engineering pillars:
 | **021** | **Home Automation & Smart IoT Hub** | IoT / Smart Home | [Day 021 Prototype](./day-021-home-monitoring/index.html) | ✅ Completed |
 | **022** | **Search Filter & Faceted Discovery Suite** | E-Commerce / Search | [Day 022 Prototype](./day-022-search-filter/index.html) | ✅ Completed |
 | **023** | **Onboarding Flow & Permissions Grant Suite** | Mobile / Auth | [Day 023 Prototype](./day-023-onboarding/index.html) | ✅ Completed |
-| **024** | Boarding Pass & Airline Travel Hub | Travel / Transit | *Upcoming* | ⏳ Queued |
+| **024** | **Boarding Pass & Airline Travel Hub** | Travel / Transit | [Day 024 Prototype](./day-024-boarding-pass/index.html) | ✅ Completed |
+| **025** | TV App & Smart Streaming Interface | Media / Entertainment | *Upcoming* | ⏳ Queued |
 
 ---
 
