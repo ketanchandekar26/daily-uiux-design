@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 025: TV App & Smart Streaming Interface | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Outfit, Inter, JetBrains Mono, Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cine: {
+              purple: '#8B5CF6',
+              purpleLight: '#A78BFA',
+              neonPink: '#EC4899',
+              neonCyan: '#06B6D4',
+              amber: '#F59E0B',
+              dark: '#05070E',
+              darkSurface: '#0B0F19',
+              cardBg: '#121826',
+              glass: 'rgba(15, 23, 42, 0.75)'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          animation: {
+            'glow-pulse': 'glowPulse 3s ease-in-out infinite',
+            'float': 'float 4s ease-in-out infinite alternate',
+            'radar-live': 'radarLive 1.8s ease-out infinite',
+          },
+          keyframes: {
+            glowPulse: {
+              '0%, 100%': { opacity: '0.6', filter: 'blur(40px)' },
+              '50%': { opacity: '0.9', filter: 'blur(60px)' }
+            },
+            float: {
+              '0%': { transform: 'translateY(0px)' },
+              '100%': { transform: 'translateY(-6px)' }
+            },
+            radarLive: {
+              '0%': { transform: 'scale(1)', opacity: '0.9' },
+              '100%': { transform: 'scale(2.2)', opacity: '0' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Smooth Living Room TV Scroll & Hidden Scrollbars */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Spatial TV Focus Halo & 10-ft Zoom Effect */
+    .tv-focusable {
+      transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  box-shadow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  border-color 0.28s ease;
+      outline: none;
+    }
+
+    .tv-focusable.tv-focused {
+      transform: scale(1.09) translateY(-4px);
+      z-index: 30 !important;
+      box-shadow: 0 16px 36px -4px rgba(139, 92, 246, 0.45),
+                  0 0 0 3px #A78BFA,
+                  0 0 25px 2px rgba(139, 92, 246, 0.6);
+      border-color: #FFFFFF !important;
+    }
+
+    /* Ambilight Bias Lighting Effect behind TV Chassis */
+    .ambilight-glow {
+      transition: background 0.8s ease, opacity 0.8s ease;
+      will-change: background, opacity;
+    }
+
+    /* Cinematic Gradient Vignette Overlays */
+    .hero-vignette {
+      background: linear-gradient(
+        to bottom,
+        rgba(5, 7, 14, 0.2) 0%,
+        rgba(5, 7, 14, 0.5) 45%,
+        rgba(5, 7, 14, 0.85) 75%,
+        #05070E 100%
+      );
+    }
+
+    .hero-side-vignette {
+      background: linear-gradient(
+        to right,
+        #05070E 0%,
+        rgba(5, 7, 14, 0.85) 25%,
+        rgba(5, 7, 14, 0.4) 60%,
+        transparent 100%
+      );
+    }
+
+    /* Screen Reader Only Utility */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
+</head>
+<body class="bg-[#020307] text-slate-100 min-h-screen font-sans selection:bg-cine-purple selection:text-white antialiased overflow-x-hidden">
+
+  <!-- A11y Live Announcer for Screen Readers & Remote Guidance -->
+  <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Global Master Bar: Daily UI Hub Navigation & Top Controls -->
+  <header class="border-b border-slate-800/80 bg-cine-dark/90 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Project Header -->
+      <div class="flex items-center space-x-3.5">
+        <a href="../index.html" class="flex items-center space-x-2 text-slate-400 hover:text-white transition-colors" title="Back to Challenge Master Hub">
+          <div class="w-8 h-8 rounded-lg bg-cine-darkSurface border border-slate-700/60 flex items-center justify-center text-cine-purpleLight">
+            <i data-lucide="tv" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200 hidden sm:inline">Daily UI #025</span>
+        </a>
+        <div class="h-4 w-px bg-slate-800"></div>
+        <div class="flex items-center space-x-2">
+          <span class="font-display font-black text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-cine-purpleLight to-cine-neonPink bg-clip-text text-transparent">
+            CINEVERSE ULTRA 4K
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest bg-cine-purple/15 text-cine-purpleLight border border-cine-purple/30">
+            10-FT UI
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Controls Toolbar -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Audio Synthesizer Toggle -->
+        <button id="toggle-audio-btn" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-cine-purpleLight hover:border-cine-purple/40 transition-all text-xs flex items-center space-x-1.5" title="Toggle TV Sound Effects (M)">
+          <i data-lucide="volume-2" id="audio-icon" class="w-4 h-4 text-cine-purpleLight"></i>
+          <span class="hidden md:inline text-xs font-mono">Audio: ON</span>
+        </button>
+
+        <!-- Remote Control HUD Toggle -->
+        <button onclick="toggleRemoteHUD()" id="remote-hud-btn" class="px-3 py-1.5 rounded-xl bg-cine-purple/20 border border-cine-purple/40 text-cine-purpleLight hover:bg-cine-purple/30 transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-sm" title="Show/Hide On-Screen Remote (R)">
+          <i data-lucide="gamepad-2" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Smart Remote (R)</span>
+        </button>
+
+        <!-- Viewport Mode: Living Room Bias Light vs Fullscreen Frameless -->
+        <button id="toggle-tv-frame-btn" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition-all text-xs flex items-center space-x-1.5" title="Toggle Living Room Frame vs Frameless Mode">
+          <i data-lucide="maximize" id="frame-icon" class="w-4 h-4 text-cyan-400"></i>
+          <span class="text-xs font-mono font-medium hidden sm:inline" id="frame-mode-label">Living Room View</span>
+        </button>
+
+        <!-- Hotkeys / Help Modal -->
+        <button onclick="openKeybindingsModal()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors" title="Remote & Keyboard Shortcuts (?)">
+          <i data-lucide="keyboard" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- TV Chassis & Ambilight Living Room Frame Wrapper -->
+  <div id="tv-outer-container" class="max-w-[1560px] mx-auto p-3 sm:p-6 lg:p-8 relative transition-all duration-500">
+    
+    <!-- Dynamic Ambilight Living Room Backlight Glow (Samples Active Movie Palette) -->
+    <div id="ambilight-backdrop" class="ambilight-glow absolute -inset-4 sm:-inset-8 rounded-[48px] bg-gradient-to-tr from-purple-900/40 via-fuchsia-950/20 to-blue-900/40 blur-3xl -z-10 pointer-events-none opacity-80"></div>
+
+    <!-- The 75" Television Hardware Bezel Shell -->
+    <div id="tv-bezel" class="relative rounded-[32px] sm:rounded-[38px] p-2 sm:p-3.5 bg-gradient-to-b from-slate-700/80 via-slate-900 to-black border-[3px] border-slate-700/60 shadow-2xl shadow-black/90">
+      
+      <!-- TV Brand Logo Micro-Badge at Bottom Bezel -->
+      <div class="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center space-x-1 pointer-events-none opacity-50 z-40">
+        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+        <span class="text-[9px] font-mono tracking-widest text-slate-400 font-bold uppercase">SONY BRAVIA XR</span>
+      </div>
+
+      <!-- TV Screen Panel (16:9 4K Cinema Viewport) -->
+      <div id="tv-screen" class="relative rounded-[24px] sm:rounded-[28px] bg-cine-dark overflow-hidden border border-slate-800/80 min-h-[780px] flex flex-col justify-between select-none">
+        
+        <!-- ================= TV TOP SYSTEM BAR ================= -->
+        <div class="relative z-30 px-6 sm:px-10 pt-5 pb-3 flex items-center justify-between text-xs font-medium">
+          
+          <!-- Category Tabs (10-ft Spatial Navigation) -->
+          <nav class="flex items-center space-x-1 sm:space-x-2 bg-slate-950/70 p-1.5 rounded-2xl border border-slate-800/80 backdrop-blur-md" role="tablist">
+            <button onclick="switchTab('home')" id="tab-home" class="nav-tab tv-focusable px-4 py-2 rounded-xl text-white font-bold bg-cine-purple shadow-sm transition-all text-xs" role="tab" aria-selected="true">
+              Featured
+            </button>
+            <button onclick="switchTab('movies')" id="tab-movies" class="nav-tab tv-focusable px-4 py-2 rounded-xl text-slate-400 hover:text-white transition-all text-xs" role="tab" aria-selected="false">
+              Movies
+            </button>
+            <button onclick="switchTab('shows')" id="tab-shows" class="nav-tab tv-focusable px-4 py-2 rounded-xl text-slate-400 hover:text-white transition-all text-xs" role="tab" aria-selected="false">
+              TV Series
+            </button>
+            <button onclick="switchTab('live')" id="tab-live" class="nav-tab tv-focusable px-4 py-2 rounded-xl text-slate-400 hover:text-white transition-all text-xs flex items-center gap-1.5" role="tab" aria-selected="false">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+              <span>Live Channels</span>
+            </button>
+            <button onclick="switchTab('watchlist')" id="tab-watchlist" class="nav-tab tv-focusable px-4 py-2 rounded-xl text-slate-400 hover:text-white transition-all text-xs" role="tab" aria-selected="false">
+              My Watchlist
+            </button>
+          </nav>
+
+          <!-- System Status Telemetry: Time, Wi-Fi, Profile -->
+          <div class="flex items-center space-x-4">
+            <!-- Search Quick Trigger -->
+            <button onclick="openSearchModal()" class="tv-focusable p-2 rounded-xl bg-slate-950/70 border border-slate-800 text-slate-400 hover:text-white transition-colors" title="Search Titles (/)">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Network Status -->
+            <div class="hidden md:flex items-center space-x-1.5 text-slate-400 font-mono text-[11px] bg-slate-950/60 px-2.5 py-1.5 rounded-xl border border-slate-800">
+              <i data-lucide="wifi" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Wi-Fi 6E (480 Mbps)</span>
+            </div>
+
+            <!-- Real-time Clock -->
+            <div id="tv-clock" class="font-mono font-bold text-sm text-slate-200 bg-slate-950/70 px-3 py-1.5 rounded-xl border border-slate-800">
+              20:45
+            </div>
+
+            <!-- Profile Badge -->
+            <div class="flex items-center space-x-2 bg-slate-950/70 pl-2 pr-3 py-1 rounded-2xl border border-slate-800">
+              <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-cine-purple to-cine-neonPink flex items-center justify-center font-bold text-white text-xs shadow-inner">
+                KC
+              </div>
+              <span class="text-xs font-semibold text-slate-300 hidden sm:inline">Ketan</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ================= HERO FEATURED SHOWCASE BANNER ================= -->
+        <div id="hero-banner" class="relative min-h-[460px] sm:min-h-[520px] flex items-end pb-8 px-6 sm:px-12 overflow-hidden transition-all duration-700">
+          
+          <!-- Dynamic Hero Background Image (Changes dynamically on card focus) -->
+          <div id="hero-bg-image" class="absolute inset-0 bg-cover bg-center transition-all duration-700 scale-105" style="background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80');">
+          </div>
+
+          <!-- Dual Layer Vignettes: Bottom Gradient and Left Darkening for Text Readability -->
+          <div class="hero-vignette absolute inset-0 z-10"></div>
+          <div class="hero-side-vignette absolute inset-0 z-10 w-2/3"></div>
+
+          <!-- Hero Content Meta & Action Buttons -->
+          <div class="relative z-20 max-w-2xl space-y-3.5">
+            
+            <!-- Tags & Audio/Video Badges -->
+            <div class="flex flex-wrap items-center gap-2 text-xs font-mono">
+              <span id="hero-badge-tag" class="px-2.5 py-0.5 rounded-md bg-cine-purple text-white font-bold tracking-wider uppercase text-[10px]">
+                CINEVERSE ORIGINAL
+              </span>
+              <span class="px-2 py-0.5 rounded bg-slate-900/80 border border-slate-700 text-amber-400 font-bold flex items-center gap-1">
+                <i data-lucide="star" class="w-3 h-3 fill-amber-400"></i>
+                <span id="hero-rating">9.4 IMDb</span>
+              </span>
+              <span class="px-2 py-0.5 rounded bg-slate-900/80 border border-slate-700 text-emerald-400 font-bold">
+                98% Fresh
+              </span>
+              <span class="px-2 py-0.5 rounded bg-slate-900/80 border border-slate-700 text-slate-300">
+                4K HDR
+              </span>
+              <span class="px-2 py-0.5 rounded bg-slate-900/80 border border-slate-700 text-slate-300">
+                Dolby Atmos
+              </span>
+              <span id="hero-duration" class="text-slate-400 font-medium">
+                2h 24m &bull; 2026
+              </span>
+            </div>
+
+            <!-- Dynamic Title -->
+            <h1 id="hero-title" class="font-display font-black text-3xl sm:text-5xl lg:text-6xl tracking-tight text-white drop-shadow-md">
+              CHRONO SHIFT: 2099
+            </h1>
+
+            <!-- Dynamic Tagline & Synopsis -->
+            <p id="hero-synopsis" class="text-sm sm:text-base text-slate-300 line-clamp-2 leading-relaxed drop-shadow">
+              When temporal anomalies fracture Neo-Tokyo’s quantum grid, an elite rogue syndicate uncovers a synthetic intelligence manipulating humanity’s historical timeline.
+            </p>
+
+            <!-- Action Buttons: 10-ft UI Primary Targets -->
+            <div class="flex items-center space-x-3 pt-2">
+              <button onclick="launchVideoPlayer()" id="hero-play-btn" class="tv-focusable tv-focused px-6 sm:px-8 py-3.5 rounded-2xl bg-white text-slate-950 font-display font-extrabold text-sm sm:text-base flex items-center space-x-2.5 shadow-2xl hover:bg-slate-200 transition-all">
+                <i data-lucide="play" class="w-5 h-5 fill-slate-950"></i>
+                <span>Play Movie</span>
+              </button>
+
+              <button onclick="toggleWatchlistCurrent()" id="hero-watchlist-btn" class="tv-focusable px-5 sm:px-6 py-3.5 rounded-2xl bg-slate-900/80 border border-slate-700/80 text-white font-semibold text-sm flex items-center space-x-2 hover:bg-slate-800 transition-all backdrop-blur-md">
+                <i data-lucide="plus" id="hero-watchlist-icon" class="w-4 h-4 text-cine-purpleLight"></i>
+                <span id="hero-watchlist-text">My List</span>
+              </button>
+
+              <button onclick="openTrailerModal()" class="tv-focusable p-3.5 rounded-2xl bg-slate-900/80 border border-slate-700/80 text-slate-300 hover:text-white transition-all backdrop-blur-md" title="Trailer & Extras">
+                <i data-lucide="film" class="w-5 h-5"></i>
+              </button>
+
+              <button onclick="openInfoModal()" class="tv-focusable p-3.5 rounded-2xl bg-slate-900/80 border border-slate-700/80 text-slate-300 hover:text-white transition-all backdrop-blur-md" title="Cast & Detailed Info">
+                <i data-lucide="info" class="w-5 h-5"></i>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- ================= CONTENT RAILS (HORIZONTAL CAROUSELS) ================= -->
+        <div id="content-rails-container" class="relative z-20 px-6 sm:px-10 pb-8 space-y-7 -mt-4">
+          
+          <!-- Rail 1: Continue Watching (Progress Bars) -->
+          <section class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h2 class="font-display font-bold text-lg sm:text-xl text-white flex items-center gap-2">
+                <i data-lucide="history" class="w-5 h-5 text-cine-purpleLight"></i>
+                Continue Watching
+              </h2>
+              <span class="text-xs font-mono text-slate-400 hidden sm:inline">Use &larr; &rarr; arrows to scroll</span>
+            </div>
+
+            <!-- Horizontal Track -->
+            <div id="rail-continue" class="flex space-x-4 overflow-x-auto no-scrollbar py-2 px-1 focus:outline-none" tabindex="0">
+              
+              <!-- Card 1 -->
+              <div onclick="selectMovie(0)" class="movie-card tv-focusable shrink-0 w-64 sm:w-72 rounded-2xl bg-cine-cardBg border border-slate-800 overflow-hidden cursor-pointer relative group" data-movie-id="0">
+                <div class="h-36 bg-cover bg-center relative" style="background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80');">
+                  <div class="absolute inset-0 bg-gradient-to-t from-cine-cardBg via-transparent to-transparent"></div>
+                  <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded bg-cine-purple text-white text-[10px] font-mono font-bold">EPISODE 4</span>
+                  <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                    <div class="w-10 h-10 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-lg">
+                      <i data-lucide="play" class="w-5 h-5 fill-slate-950"></i>
+                    </div>
+                  </div>
+                </div>
+                <!-- Card Meta -->
+                <div class="p-3">
+                  <h3 class="font-bold text-white text-sm truncate">Chrono Shift: 2099</h3>
+                  <div class="flex justify-between items-center text-[11px] text-slate-400 font-mono mt-1 mb-2">
+                    <span>S1:E4 &bull; Quantum Echo</span>
+                    <span class="text-cine-purpleLight">28m left</span>
+                  </div>
+                  <!-- Progress Bar -->
+                  <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div class="bg-gradient-to-r from-cine-purple to-cine-neonPink h-full w-[65%] rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2 -->
+              <div onclick="selectMovie(1)" class="movie-card tv-focusable shrink-0 w-64 sm:w-72 rounded-2xl bg-cine-cardBg border border-slate-800 overflow-hidden cursor-pointer relative group" data-movie-id="1">
+                <div class="h-36 bg-cover bg-center relative" style="background-image: url('https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=600&q=80');">
+                  <div class="absolute inset-0 bg-gradient-to-t from-cine-cardBg via-transparent to-transparent"></div>
+                  <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded bg-sky-500 text-white text-[10px] font-mono font-bold">FEATURE FILM</span>
+                  <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                    <div class="w-10 h-10 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-lg">
+                      <i data-lucide="play" class="w-5 h-5 fill-slate-950"></i>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3">
+                  <h3 class="font-bold text-white text-sm truncate">Solaris Horizon</h3>
+                  <div class="flex justify-between items-center text-[11px] text-slate-400 font-mono mt-1 mb-2">
+                    <span>Sci-Fi &bull; 4K HDR</span>
+                    <span class="text-sky-400">1h 12m left</span>
+                  </div>
+                  <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div class="bg-gradient-to-r from-sky-500 to-cyan-400 h-full w-[45%] rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 3 -->
+              <div onclick="selectMovie(2)" class="movie-card tv-focusable shrink-0 w-64 sm:w-72 rounded-2xl bg-cine-cardBg border border-slate-800 overflow-hidden cursor-pointer relative group" data-movie-id="2">
+                <div class="h-36 bg-cover bg-center relative" style="background-image: url('https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80');">
+                  <div class="absolute inset-0 bg-gradient-to-t from-cine-cardBg via-transparent to-transparent"></div>
+                  <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-mono font-bold">EPISODE 8</span>
+                  <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                    <div class="w-10 h-10 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-lg">
+                      <i data-lucide="play" class="w-5 h-5 fill-slate-950"></i>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3">
+                  <h3 class="font-bold text-white text-sm truncate">Cyberblade: Syndicate</h3>
+                  <div class="flex justify-between items-center text-[11px] text-slate-400 font-mono mt-1 mb-2">
+                    <span>S2:E8 &bull; Redline</span>
+                    <span class="text-amber-400">14m left</span>
+                  </div>
+                  <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div class="bg-gradient-to-r from-amber-500 to-rose-500 h-full w-[85%] rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 4 -->
+              <div onclick="selectMovie(3)" class="movie-card tv-focusable shrink-0 w-64 sm:w-72 rounded-2xl bg-cine-cardBg border border-slate-800 overflow-hidden cursor-pointer relative group" data-movie-id="3">
+                <div class="h-36 bg-cover bg-center relative" style="background-image: url('https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80');">
+                  <div class="absolute inset-0 bg-gradient-to-t from-cine-cardBg via-transparent to-transparent"></div>
+                  <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded bg-emerald-500 text-slate-950 text-[10px] font-mono font-bold">DOCUSERIES</span>
+                  <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                    <div class="w-10 h-10 rounded-full bg-white text-slate-950 flex items-center justify-center shadow-lg">
+                      <i data-lucide="play" class="w-5 h-5 fill-slate-950"></i>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-3">
+                  <h3 class="font-bold text-white text-sm truncate">Deep Void: Europa</h3>
+                  <div class="flex justify-between items-center text-[11px] text-slate-400 font-mono mt-1 mb-2">
+                    <span>Episode 2 &bull; Ice Trench</span>
+                    <span class="text-emerald-400">38m left</span>
+                  </div>
+                  <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-[30%] rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          <!-- Rail 2: Top 10 Trending in 4K HDR (Vertical Posters with Neon Rank Badges) -->
+          <section class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h2 class="font-display font-bold text-lg sm:text-xl text-white flex items-center gap-2">
+                <i data-lucide="trending-up" class="w-5 h-5 text-amber-400"></i>
+                Top 10 Trending in 4K HDR
+              </h2>
+              <span class="text-xs font-mono text-slate-400 hidden sm:inline">Updated Hourly</span>
+            </div>
+
+            <!-- Horizontal Track -->
+            <div id="rail-trending" class="flex space-x-6 overflow-x-auto no-scrollbar py-3 px-2 focus:outline-none" tabindex="0">
+              
+              <!-- Rank 1 -->
+              <div onclick="selectMovie(0)" class="movie-card tv-focusable shrink-0 flex items-end cursor-pointer group" data-movie-id="0">
+                <span class="font-display font-black text-7xl sm:text-8xl text-transparent bg-clip-text bg-gradient-to-t from-slate-700 via-slate-500 to-white -mr-6 sm:-mr-8 z-10 select-none drop-shadow-xl">1</span>
+                <div class="w-36 sm:w-44 h-56 sm:h-64 rounded-2xl bg-cover bg-center border border-slate-700/80 shadow-xl overflow-hidden relative" style="background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80');">
+                  <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                  <div class="absolute bottom-2 left-2 right-2">
+                    <span class="text-[10px] font-mono text-cine-purpleLight font-bold">4K DOLBY VISION</span>
+                    <h4 class="text-xs font-bold text-white truncate">Chrono Shift: 2099</h4>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rank 2 -->
+              <div onclick="selectMovie(1)" class="movie-card tv-focusable shrink-0 flex items-end cursor-pointer group" data-movie-id="1">
+                <span class="font-display font-black text-7xl sm:text-8xl text-transparent bg-clip-text bg-gradient-to-t from-slate-700 via-slate-500 to-white -mr-6 sm:-mr-8 z-10 select-none drop-shadow-xl">2</span>
+                <div class="w-36 sm:w-44 h-56 sm:h-64 rounded-2xl bg-cover bg-center border border-slate-700/80 shadow-xl overflow-hidden relative" style="background-image: url('https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=400&q=80');">
+                  <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                  <div class="absolute bottom-2 left-2 right-2">
+                    <span class="text-[10px] font-mono text-cyan-400 font-bold">DOLBY ATMOS</span>
+                    <h4 class="text-xs font-bold text-white truncate">Solaris Horizon</h4>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rank 3 -->
+              <div onclick="selectMovie(2)" class="movie-card tv-focusable shrink-0 flex items-end cursor-pointer group" data-movie-id="2">
+                <span class="font-display font-black text-7xl sm:text-8xl text-transparent bg-clip-text bg-gradient-to-t from-slate-700 via-slate-500 to-white -mr-6 sm:-mr-8 z-10 select-none drop-shadow-xl">3</span>
+                <div class="w-36 sm:w-44 h-56 sm:h-64 rounded-2xl bg-cover bg-center border border-slate-700/80 shadow-xl overflow-hidden relative" style="background-image: url('https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=400&q=80');">
+                  <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                  <div class="absolute bottom-2 left-2 right-2">
+                    <span class="text-[10px] font-mono text-amber-400 font-bold">NEW SEASON</span>
+                    <h4 class="text-xs font-bold text-white truncate">Cyberblade: Syndicate</h4>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rank 4 -->
+              <div onclick="selectMovie(4)" class="movie-card tv-focusable shrink-0 flex items-end cursor-pointer group" data-movie-id="4">
+                <span class="font-display font-black text-7xl sm:text-8xl text-transparent bg-clip-text bg-gradient-to-t from-slate-700 via-slate-500 to-white -mr-6 sm:-mr-8 z-10 select-none drop-shadow-xl">4</span>
+                <div class="w-36 sm:w-44 h-56 sm:h-64 rounded-2xl bg-cover bg-center border border-slate-700/80 shadow-xl overflow-hidden relative" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=400&q=80');">
+                  <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                  <div class="absolute bottom-2 left-2 right-2">
+                    <span class="text-[10px] font-mono text-fuchsia-400 font-bold">EXCLUSIVE</span>
+                    <h4 class="text-xs font-bold text-white truncate">Quantum Overdrive</h4>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rank 5 -->
+              <div onclick="selectMovie(5)" class="movie-card tv-focusable shrink-0 flex items-end cursor-pointer group" data-movie-id="5">
+                <span class="font-display font-black text-7xl sm:text-8xl text-transparent bg-clip-text bg-gradient-to-t from-slate-700 via-slate-500 to-white -mr-6 sm:-mr-8 z-10 select-none drop-shadow-xl">5</span>
+                <div class="w-36 sm:w-44 h-56 sm:h-64 rounded-2xl bg-cover bg-center border border-slate-700/80 shadow-xl overflow-hidden relative" style="background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80');">
+                  <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                  <div class="absolute bottom-2 left-2 right-2">
+                    <span class="text-[10px] font-mono text-emerald-400 font-bold">IMAX ENHANCED</span>
+                    <h4 class="text-xs font-bold text-white truncate">Nebula Rising</h4>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          <!-- Rail 3: Live Channels & 24/7 Global Streams -->
+          <section class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h2 class="font-display font-bold text-lg sm:text-xl text-white flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+                Live 4K Channels &amp; Tournaments
+              </h2>
+              <span class="text-xs font-mono text-red-400 font-semibold flex items-center gap-1">
+                <i data-lucide="radio" class="w-3.5 h-3.5"></i> Broadcast Feed
+              </span>
+            </div>
+
+            <!-- Horizontal Track -->
+            <div id="rail-live" class="flex space-x-4 overflow-x-auto no-scrollbar py-2 px-1 focus:outline-none" tabindex="0">
+              
+              <!-- Live 1 -->
+              <div onclick="launchLiveChannel('ESPORTS GRAND FINALS')" class="tv-focusable shrink-0 w-64 sm:w-72 rounded-2xl bg-cine-cardBg border border-slate-800 p-3.5 cursor-pointer relative group">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="px-2 py-0.5 rounded bg-red-600 text-white font-mono text-[10px] font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> LIVE
+                  </span>
+                  <span class="text-[11px] font-mono text-slate-400">142K Viewers</span>
+                </div>
+                <h3 class="font-bold text-white text-sm">Apex Worlds 2026: Finals</h3>
+                <p class="text-[11px] text-slate-400 font-sans mt-0.5 mb-2">Tokyo Dome Arena &bull; English Commentary</p>
+                <div class="text-[10px] font-mono text-cyan-400 flex items-center gap-1">
+                  <i data-lucide="play-circle" class="w-3 h-3"></i> Match 4 of 7 (In Progress)
+                </div>
+              </div>
+
+              <!-- Live 2 -->
+              <div onclick="launchLiveChannel('FORMULA E TOKYO')" class="tv-focusable shrink-0 w-64 sm:w-72 rounded-2xl bg-cine-cardBg border border-slate-800 p-3.5 cursor-pointer relative group">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="px-2 py-0.5 rounded bg-red-600 text-white font-mono text-[10px] font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> LIVE
+                  </span>
+                  <span class="text-[11px] font-mono text-slate-400">89K Viewers</span>
+                </div>
+                <h3 class="font-bold text-white text-sm">FIA Formula E: Tokyo GP</h3>
+                <p class="text-[11px] text-slate-400 font-sans mt-0.5 mb-2">4K 60fps &bull; Onboard Driver Cam Active</p>
+                <div class="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                  <i data-lucide="play-circle" class="w-3 h-3"></i> Lap 24 / 32
+                </div>
+              </div>
+
+              <!-- Live 3 -->
+              <div onclick="launchLiveChannel('NASA DEEP SPACE TELEMETRY')" class="tv-focusable shrink-0 w-64 sm:w-72 rounded-2xl bg-cine-cardBg border border-slate-800 p-3.5 cursor-pointer relative group">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="px-2 py-0.5 rounded bg-blue-600 text-white font-mono text-[10px] font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> 24/7 STREAM
+                  </span>
+                  <span class="text-[11px] font-mono text-slate-400">34K Viewers</span>
+                </div>
+                <h3 class="font-bold text-white text-sm">James Webb &amp; Artemis Base</h3>
+                <p class="text-[11px] text-slate-400 font-sans mt-0.5 mb-2">Lunar Gateway Direct Ultra-HD Feed</p>
+                <div class="text-[10px] font-mono text-purple-400 flex items-center gap-1">
+                  <i data-lucide="play-circle" class="w-3 h-3"></i> Live Orbit View
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ================= ON-SCREEN SMART TV REMOTE CONTROL HUD ================= -->
+  <aside id="remote-control-hud" class="fixed bottom-6 right-6 z-50 w-64 bg-slate-900/95 border-2 border-slate-700/80 rounded-[36px] p-5 shadow-2xl backdrop-blur-xl select-none transition-all duration-300">
+    
+    <!-- Remote Top Header -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+      <div class="flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span class="font-mono text-[10px] uppercase tracking-wider text-slate-300 font-bold">XR Tactile Remote</span>
+      </div>
+      <button onclick="toggleRemoteHUD()" class="text-slate-400 hover:text-white p-1" title="Hide Remote">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Power & Mic Row -->
+    <div class="flex items-center justify-between mb-4 px-2">
+      <button onclick="simulateRemoteKey('Power')" class="w-8 h-8 rounded-full bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all text-xs" title="Power TV">
+        <i data-lucide="power" class="w-4 h-4"></i>
+      </button>
+      <button onclick="simulateRemoteKey('Mic')" class="w-8 h-8 rounded-full bg-slate-800 text-cyan-400 border border-slate-700 flex items-center justify-center hover:bg-cyan-500 hover:text-slate-950 transition-all text-xs" title="Voice Search">
+        <i data-lucide="mic" class="w-4 h-4"></i>
+      </button>
+      <button onclick="simulateRemoteKey('Settings')" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center justify-center hover:bg-slate-700 hover:text-white transition-all text-xs" title="Settings">
+        <i data-lucide="settings" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- The Directional D-Pad Wheel -->
+    <div class="relative w-44 h-44 mx-auto mb-4 flex items-center justify-center">
+      
+      <!-- Outer D-Pad Ring -->
+      <div class="w-44 h-44 rounded-full bg-slate-950 border border-slate-800 shadow-inner flex items-center justify-center relative">
+        
+        <!-- Up Button -->
+        <button onclick="simulateRemoteKey('ArrowUp')" class="absolute top-2 w-12 h-9 rounded-t-full bg-slate-800/80 hover:bg-cine-purple hover:text-white text-slate-300 flex items-center justify-center transition-all" title="Up">
+          <i data-lucide="chevron-up" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Down Button -->
+        <button onclick="simulateRemoteKey('ArrowDown')" class="absolute bottom-2 w-12 h-9 rounded-b-full bg-slate-800/80 hover:bg-cine-purple hover:text-white text-slate-300 flex items-center justify-center transition-all" title="Down">
+          <i data-lucide="chevron-down" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Left Button -->
+        <button onclick="simulateRemoteKey('ArrowLeft')" class="absolute left-2 w-9 h-12 rounded-l-full bg-slate-800/80 hover:bg-cine-purple hover:text-white text-slate-300 flex items-center justify-center transition-all" title="Left">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Right Button -->
+        <button onclick="simulateRemoteKey('ArrowRight')" class="absolute right-2 w-9 h-12 rounded-r-full bg-slate-800/80 hover:bg-cine-purple hover:text-white text-slate-300 flex items-center justify-center transition-all" title="Right">
+          <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Center OK / Enter Button -->
+        <button onclick="simulateRemoteKey('Enter')" class="w-16 h-16 rounded-full bg-gradient-to-tr from-cine-purple to-cine-purpleLight text-white font-display font-black text-xs shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center" title="Select / OK">
+          OK
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- Back / Home / Menu Row -->
+    <div class="grid grid-cols-3 gap-2 mb-4 text-xs font-semibold">
+      <button onclick="simulateRemoteKey('Escape')" class="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center gap-1 border border-slate-700" title="Back (Esc)">
+        <i data-lucide="undo-2" class="w-3.5 h-3.5"></i> Back
+      </button>
+      <button onclick="simulateRemoteKey('Home')" class="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center gap-1 border border-slate-700" title="Home">
+        <i data-lucide="home" class="w-3.5 h-3.5"></i> Home
+      </button>
+      <button onclick="simulateRemoteKey('PlayPause')" class="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center gap-1 border border-slate-700" title="Play / Pause">
+        <i data-lucide="play" class="w-3.5 h-3.5"></i> Play
+      </button>
+    </div>
+
+    <!-- Volume & Channel Rockers -->
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <!-- Volume Rocker -->
+      <div class="bg-slate-950 p-2 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <button onclick="simulateRemoteKey('VolDown')" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center font-bold text-xs">-</button>
+        <span class="text-[10px] font-mono text-slate-400">VOL</span>
+        <button onclick="simulateRemoteKey('VolUp')" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center font-bold text-xs">+</button>
+      </div>
+
+      <!-- Channel Rocker -->
+      <div class="bg-slate-950 p-2 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <button onclick="simulateRemoteKey('ChDown')" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center font-bold text-xs">&darr;</button>
+        <span class="text-[10px] font-mono text-slate-400">CH</span>
+        <button onclick="simulateRemoteKey('ChUp')" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center font-bold text-xs">&uarr;</button>
+      </div>
+    </div>
+
+    <!-- Quick App Launcher Badges -->
+    <div class="grid grid-cols-4 gap-1.5 pt-2 border-t border-slate-800 text-[9px] font-mono font-bold text-center">
+      <button onclick="selectMovie(0)" class="py-1.5 rounded-lg bg-red-600/30 text-red-300 border border-red-500/40 hover:bg-red-600 hover:text-white transition-colors">NETFLIX</button>
+      <button onclick="selectMovie(1)" class="py-1.5 rounded-lg bg-blue-600/30 text-blue-300 border border-blue-500/40 hover:bg-blue-600 hover:text-white transition-colors">PRIME</button>
+      <button onclick="selectMovie(2)" class="py-1.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-600 hover:text-white transition-colors">DISNEY+</button>
+      <button onclick="selectMovie(4)" class="py-1.5 rounded-lg bg-purple-600/30 text-purple-300 border border-purple-500/40 hover:bg-purple-600 hover:text-white transition-colors">CINE</button>
+    </div>
+
+  </aside>
+
+  <!-- ================= CINEMATIC 4K VIDEO PLAYER MODAL ================= -->
+  <div id="video-player-modal" class="fixed inset-0 z-50 bg-black hidden flex flex-col justify-between p-6 sm:p-10 select-none">
+    
+    <!-- Top Player Controls Bar -->
+    <div class="flex items-center justify-between relative z-20">
+      <button onclick="closeVideoPlayer()" class="tv-focusable p-3 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-white flex items-center gap-2 border border-slate-700">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        <span class="text-sm font-semibold">Exit Cinema</span>
+      </button>
+
+      <div class="text-center">
+        <h2 id="player-title" class="font-display font-black text-xl text-white">Chrono Shift: 2099</h2>
+        <p id="player-subtitle" class="text-xs font-mono text-cine-purpleLight">4K HDR &bull; Dolby Atmos 7.1.4 &bull; 24fps Cinema Mode</p>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button onclick="toggleSubtitles()" class="tv-focusable px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-xs font-mono font-semibold text-slate-300 flex items-center gap-1.5">
+          <i data-lucide="subtitles" class="w-4 h-4 text-cine-purpleLight"></i>
+          <span id="subtitles-label">CC: English</span>
+        </button>
+        <button onclick="toggleAudioTrack()" class="tv-focusable px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-xs font-mono font-semibold text-slate-300 flex items-center gap-1.5">
+          <i data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+          <span id="audio-track-label">Dolby Atmos</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Center Canvas Visualizer: Animated Nebula Simulation -->
+    <div class="relative w-full flex-1 my-4 flex items-center justify-center overflow-hidden rounded-3xl border border-slate-800/80">
+      <canvas id="player-canvas" class="w-full h-full absolute inset-0"></canvas>
+      
+      <!-- Center Play/Pause HUD Overlay Icon (Fades) -->
+      <div id="player-center-icon" class="relative z-10 w-20 h-20 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white text-2xl transition-opacity duration-300 opacity-0">
+        <i data-lucide="play" class="w-8 h-8 fill-white"></i>
+      </div>
+    </div>
+
+    <!-- Bottom Player Scrubber & Controls -->
+    <div class="relative z-20 space-y-3 bg-gradient-to-t from-black via-black/90 to-transparent pt-4">
+      
+      <!-- Scrubber Bar -->
+      <div class="space-y-1">
+        <div class="flex justify-between text-xs font-mono text-slate-400">
+          <span id="player-current-time">00:34:12</span>
+          <span id="player-total-time">02:24:50</span>
+        </div>
+        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden relative cursor-pointer" onclick="seekVideo(event)">
+          <div id="player-progress-bar" class="bg-gradient-to-r from-cine-purple via-cine-neonPink to-cyan-400 h-full w-[24%] rounded-full transition-all"></div>
+        </div>
+      </div>
+
+      <!-- Playback Control Buttons -->
+      <div class="flex items-center justify-between pt-2">
+        <div class="flex items-center space-x-3">
+          <button onclick="skipTime(-10)" class="tv-focusable p-3 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700" title="Rewind 10s">
+            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+          </button>
+          <button onclick="togglePlayState()" id="player-play-btn" class="tv-focusable px-6 py-3 rounded-2xl bg-white text-slate-950 font-bold flex items-center gap-2 hover:bg-slate-200">
+            <i data-lucide="pause" id="player-play-icon" class="w-5 h-5 fill-slate-950"></i>
+            <span id="player-play-text">Pause</span>
+          </button>
+          <button onclick="skipTime(10)" class="tv-focusable p-3 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700" title="Skip 10s">
+            <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <span class="text-xs font-mono text-slate-400 hidden sm:inline">Press <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-white">Space</kbd> or <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-white">OK</kbd> to Pause</span>
+          <button onclick="nextEpisodeSim()" class="tv-focusable px-4 py-3 rounded-2xl bg-cine-purple hover:bg-purple-600 text-white text-xs font-bold flex items-center gap-1.5">
+            <span>Next Episode</span>
+            <i data-lucide="skip-forward" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ================= KEYBINDINGS & HELP MODAL ================= -->
+  <div id="keybindings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="gamepad-2" class="w-5 h-5 text-cine-purpleLight"></i>
+          <h3 class="font-display font-bold text-lg text-white">10-ft TV D-Pad &amp; Hotkeys</h3>
+        </div>
+        <button onclick="closeKeybindingsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2 text-xs font-mono">
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Spatial Navigation (D-Pad)</span>
+          <div class="space-x-1">
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-cine-purpleLight border border-slate-700">&uarr;</kbd>
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-cine-purpleLight border border-slate-700">&darr;</kbd>
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-cine-purpleLight border border-slate-700">&larr;</kbd>
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-cine-purpleLight border border-slate-700">&rarr;</kbd>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Select / Play Movie</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-cine-purpleLight border border-slate-700">Enter / Space</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Back / Close Player</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-cine-purpleLight border border-slate-700">Escape / Backspace</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle Smart Remote HUD</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-cine-purpleLight border border-slate-700">R</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle TV Sound Effects</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-cine-purpleLight border border-slate-700">M</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Add to Watchlist</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-cine-purpleLight border border-slate-700">W</kbd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast for TV Interactions -->
+  <div id="tv-toast" class="fixed top-20 right-8 z-50 bg-slate-900 border-2 border-cine-purple text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 transition-all duration-300 translate-y-[-100px] opacity-0 pointer-events-none">
+    <div class="w-8 h-8 rounded-lg bg-cine-purple/20 flex items-center justify-center text-cine-purpleLight">
+      <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
+    </div>
+    <span id="tv-toast-message" class="text-xs font-semibold">Added to My Watchlist</span>
+  </div>
+
+  <!-- Vanilla JavaScript & Web Audio API Acoustic Engine -->
+  <script>
+    // Movie Database & Color Palettes for Dynamic Ambilight Sync
+    const MOVIES = [
+      {
+        id: 0,
+        title: "CHRONO SHIFT: 2099",
+        badge: "CINEVERSE ORIGINAL",
+        rating: "9.4 IMDb",
+        fresh: "98% Fresh",
+        duration: "2h 24m • 2026",
+        synopsis: "When temporal anomalies fracture Neo-Tokyo’s quantum grid, an elite rogue syndicate uncovers a synthetic intelligence manipulating humanity’s historical timeline.",
+        bgImage: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80",
+        ambilight: "linear-gradient(to tr, rgba(139, 92, 246, 0.45), rgba(236, 72, 153, 0.3), rgba(6, 182, 212, 0.45))",
+        inWatchlist: false
+      },
+      {
+        id: 1,
+        title: "SOLARIS HORIZON",
+        badge: "4K REMASTER",
+        rating: "9.1 IMDb",
+        fresh: "95% Fresh",
+        duration: "2h 48m • 2025",
+        synopsis: "Deep in the Proxima Centauri star cluster, a deep-space exploration vessel discovers a living sentient planet capable of manifesting human subconscious memories.",
+        bgImage: "https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=1920&q=80",
+        ambilight: "linear-gradient(to tr, rgba(14, 165, 233, 0.45), rgba(59, 130, 246, 0.35), rgba(99, 102, 241, 0.4))",
+        inWatchlist: true
+      },
+      {
+        id: 2,
+        title: "CYBERBLADE: SYNDICATE",
+        badge: "NEW SEASON EXCLUSIVE",
+        rating: "8.9 IMDb",
+        fresh: "92% Fresh",
+        duration: "Season 2 • 10 Episodes",
+        synopsis: "Bounty hunter Ren Tanaka infiltrates an underground biometric trafficking cartel in the radioactive underbelly of Sector 7.",
+        bgImage: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1920&q=80",
+        ambilight: "linear-gradient(to tr, rgba(245, 158, 11, 0.45), rgba(239, 68, 68, 0.4), rgba(217, 70, 239, 0.35))",
+        inWatchlist: false
+      },
+      {
+        id: 3,
+        title: "DEEP VOID: EUROPA",
+        badge: "NAT GEO &bull; CINEVERSE",
+        rating: "9.5 IMDb",
+        fresh: "99% Fresh",
+        duration: "Docuseries • 6 Episodes",
+        synopsis: "Autonomous robotic submersibles dive into the 100-kilometer subterranean oceans of Jupiter's moon Europa, seeking geothermal hydrothermal alien ecologies.",
+        bgImage: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1920&q=80",
+        ambilight: "linear-gradient(to tr, rgba(16, 185, 129, 0.45), rgba(6, 182, 212, 0.4), rgba(59, 130, 246, 0.35))",
+        inWatchlist: false
+      },
+      {
+        id: 4,
+        title: "QUANTUM OVERDRIVE",
+        badge: "ACTION SPECTACLE",
+        rating: "8.7 IMDb",
+        fresh: "88% Fresh",
+        duration: "1h 56m • 2026",
+        synopsis: "Experimental particle accelerators collapse during an orbital hypersonic drag race over the Sahara Desert, unleashing gravitational shockwaves.",
+        bgImage: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1920&q=80",
+        ambilight: "linear-gradient(to tr, rgba(217, 70, 239, 0.5), rgba(168, 85, 247, 0.4), rgba(59, 130, 246, 0.35))",
+        inWatchlist: false
+      },
+      {
+        id: 5,
+        title: "NEBULA RISING",
+        badge: "IMAX ENHANCED",
+        rating: "9.3 IMDb",
+        fresh: "96% Fresh",
+        duration: "2h 35m • 2026",
+        synopsis: "The flagship interstellar colony carrier Pilgrim-IV enters the dense gravitational envelope of the Orion molecular cloud complex.",
+        bgImage: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80",
+        ambilight: "linear-gradient(to tr, rgba(147, 51, 234, 0.45), rgba(59, 130, 246, 0.4), rgba(6, 182, 212, 0.4))",
+        inWatchlist: false
+      }
+    ];
+
+    // State Management Architecture
+    const state = {
+      activeMovieId: 0,
+      isAudioEnabled: true,
+      isRemoteVisible: true,
+      isLivingRoomView: true,
+      isPlayingVideo: false,
+      videoProgress: 24, // percentage
+      audioCtx: null,
+      focusedElement: null
+    };
+
+    // A11y Live Announcer
+    function announceA11y(message) {
+      const el = document.getElementById('a11y-announcer');
+      if (el) el.textContent = message;
+    }
+
+    // ================= WEB AUDIO API SYNTHESIZER =================
+    function initAudioContext() {
+      if (!state.audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        state.audioCtx = new AudioContext();
+      }
+      if (state.audioCtx.state === 'suspended') {
+        state.audioCtx.resume();
+      }
+    }
+
+    // Sound 1: Spatial 10-ft D-Pad Navigation Tick
+    function playNavTick() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(420, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.04);
+
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Sound 2: Cinema Cinematic Sub-Bass Surge (Play/Select)
+    function playSelectChime() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+
+        // Sub bass oscillator
+        const subOsc = state.audioCtx.createOscillator();
+        const subGain = state.audioCtx.createGain();
+        subOsc.type = 'sine';
+        subOsc.frequency.setValueAtTime(110, now);
+        subOsc.frequency.exponentialRampToValueAtTime(55, now + 0.45);
+
+        subGain.gain.setValueAtTime(0.3, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+        subOsc.connect(subGain);
+        subGain.connect(state.audioCtx.destination);
+        subOsc.start(now);
+        subOsc.stop(now + 0.45);
+
+        // Shimmer overtone
+        const chimeOsc = state.audioCtx.createOscillator();
+        const chimeGain = state.audioCtx.createGain();
+        chimeOsc.type = 'triangle';
+        chimeOsc.frequency.setValueAtTime(880, now + 0.05);
+        chimeOsc.frequency.exponentialRampToValueAtTime(1760, now + 0.4);
+
+        chimeGain.gain.setValueAtTime(0.15, now + 0.05);
+        chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+        chimeOsc.connect(chimeGain);
+        chimeGain.connect(state.audioCtx.destination);
+        chimeOsc.start(now + 0.05);
+        chimeOsc.stop(now + 0.4);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Sound 3: Back / Dismiss Swoosh
+    function playBackSound() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.12);
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Toggle Audio Handler
+    document.getElementById('toggle-audio-btn').addEventListener('click', () => {
+      state.isAudioEnabled = !state.isAudioEnabled;
+      const btn = document.getElementById('toggle-audio-btn');
+      const icon = document.getElementById('audio-icon');
+      if (state.isAudioEnabled) {
+        btn.querySelector('span').textContent = 'Audio: ON';
+        icon.classList.add('text-cine-purpleLight');
+        playSelectChime();
+        announceA11y('TV audio effects enabled');
+      } else {
+        btn.querySelector('span').textContent = 'Audio: OFF';
+        icon.classList.remove('text-cine-purpleLight');
+        announceA11y('TV audio effects muted');
+      }
+    });
+
+    // ================= DYNAMIC MOVIE SELECTION & AMBILIGHT SYNC =================
+    function selectMovie(id) {
+      const movie = MOVIES[id];
+      if (!movie) return;
+
+      state.activeMovieId = id;
+      playNavTick();
+
+      // Update Hero Content
+      document.getElementById('hero-title').textContent = movie.title;
+      document.getElementById('hero-badge-tag').textContent = movie.badge;
+      document.getElementById('hero-rating').textContent = movie.rating;
+      document.getElementById('hero-duration').textContent = movie.duration;
+      document.getElementById('hero-synopsis').textContent = movie.synopsis;
+
+      // Update Backgrounds
+      const bgImage = document.getElementById('hero-bg-image');
+      bgImage.style.backgroundImage = `url('${movie.bgImage}')`;
+
+      // Update Living Room Ambilight Bias Lighting
+      const ambilight = document.getElementById('ambilight-backdrop');
+      if (ambilight) {
+        ambilight.style.background = movie.ambilight;
+      }
+
+      // Update Watchlist Button state
+      updateWatchlistButtonState(movie.inWatchlist);
+
+      announceA11y(`Selected ${movie.title}. ${movie.rating}. ${movie.synopsis}`);
+    }
+
+    function updateWatchlistButtonState(inList) {
+      const text = document.getElementById('hero-watchlist-text');
+      const icon = document.getElementById('hero-watchlist-icon');
+      if (inList) {
+        text.textContent = 'In Watchlist';
+        icon.setAttribute('data-lucide', 'check');
+      } else {
+        text.textContent = 'My List';
+        icon.setAttribute('data-lucide', 'plus');
+      }
+      lucide.createIcons();
+    }
+
+    function toggleWatchlistCurrent() {
+      const movie = MOVIES[state.activeMovieId];
+      movie.inWatchlist = !movie.inWatchlist;
+      updateWatchlistButtonState(movie.inWatchlist);
+      playSelectChime();
+      showToast(movie.inWatchlist ? `Added "${movie.title}" to My Watchlist` : `Removed "${movie.title}" from My Watchlist`);
+    }
+
+    // ================= SPATIAL 10-FT NAVIGATION ENGINE =================
+    function getFocusableElements() {
+      return Array.from(document.querySelectorAll('.tv-focusable')).filter(el => {
+        return el.offsetParent !== null && !el.disabled;
+      });
+    }
+
+    function setFocused(el) {
+      if (!el) return;
+      document.querySelectorAll('.tv-focusable').forEach(item => item.classList.remove('tv-focused'));
+      el.classList.add('tv-focused');
+      state.focusedElement = el;
+
+      // If the focused element is a movie card, automatically preview it in hero!
+      if (el.dataset.movieId !== undefined) {
+        selectMovie(parseInt(el.dataset.movieId, 10));
+      }
+
+      // Scroll smoothly into view if inside a horizontal rail
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+
+    function moveFocus(direction) {
+      const focusables = getFocusableElements();
+      if (!focusables.length) return;
+
+      const current = state.focusedElement || document.querySelector('.tv-focused') || focusables[0];
+      const currentRect = current.getBoundingClientRect();
+      const currentCenter = {
+        x: currentRect.left + currentRect.width / 2,
+        y: currentRect.top + currentRect.height / 2
+      };
+
+      let bestCandidate = null;
+      let minDistance = Infinity;
+
+      focusables.forEach(target => {
+        if (target === current) return;
+        const targetRect = target.getBoundingClientRect();
+        const targetCenter = {
+          x: targetRect.left + targetRect.width / 2,
+          y: targetRect.top + targetRect.height / 2
+        };
+
+        const dx = targetCenter.x - currentCenter.x;
+        const dy = targetCenter.y - currentCenter.y;
+
+        let isValid = false;
+        if (direction === 'ArrowRight' && dx > 15 && Math.abs(dy) < currentRect.height * 1.5) isValid = true;
+        if (direction === 'ArrowLeft' && dx < -15 && Math.abs(dy) < currentRect.height * 1.5) isValid = true;
+        if (direction === 'ArrowDown' && dy > 15) isValid = true;
+        if (direction === 'ArrowUp' && dy < -15) isValid = true;
+
+        if (isValid) {
+          // Weighted distance: prioritize items directly on the primary axis
+          const primaryDist = (direction === 'ArrowLeft' || direction === 'ArrowRight') ? Math.abs(dx) : Math.abs(dy);
+          const secondaryDist = (direction === 'ArrowLeft' || direction === 'ArrowRight') ? Math.abs(dy) : Math.abs(dx);
+          const totalDistance = primaryDist + secondaryDist * 2.2;
+
+          if (totalDistance < minDistance) {
+            minDistance = totalDistance;
+            bestCandidate = target;
+          }
+        }
+      });
+
+      if (bestCandidate) {
+        setFocused(bestCandidate);
+        playNavTick();
+      }
+    }
+
+    // ================= REMOTE CONTROL EMULATOR =================
+    function simulateRemoteKey(key) {
+      playNavTick();
+
+      if (key.startsWith('Arrow')) {
+        moveFocus(key);
+      } else if (key === 'Enter') {
+        const current = state.focusedElement || document.querySelector('.tv-focused');
+        if (current) {
+          current.click();
+        } else {
+          launchVideoPlayer();
+        }
+      } else if (key === 'Escape' || key === 'Back') {
+        if (state.isPlayingVideo) {
+          closeVideoPlayer();
+        } else {
+          playBackSound();
+          showToast('Returning to Home Screen');
+        }
+      } else if (key === 'Home') {
+        switchTab('home');
+      } else if (key === 'PlayPause') {
+        if (state.isPlayingVideo) {
+          togglePlayState();
+        } else {
+          launchVideoPlayer();
+        }
+      } else if (key === 'VolUp') {
+        showToast('🔊 Volume: 42%');
+      } else if (key === 'VolDown') {
+        showToast('🔉 Volume: 38%');
+      } else if (key === 'ChUp') {
+        showToast('📺 Channel: 402 CineVerse Premieres');
+      } else if (key === 'ChDown') {
+        showToast('📺 Channel: 401 CineVerse 4K');
+      } else if (key === 'Mic') {
+        openSearchModal();
+      } else if (key === 'Power') {
+        showToast('⚡ Standby Mode Simulated');
+      }
+    }
+
+    function toggleRemoteHUD() {
+      const hud = document.getElementById('remote-control-hud');
+      state.isRemoteVisible = !state.isRemoteVisible;
+      if (state.isRemoteVisible) {
+        hud.classList.remove('translate-x-96', 'opacity-0');
+        announceA11y('Smart TV remote control shown');
+      } else {
+        hud.classList.add('translate-x-96', 'opacity-0');
+        announceA11y('Smart TV remote control hidden');
+      }
+    }
+
+    // ================= FULLSCREEN 4K VIDEO PLAYER ENGINE =================
+    let canvasAnimationId = null;
+
+    function launchVideoPlayer() {
+      playSelectChime();
+      state.isPlayingVideo = true;
+      const modal = document.getElementById('video-player-modal');
+      modal.classList.remove('hidden');
+
+      const movie = MOVIES[state.activeMovieId];
+      document.getElementById('player-title').textContent = movie.title;
+
+      startCanvasVisualizer();
+      announceA11y(`Now playing ${movie.title} in 4K HDR with Dolby Atmos`);
+    }
+
+    function closeVideoPlayer() {
+      playBackSound();
+      state.isPlayingVideo = false;
+      document.getElementById('video-player-modal').classList.add('hidden');
+      if (canvasAnimationId) {
+        cancelAnimationFrame(canvasAnimationId);
+      }
+      announceA11y('Exited video player');
+    }
+
+    function togglePlayState() {
+      const btn = document.getElementById('player-play-btn');
+      const text = document.getElementById('player-play-text');
+      const icon = document.getElementById('player-play-icon');
+      const centerIcon = document.getElementById('player-center-icon');
+
+      playNavTick();
+
+      if (text.textContent === 'Pause') {
+        text.textContent = 'Play';
+        icon.setAttribute('data-lucide', 'play');
+        showPlayerCenterIcon('play');
+        announceA11y('Playback paused');
+      } else {
+        text.textContent = 'Pause';
+        icon.setAttribute('data-lucide', 'pause');
+        showPlayerCenterIcon('pause');
+        announceA11y('Playback resumed');
+      }
+      lucide.createIcons();
+    }
+
+    function showPlayerCenterIcon(type) {
+      const icon = document.getElementById('player-center-icon');
+      icon.innerHTML = `<i data-lucide="${type}" class="w-8 h-8 fill-white"></i>`;
+      lucide.createIcons();
+      icon.classList.remove('opacity-0');
+      setTimeout(() => icon.classList.add('opacity-0'), 600);
+    }
+
+    function skipTime(seconds) {
+      playNavTick();
+      state.videoProgress = Math.max(0, Math.min(100, state.videoProgress + (seconds > 0 ? 4 : -4)));
+      document.getElementById('player-progress-bar').style.width = `${state.videoProgress}%`;
+      showToast(seconds > 0 ? '+10s Skip' : '-10s Rewind');
+    }
+
+    function seekVideo(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      state.videoProgress = Math.round(pos * 100);
+      document.getElementById('player-progress-bar').style.width = `${state.videoProgress}%`;
+      playNavTick();
+    }
+
+    function toggleSubtitles() {
+      const label = document.getElementById('subtitles-label');
+      playNavTick();
+      if (label.textContent.includes('English')) {
+        label.textContent = 'CC: Off';
+        showToast('Subtitles: Off');
+      } else {
+        label.textContent = 'CC: English';
+        showToast('Subtitles: English SDH');
+      }
+    }
+
+    function toggleAudioTrack() {
+      const label = document.getElementById('audio-track-label');
+      playNavTick();
+      if (label.textContent.includes('Atmos')) {
+        label.textContent = 'DTS-HD 7.1';
+        showToast('Audio: DTS-HD Master Audio');
+      } else {
+        label.textContent = 'Dolby Atmos';
+        showToast('Audio: Dolby Atmos Spatial Audio');
+      }
+    }
+
+    function nextEpisodeSim() {
+      playSelectChime();
+      showToast('Loading Episode 5: Temporal Collapse...');
+    }
+
+    // Canvas Generative Nebula Particle Player Background
+    function startCanvasVisualizer() {
+      const canvas = document.getElementById('player-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+
+      const particles = [];
+      for (let i = 0; i < 45; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 2.5 + 1,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: (Math.random() - 0.5) * 0.8,
+          color: ['#8B5CF6', '#EC4899', '#06B6D4', '#E2E8F0'][Math.floor(Math.random() * 4)]
+        });
+      }
+
+      function render() {
+        ctx.fillStyle = 'rgba(5, 7, 14, 0.25)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x = canvas.width;
+          if (p.x > canvas.width) p.x = 0;
+          if (p.y < 0) p.y = canvas.height;
+          if (p.y > canvas.height) p.y = 0;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = p.color;
+          ctx.fill();
+        });
+
+        if (state.isPlayingVideo) {
+          canvasAnimationId = requestAnimationFrame(render);
+        }
+      }
+      render();
+    }
+
+    // ================= MODALS & TOAST NOTIFICATIONS =================
+    function showToast(message) {
+      const toast = document.getElementById('tv-toast');
+      const text = document.getElementById('tv-toast-message');
+      text.textContent = message;
+      toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-[-100px]', 'opacity-0');
+      }, 3000);
+    }
+
+    function switchTab(tabId) {
+      playNavTick();
+      document.querySelectorAll('.nav-tab').forEach(t => {
+        t.classList.remove('bg-cine-purple', 'text-white', 'font-bold');
+        t.classList.add('text-slate-400');
+      });
+      const activeTab = document.getElementById(`tab-${tabId}`);
+      if (activeTab) {
+        activeTab.classList.remove('text-slate-400');
+        activeTab.classList.add('bg-cine-purple', 'text-white', 'font-bold');
+      }
+      showToast(`Navigated to ${tabId.toUpperCase()}`);
+    }
+
+    function openSearchModal() {
+      playNavTick();
+      showToast('Voice Search Active: "Find 4K Sci-Fi Thrillers"');
+    }
+
+    function openTrailerModal() {
+      playSelectChime();
+      launchVideoPlayer();
+    }
+
+    function openInfoModal() {
+      playNavTick();
+      const movie = MOVIES[state.activeMovieId];
+      alert(`🎬 ${movie.title}\n\nDirector: Denis Villeneuve\nCast: Timothée Chalamet, Florence Pugh, Ken Watanabe\nAudio: English (Dolby Atmos), Japanese (DTS-HD)\nSubtitles: English SDH, French, Spanish, German, Japanese`);
+    }
+
+    function launchLiveChannel(channelName) {
+      playSelectChime();
+      showToast(`Connecting to ${channelName} Broadcast Stream...`);
+      setTimeout(() => {
+        launchVideoPlayer();
+      }, 500);
+    }
+
+    function openKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.remove('hidden');
+    }
+
+    function closeKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.add('hidden');
+    }
+
+    // ================= VIEWPORT TOGGLE: LIVING ROOM VS FRAMELESS =================
+    document.getElementById('toggle-tv-frame-btn').addEventListener('click', () => {
+      state.isLivingRoomView = !state.isLivingRoomView;
+      const tvBezel = document.getElementById('tv-bezel');
+      const ambilight = document.getElementById('ambilight-backdrop');
+      const frameModeLabel = document.getElementById('frame-mode-label');
+
+      if (state.isLivingRoomView) {
+        tvBezel.className = 'relative rounded-[32px] sm:rounded-[38px] p-2 sm:p-3.5 bg-gradient-to-b from-slate-700/80 via-slate-900 to-black border-[3px] border-slate-700/60 shadow-2xl shadow-black/90';
+        ambilight.classList.remove('hidden');
+        frameModeLabel.textContent = 'Living Room View';
+        announceA11y('View switched to Living Room with Ambilight backlighting');
+      } else {
+        tvBezel.className = 'relative rounded-none p-0 bg-transparent border-0 shadow-none';
+        ambilight.classList.add('hidden');
+        frameModeLabel.textContent = 'Frameless 4K View';
+        announceA11y('View switched to Frameless Cinema Viewport');
+      }
+    });
+
+    // ================= REAL-TIME SYSTEM CLOCK =================
+    setInterval(() => {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      const clockEl = document.getElementById('tv-clock');
+      if (clockEl) clockEl.textContent = timeStr;
+    }, 1000);
+
+    // ================= KEYBOARD LISTENER (D-PAD HOTKEYS) =================
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        simulateRemoteKey(e.key);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        simulateRemoteKey('Enter');
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeKeybindingsModal();
+        simulateRemoteKey('Escape');
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        if (state.isPlayingVideo) {
+          togglePlayState();
+        } else {
+          launchVideoPlayer();
+        }
+      } else if (e.key.toLowerCase() === 'r') {
+        toggleRemoteHUD();
+      } else if (e.key.toLowerCase() === 'm') {
+        document.getElementById('toggle-audio-btn').click();
+      } else if (e.key.toLowerCase() === 'w') {
+        toggleWatchlistCurrent();
+      } else if (e.key === '?') {
+        openKeybindingsModal();
+      }
+    });
+
+    // Initialize on Page Load
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      // Auto-focus Hero Play button by default for instant 10-ft experience
+      const heroPlay = document.getElementById('hero-play-btn');
+      if (heroPlay) {
+        setFocused(heroPlay);
+      }
+    });
+  </script>
+
+</body>
+</html>
