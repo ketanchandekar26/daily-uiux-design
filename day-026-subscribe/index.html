@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 026: Subscribe & Membership Subscription Suite | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter, Space Grotesk, Outfit, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              purple: '#7C3AED',
+              purpleLight: '#A78BFA',
+              indigo: '#4F46E5',
+              neonCyan: '#06B6D4',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E',
+              dark: '#060813',
+              darkSurface: '#0E1326',
+              cardBg: '#131A33',
+              border: '#1F294A'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          animation: {
+            'glow-pulse': 'glowPulse 3s ease-in-out infinite',
+            'shimmer': 'shimmer 2.5s infinite',
+            'float-slow': 'floatSlow 4s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            glowPulse: {
+              '0%, 100%': { opacity: '0.5', filter: 'blur(35px)' },
+              '50%': { opacity: '0.9', filter: 'blur(55px)' }
+            },
+            shimmer: {
+              '0%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(200%)' }
+            },
+            floatSlow: {
+              '0%': { transform: 'translateY(0px)' },
+              '100%': { transform: 'translateY(-6px)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Neon Glow Halo for Pro Tier Card */
+    .pro-tier-glow {
+      position: relative;
+    }
+    .pro-tier-glow::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 28px;
+      padding: 2px;
+      background: linear-gradient(135deg, #7C3AED, #EC4899, #06B6D4);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* Shimmering Button Accent */
+    .btn-shimmer {
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-shimmer::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        60deg,
+        rgba(255, 255, 255, 0) 20%,
+        rgba(255, 255, 255, 0.25) 50%,
+        rgba(255, 255, 255, 0) 80%
+      );
+      transform: rotate(30deg);
+      pointer-events: none;
+      animation: shimmer 3.5s infinite;
+    }
+
+    /* Screen Reader Only Utility */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #060813;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1F294A;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #7C3AED;
+    }
+  </style>
+</head>
+<body class="bg-[#05070F] text-slate-100 min-h-screen font-sans selection:bg-brand-purple selection:text-white antialiased overflow-x-hidden">
+
+  <!-- A11y Live Announcer for Screen Readers -->
+  <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Confetti Celebration Canvas Overlay -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
+
+  <!-- Global Header Bar -->
+  <header class="border-b border-slate-800/80 bg-brand-dark/90 backdrop-blur-xl sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & Challenge Nav -->
+      <div class="flex items-center space-x-3.5">
+        <a href="../index.html" class="flex items-center space-x-2 text-slate-400 hover:text-white transition-colors" title="Back to Challenge Master Hub">
+          <div class="w-8 h-8 rounded-lg bg-brand-darkSurface border border-slate-700/60 flex items-center justify-center text-brand-purpleLight">
+            <i data-lucide="mail-check" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200 hidden sm:inline">Daily UI #026</span>
+        </a>
+        <div class="h-4 w-px bg-slate-800"></div>
+        <div class="flex items-center space-x-2">
+          <span class="font-display font-black text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-brand-purpleLight to-brand-neonCyan bg-clip-text text-transparent">
+            SYNTHETIX INSIGHTS
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest bg-brand-purple/15 text-brand-purpleLight border border-brand-purple/30">
+            MEMBERSHIP
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Actions Toolbar -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Audio Synthesizer Chime Toggle -->
+        <button id="toggle-audio-btn" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-brand-purpleLight hover:border-brand-purple/40 transition-all text-xs flex items-center space-x-1.5" title="Toggle Acoustic Chimes (M)">
+          <i data-lucide="volume-2" id="audio-icon" class="w-4 h-4 text-brand-purpleLight"></i>
+          <span class="hidden md:inline text-xs font-mono">Audio: ON</span>
+        </button>
+
+        <!-- Paywall Preview Trigger -->
+        <button onclick="triggerPaywallDemo()" class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition-all text-xs font-semibold flex items-center space-x-1.5" title="Test Reading Paywall Intercept (P)">
+          <i data-lucide="lock" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span class="hidden sm:inline">Test Paywall Intercept</span>
+        </button>
+
+        <!-- Keyboard Hotkeys Modal -->
+        <button onclick="openKeybindingsModal()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors" title="Keyboard Shortcuts (?)">
+          <i data-lucide="keyboard" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Hero Section: Headline, Social Proof & Ambient Glow -->
+  <section class="relative pt-12 pb-8 sm:pt-16 sm:pb-12 overflow-hidden">
+    <!-- Ambient Background Blur Orbs -->
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-brand-purple/20 rounded-full blur-3xl pointer-events-none -z-10 animate-glow-pulse"></div>
+    <div class="absolute top-1/3 left-1/4 w-80 h-80 bg-brand-neonCyan/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="absolute top-1/3 right-1/4 w-80 h-80 bg-brand-rose/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-5">
+      
+      <!-- Social Proof Badge -->
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/80 border border-slate-700/80 text-xs font-medium backdrop-blur-md shadow-lg">
+        <div class="flex -space-x-1.5">
+          <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 border border-slate-900 flex items-center justify-center text-[9px] font-bold">JD</div>
+          <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 border border-slate-900 flex items-center justify-center text-[9px] font-bold">SR</div>
+          <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-500 to-rose-500 border border-slate-900 flex items-center justify-center text-[9px] font-bold">AL</div>
+        </div>
+        <span class="text-slate-300">Joined by <strong class="text-white font-semibold">68,400+</strong> AI engineers, researchers &amp; founders</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      </div>
+
+      <!-- Main Headline -->
+      <h1 class="font-display font-black text-3xl sm:text-5xl lg:text-6xl tracking-tight text-white leading-[1.15]">
+        The Intelligence Edge for the <br class="hidden sm:inline">
+        <span class="bg-gradient-to-r from-brand-purpleLight via-brand-neonCyan to-emerald-300 bg-clip-text text-transparent">
+          Next Generation of Tech Leaders
+        </span>
+      </h1>
+
+      <!-- Subtitle -->
+      <p class="max-w-2xl mx-auto text-sm sm:text-base text-slate-400 leading-relaxed font-sans">
+        Proprietary AI research briefs, reverse-engineered model teardowns, and actionable architectural patterns delivered straight to your inbox and Discord.
+      </p>
+
+      <!-- Billing Frequency Switcher: Annual vs Monthly Toggle (Anchor Heuristic) -->
+      <div class="pt-4 flex items-center justify-center">
+        <div class="bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 shadow-xl flex items-center space-x-2 backdrop-blur-md">
+          <button onclick="setBillingCycle('monthly')" id="btn-monthly" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white">
+            Monthly Billing
+          </button>
+          <button onclick="setBillingCycle('annual')" id="btn-annual" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-purple text-white shadow-md flex items-center space-x-1.5">
+            <span>Annual Billing</span>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-mono font-extrabold uppercase tracking-wide">
+              Save 25% + 2 Mo Free
+            </span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Main Pricing Cards Grid: 3 Tiers (Anchor & Decoy Architecture) -->
+  <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+      
+      <!-- TIER 1: EXPLORER (Free Forever) -->
+      <div class="rounded-3xl bg-brand-cardBg/60 border border-slate-800/90 p-7 flex flex-col justify-between hover:border-slate-700 transition-all shadow-xl backdrop-blur-sm relative">
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">Explorer</span>
+              <h3 class="font-display font-bold text-xl text-white mt-0.5">Free Community</h3>
+            </div>
+            <div class="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300">
+              <i data-lucide="compass" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Essential weekly market pulse and open-source updates for curious builders.
+          </p>
+
+          <!-- Price Display -->
+          <div class="pt-2 pb-4 border-b border-slate-800">
+            <div class="flex items-baseline space-x-1">
+              <span class="font-display font-black text-4xl text-white">$0</span>
+              <span class="text-xs font-mono text-slate-400">/ forever</span>
+            </div>
+            <span class="text-[11px] font-mono text-slate-500 block mt-1">No credit card required</span>
+          </div>
+
+          <!-- Feature List -->
+          <ul class="space-y-3 text-xs text-slate-300">
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span>Weekly Friday AI Recap newsletter</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span>Access to public web archive (7 days)</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span>Read-only access to Community Discord</span>
+            </li>
+            <li class="flex items-center gap-2.5 text-slate-500">
+              <i data-lucide="minus" class="w-4 h-4 shrink-0"></i>
+              <span>No deep-dive architectural teardowns</span>
+            </li>
+            <li class="flex items-center gap-2.5 text-slate-500">
+              <i data-lucide="minus" class="w-4 h-4 shrink-0"></i>
+              <span>Standard email delivery queue</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="pt-8">
+          <button onclick="openCheckoutModal('free', 'Explorer Free', 0)" class="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs border border-slate-700 transition-all flex items-center justify-center gap-2">
+            <span>Subscribe Free</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- TIER 2: PRO RESEARCHER (The Highlighted Asymmetric Anchor) -->
+      <div class="rounded-3xl bg-gradient-to-b from-brand-cardBg to-[#0A0E1F] border border-brand-purple/60 p-7 flex flex-col justify-between transition-all shadow-2xl shadow-brand-purple/20 relative pro-tier-glow scale-100 lg:scale-[1.03] z-10">
+        
+        <!-- Popular Badge -->
+        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-brand-purple to-brand-neonCyan text-white font-mono text-[10px] font-extrabold uppercase tracking-widest shadow-md flex items-center gap-1">
+          <i data-lucide="sparkles" class="w-3 h-3 fill-white"></i>
+          <span>Most Popular &bull; 14-Day Free Trial</span>
+        </div>
+
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-mono font-bold uppercase tracking-wider text-brand-purpleLight">Pro Researcher</span>
+              <h3 class="font-display font-bold text-xl text-white mt-0.5">Full Access Pass</h3>
+            </div>
+            <div class="w-9 h-9 rounded-xl bg-brand-purple/20 border border-brand-purple/40 flex items-center justify-center text-brand-purpleLight">
+              <i data-lucide="zap" class="w-5 h-5 fill-brand-purpleLight"></i>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-300 leading-relaxed">
+            The definitive blueprint suite for practicing AI engineers, tech leads, and founders.
+          </p>
+
+          <!-- Price Display -->
+          <div class="pt-2 pb-4 border-b border-slate-800">
+            <div class="flex items-baseline space-x-1">
+              <span id="price-pro" class="font-display font-black text-4xl text-white">$14</span>
+              <span class="text-xs font-mono text-slate-400">/ month</span>
+            </div>
+            <span id="billed-sub-pro" class="text-[11px] font-mono text-emerald-400 font-semibold block mt-1">
+              Billed annually ($168/yr). You save $60/yr!
+            </span>
+          </div>
+
+          <!-- Feature List -->
+          <ul class="space-y-3 text-xs text-slate-200">
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span class="font-semibold text-white">All 3 Weekly Deep-Dive Teardowns</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span>Unrestricted 5-year archive access</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span>Exclusive Private Discord Lounge &amp; AMAs</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span>Downloadable Jupyter notebooks &amp; prompt evals</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span>Ad-free private podcast audio feed</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="pt-8">
+          <button onclick="openCheckoutModal('pro', 'Pro Researcher', state.billingCycle === 'annual' ? 14 : 19)" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-brand-purple to-brand-indigo hover:from-purple-600 hover:to-indigo-600 text-white font-display font-bold text-sm shadow-xl shadow-brand-purple/30 transition-all btn-shimmer flex items-center justify-center gap-2">
+            <span>Start 14-Day Free Trial</span>
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+          </button>
+          <p class="text-center text-[10px] font-mono text-slate-400 mt-2">Zero commitment &bull; 1-click cancellation</p>
+        </div>
+      </div>
+
+      <!-- TIER 3: EXECUTIVE & PATRON (High-Value Upsell) -->
+      <div class="rounded-3xl bg-brand-cardBg/60 border border-slate-800/90 p-7 flex flex-col justify-between hover:border-slate-700 transition-all shadow-xl backdrop-blur-sm relative">
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-mono font-bold uppercase tracking-wider text-amber-400">Executive Patron</span>
+              <h3 class="font-display font-bold text-xl text-white mt-0.5">Enterprise Advisory</h3>
+            </div>
+            <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+              <i data-lucide="crown" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-400 leading-relaxed">
+            For leaders, CTOs, and investment firms seeking bespoke strategic advisory.
+          </p>
+
+          <!-- Price Display -->
+          <div class="pt-2 pb-4 border-b border-slate-800">
+            <div class="flex items-baseline space-x-1">
+              <span id="price-exec" class="font-display font-black text-4xl text-white">$39</span>
+              <span class="text-xs font-mono text-slate-400">/ month</span>
+            </div>
+            <span id="billed-sub-exec" class="text-[11px] font-mono text-amber-400 font-semibold block mt-1">
+              Billed annually ($468/yr). 3 team seats included!
+            </span>
+          </div>
+
+          <!-- Feature List -->
+          <ul class="space-y-3 text-xs text-slate-300">
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <span class="font-semibold text-white">Everything in Pro for up to 3 Seats</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <span>Monthly 45-min Group Strategy Call with Editors</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <span>Quarterly Executive State of AI PDF Dossiers</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <span>Direct Slack / Signal backchannel hotline</span>
+            </li>
+            <li class="flex items-center gap-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <span>Expensed corporate invoicing &amp; tax compliance</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="pt-8">
+          <button onclick="openCheckoutModal('exec', 'Executive Patron', state.billingCycle === 'annual' ? 39 : 49)" class="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 font-semibold text-xs border border-amber-500/30 transition-all flex items-center justify-center gap-2">
+            <span>Join Executive Circle</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Section 2: Fast 1-Click Newsletter Opt-in Bar (Secondary Growth Vector) -->
+  <section class="max-w-4xl mx-auto px-4 sm:px-6 mb-16">
+    <div class="rounded-3xl bg-gradient-to-r from-brand-cardBg via-brand-darkSurface to-brand-cardBg border border-slate-800 p-8 shadow-2xl relative overflow-hidden">
+      <!-- Background Glow -->
+      <div class="absolute -right-16 -top-16 w-60 h-60 bg-brand-purple/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+        <div class="md:col-span-7 space-y-2">
+          <span class="text-xs font-mono font-bold text-brand-purpleLight flex items-center gap-1.5 uppercase">
+            <i data-lucide="sparkle" class="w-3.5 h-3.5"></i>
+            Free Weekly Dispatch
+          </span>
+          <h2 class="font-display font-extrabold text-2xl text-white">Just Want the Weekly Briefing?</h2>
+          <p class="text-xs text-slate-400 font-sans">
+            Get our Sunday morning analysis on breakthrough papers and industry shifts. No spam. One-click unsubscribe anytime.
+          </p>
+        </div>
+
+        <div class="md:col-span-5">
+          <form id="newsletter-form" onsubmit="handleNewsletterSubmit(event)" class="space-y-2.5">
+            <div class="relative">
+              <input type="email" id="newsletter-email" required placeholder="name@workemail.com" class="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 focus:border-brand-purple focus:ring-2 focus:ring-brand-purple/30 text-white placeholder-slate-500 text-xs font-mono outline-none transition-all">
+              <i data-lucide="mail" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5"></i>
+            </div>
+            <button type="submit" class="w-full py-3 rounded-2xl bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md">
+              <span>Subscribe to Free Dispatch</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Feature Comparison Matrix Accordion -->
+  <section class="max-w-4xl mx-auto px-4 sm:px-6 mb-16">
+    <div class="rounded-3xl bg-brand-cardBg/40 border border-slate-800 p-6 sm:p-8">
+      <div class="flex items-center justify-between cursor-pointer" onclick="toggleComparisonTable()">
+        <div>
+          <h2 class="font-display font-bold text-lg sm:text-xl text-white flex items-center gap-2">
+            <i data-lucide="table" class="w-5 h-5 text-brand-purpleLight"></i>
+            Complete Feature Comparison Table
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Detailed breakdown of quotas, deliverables, and team licenses</p>
+        </div>
+        <button id="comparison-toggle-icon" class="p-2 rounded-xl bg-slate-800 text-slate-300">
+          <i data-lucide="chevron-down" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Expandable Table Body -->
+      <div id="comparison-table-content" class="mt-6 pt-6 border-t border-slate-800 overflow-x-auto no-scrollbar hidden">
+        <table class="w-full text-left text-xs font-sans">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400 font-mono text-[11px]">
+              <th class="pb-3 font-semibold">Capability</th>
+              <th class="pb-3 text-center font-semibold">Explorer ($0)</th>
+              <th class="pb-3 text-center font-semibold text-brand-purpleLight">Pro ($14/mo)</th>
+              <th class="pb-3 text-center font-semibold text-amber-400">Executive ($39/mo)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-300">
+            <tr>
+              <td class="py-3 font-medium text-white">Publication Frequency</td>
+              <td class="py-3 text-center">1x / week</td>
+              <td class="py-3 text-center font-bold text-brand-purpleLight">3x / week</td>
+              <td class="py-3 text-center font-bold text-amber-400">Daily Live Feed + 3x / week</td>
+            </tr>
+            <tr>
+              <td class="py-3 font-medium text-white">Model Architecture Teardowns</td>
+              <td class="py-3 text-center text-slate-500">&mdash;</td>
+              <td class="py-3 text-center text-emerald-400 font-bold">&check; Full Access</td>
+              <td class="py-3 text-center text-emerald-400 font-bold">&check; Full Access</td>
+            </tr>
+            <tr>
+              <td class="py-3 font-medium text-white">Code Repositories &amp; Weights</td>
+              <td class="py-3 text-center text-slate-500">&mdash;</td>
+              <td class="py-3 text-center text-emerald-400 font-bold">&check; GitHub Access</td>
+              <td class="py-3 text-center text-emerald-400 font-bold">&check; GitHub Access</td>
+            </tr>
+            <tr>
+              <td class="py-3 font-medium text-white">Direct Advisory &amp; AMA Sessions</td>
+              <td class="py-3 text-center text-slate-500">&mdash;</td>
+              <td class="py-3 text-center">Async in Discord</td>
+              <td class="py-3 text-center text-amber-400 font-bold">&check; Monthly 1-on-1 Zoom</td>
+            </tr>
+            <tr>
+              <td class="py-3 font-medium text-white">Team Member Seats</td>
+              <td class="py-3 text-center">1 User</td>
+              <td class="py-3 text-center">1 User</td>
+              <td class="py-3 text-center text-amber-400 font-bold">3 Included (Add more)</td>
+            </tr>
+            <tr>
+              <td class="py-3 font-medium text-white">Company Invoice &amp; VAT Receipts</td>
+              <td class="py-3 text-center text-slate-500">&mdash;</td>
+              <td class="py-3 text-center">&check; Standard PDF</td>
+              <td class="py-3 text-center text-amber-400 font-bold">&check; Dedicated Expense Portal</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MODALS & PAYWALL DRAWERS ================= -->
+
+  <!-- Modal 1: Zero-Friction Checkout Simulation Drawer -->
+  <div id="checkout-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative">
+      <button onclick="closeCheckoutModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center space-x-2 text-brand-purpleLight mb-1">
+        <i data-lucide="shield-check" class="w-4 h-4"></i>
+        <span class="text-xs font-mono font-bold uppercase tracking-wider">Secure 256-Bit SSL Checkout</span>
+      </div>
+      
+      <h3 class="font-display font-extrabold text-2xl text-white">Complete Your Membership</h3>
+      <p id="checkout-tier-subtitle" class="text-xs text-slate-400 mt-1 mb-5">
+        Pro Researcher Plan &bull; 14-Day Free Trial Activated
+      </p>
+
+      <!-- Coupon Code Promo Code Applied Simulator -->
+      <div class="mb-5 p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="tag" class="w-4 h-4 text-amber-400"></i>
+          <input type="text" id="coupon-input" placeholder="Promo code (e.g. DAILYUI50)" class="bg-transparent text-xs font-mono text-white placeholder-slate-500 uppercase outline-none w-48">
+        </div>
+        <button onclick="applyCoupon()" class="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200">
+          Apply
+        </button>
+      </div>
+
+      <!-- Trial Timeline Visualizer -->
+      <div class="p-3.5 rounded-2xl bg-brand-purple/10 border border-brand-purple/30 mb-5 text-xs">
+        <div class="flex justify-between items-center text-slate-200 mb-2">
+          <span class="font-bold flex items-center gap-1.5">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-brand-purpleLight"></i> Trial Timeline
+          </span>
+          <span class="font-mono text-emerald-400 font-bold">$0.00 Due Today</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-400">
+          <div class="p-2 rounded-xl bg-slate-900">
+            <span class="text-slate-200 block font-bold">Today</span>
+            <span>Instant full archive unlock</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900">
+            <span class="text-slate-200 block font-bold">Day 14 (Trial Ends)</span>
+            <span id="checkout-charge-summary">Billed $168/yr unless canceled</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Method Tabs -->
+      <div class="space-y-3">
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="setPaymentMethod('apple')" id="pm-apple" class="py-2.5 rounded-xl bg-black text-white text-xs font-bold border border-slate-700 flex items-center justify-center gap-1">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Apple Pay
+          </button>
+          <button onclick="setPaymentMethod('google')" id="pm-google" class="py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1">
+            <i data-lucide="wallet" class="w-3.5 h-3.5"></i> Google Pay
+          </button>
+          <button onclick="setPaymentMethod('card')" id="pm-card" class="py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1">
+            <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> Card
+          </button>
+        </div>
+
+        <!-- Email & Billing Fields -->
+        <input type="email" id="checkout-email" required placeholder="Billing Email Address" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-xs font-mono text-white placeholder-slate-500 outline-none focus:border-brand-purple">
+
+        <!-- Complete Subscription CTA Button -->
+        <button onclick="confirmSubscription()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-brand-purple to-brand-neonCyan text-white font-display font-black text-sm shadow-xl shadow-brand-purple/20 transition-all hover:opacity-95 flex items-center justify-center gap-2">
+          <i data-lucide="lock" class="w-4 h-4"></i>
+          <span id="checkout-btn-text">Start Free 14-Day Trial ($0.00)</span>
+        </button>
+
+        <p class="text-center text-[10px] text-slate-500 font-mono">
+          By proceeding, you agree to the Terms of Service. Cancel anytime from your account settings with zero friction.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal 2: In-Article Reading Paywall Intercept Simulation -->
+  <div id="paywall-demo-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+      <button onclick="closePaywallDemo()" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <span class="px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-mono font-bold uppercase tracking-wider">
+        PREMIUM INVESTIGATION
+      </span>
+      <h3 class="font-display font-extrabold text-xl text-white mt-2">
+        Inside OpenAI’s Next-Gen Reasoning Infrastructure: Cluster Architecture Breakdown
+      </h3>
+      <p class="text-xs text-slate-400 font-mono mt-1 mb-4">By Alex Rivera &bull; 14 min read &bull; Published Yesterday</p>
+
+      <!-- Simulated Blurred Content -->
+      <div class="relative mb-6">
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Through confidential disclosures and supply-chain analysis across tier-1 hyperscaler datacenter footprints, we can now reveal the interconnect topology powering next-generation mixture-of-agents inference clusters...
+        </p>
+        <p class="text-xs text-slate-400 leading-relaxed mt-2 blur-sm select-none opacity-50">
+          The optical switching fabric utilizes 800G OSFP transceivers routed through customized spine switches. By eliminating traditional memory bandwidth bottlenecks with custom NVLink domain controllers, latency overheads dropped by 42% across distributed checkpoint syncs...
+        </p>
+        <!-- Fadeout Gradient -->
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent"></div>
+      </div>
+
+      <!-- Paywall Lock Box -->
+      <div class="p-5 rounded-2xl bg-slate-950 border border-brand-purple/40 text-center space-y-3">
+        <div class="w-10 h-10 rounded-full bg-brand-purple/20 text-brand-purpleLight mx-auto flex items-center justify-center">
+          <i data-lucide="lock" class="w-5 h-5"></i>
+        </div>
+        <h4 class="font-display font-bold text-base text-white">Unlock the Remaining 85% of this Analysis</h4>
+        <p class="text-xs text-slate-400 max-w-md mx-auto">
+          Join thousands of tech executives who rely on Synthetix to navigate AI infrastructure shifts for just $0.46 / day.
+        </p>
+        <div class="flex items-center justify-center gap-3 pt-1">
+          <button onclick="closePaywallDemo(); openCheckoutModal('pro', 'Pro Researcher', 14);" class="px-6 py-2.5 rounded-xl bg-brand-purple hover:bg-purple-600 text-white font-bold text-xs shadow-lg shadow-brand-purple/30 transition-colors">
+            Start 14-Day Free Trial
+          </button>
+          <button onclick="closePaywallDemo()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold">
+            Already a member? Sign In
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Keybindings Guide -->
+  <div id="keybindings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="keyboard" class="w-5 h-5 text-brand-purpleLight"></i>
+          <h3 class="font-display font-bold text-lg text-white">Keyboard Shortcuts</h3>
+        </div>
+        <button onclick="closeKeybindingsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2.5 text-xs font-mono">
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle Annual / Monthly Billing</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-brand-purpleLight border border-slate-700">T</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Preview In-Article Paywall Intercept</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-brand-purpleLight border border-slate-700">P</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle Audio Chimes</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-brand-purpleLight border border-slate-700">M</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Focus Newsletter Email Input</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-brand-purpleLight border border-slate-700">/</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Close Modals / Overlays</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-brand-purpleLight border border-slate-700">Esc</kbd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulated Toast Notification Banner -->
+  <div id="sub-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border-2 border-emerald-500 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-3.5 transition-all duration-300 translate-y-32 opacity-0 pointer-events-none">
+    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-emerald-400">
+      <i data-lucide="check" class="w-5 h-5 stroke-[3]"></i>
+    </div>
+    <div>
+      <div class="font-display font-extrabold text-sm text-emerald-400" id="toast-title">SUBSCRIPTION CONFIRMED</div>
+      <div id="toast-message" class="text-xs text-slate-300 font-mono">Welcome to Synthetix Insights Pro</div>
+    </div>
+  </div>
+
+  <!-- Vanilla JavaScript & Web Audio API Acoustic Engine -->
+  <script>
+    // State Management Architecture
+    const state = {
+      billingCycle: 'annual', // 'annual' | 'monthly'
+      discountMultiplier: 1.0,
+      activeTier: 'pro',
+      paymentMethod: 'apple',
+      isAudioEnabled: true,
+      audioCtx: null
+    };
+
+    // A11y Live Announcer
+    function announceA11y(message) {
+      const el = document.getElementById('a11y-announcer');
+      if (el) el.textContent = message;
+    }
+
+    // ================= WEB AUDIO API SYNTHESIZER =================
+    function initAudioContext() {
+      if (!state.audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        state.audioCtx = new AudioContext();
+      }
+      if (state.audioCtx.state === 'suspended') {
+        state.audioCtx.resume();
+      }
+    }
+
+    // Sound 1: Celebration Fanfare Chord (C5 - E5 - G5 - C6)
+    function playCelebrationFanfare() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+        const freqs = [523.25, 659.25, 783.99, 1046.50];
+
+        freqs.forEach((freq, idx) => {
+          const osc = state.audioCtx.createOscillator();
+          const gain = state.audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+          gain.gain.setValueAtTime(0.18, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.8);
+
+          osc.connect(gain);
+          gain.connect(state.audioCtx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.8);
+        });
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Sound 2: Mechanical Switch Click
+    function playToggleSound() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.05);
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Toggle Audio Handler
+    document.getElementById('toggle-audio-btn').addEventListener('click', () => {
+      state.isAudioEnabled = !state.isAudioEnabled;
+      const btn = document.getElementById('toggle-audio-btn');
+      const icon = document.getElementById('audio-icon');
+      if (state.isAudioEnabled) {
+        btn.querySelector('span').textContent = 'Audio: ON';
+        icon.classList.add('text-brand-purpleLight');
+        playCelebrationFanfare();
+        announceA11y('Acoustic chimes enabled');
+      } else {
+        btn.querySelector('span').textContent = 'Audio: OFF';
+        icon.classList.remove('text-brand-purpleLight');
+        announceA11y('Audio feedback muted');
+      }
+    });
+
+    // ================= BILLING CYCLE TOGGLE (ANNUAL VS MONTHLY) =================
+    function setBillingCycle(cycle) {
+      state.billingCycle = cycle;
+      playToggleSound();
+
+      const btnMonthly = document.getElementById('btn-monthly');
+      const btnAnnual = document.getElementById('btn-annual');
+      const pricePro = document.getElementById('price-pro');
+      const priceExec = document.getElementById('price-exec');
+      const billedSubPro = document.getElementById('billed-sub-pro');
+      const billedSubExec = document.getElementById('billed-sub-exec');
+
+      if (cycle === 'annual') {
+        btnAnnual.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-purple text-white shadow-md flex items-center space-x-1.5';
+        btnMonthly.className = 'px-4 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white';
+
+        const calcPro = Math.round(14 * state.discountMultiplier);
+        const calcExec = Math.round(39 * state.discountMultiplier);
+
+        pricePro.textContent = `$${calcPro}`;
+        priceExec.textContent = `$${calcExec}`;
+        billedSubPro.textContent = 'Billed annually ($168/yr). You save $60/yr!';
+        billedSubExec.textContent = 'Billed annually ($468/yr). 3 team seats included!';
+        announceA11y('Billing switched to Annual. 25% discount applied.');
+      } else {
+        btnMonthly.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-purple text-white shadow-md';
+        btnAnnual.className = 'px-4 py-2 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white flex items-center space-x-1.5';
+
+        const calcPro = Math.round(19 * state.discountMultiplier);
+        const calcExec = Math.round(49 * state.discountMultiplier);
+
+        pricePro.textContent = `$${calcPro}`;
+        priceExec.textContent = `$${calcExec}`;
+        billedSubPro.textContent = 'Billed monthly. Cancel anytime.';
+        billedSubExec.textContent = 'Billed monthly. Up to 3 seats included.';
+        announceA11y('Billing switched to Monthly.');
+      }
+    }
+
+    // ================= COUPON CODE PROMO VALIDATOR =================
+    function applyCoupon() {
+      const code = document.getElementById('coupon-input').value.trim().toUpperCase();
+      if (code === 'DAILYUI50' || code === 'VIPFREE') {
+        state.discountMultiplier = 0.5;
+        playCelebrationFanfare();
+        setBillingCycle(state.billingCycle);
+        showToast('PROMO CODE APPLIED', '50% VIP discount unlocked for your first 3 months!');
+        announceA11y('Coupon applied. 50% discount activated.');
+      } else {
+        playToggleSound();
+        showToast('INVALID CODE', 'Try code "DAILYUI50" to test 50% discount.');
+      }
+    }
+
+    // ================= CHECKOUT MODAL & TRIAL WORKFLOW =================
+    function openCheckoutModal(tier, name, price) {
+      state.activeTier = tier;
+      playToggleSound();
+
+      const modal = document.getElementById('checkout-modal');
+      const subtitle = document.getElementById('checkout-tier-subtitle');
+      const summary = document.getElementById('checkout-charge-summary');
+      const btnText = document.getElementById('checkout-btn-text');
+
+      subtitle.textContent = `${name} Plan • 14-Day Free Trial Activated`;
+
+      if (tier === 'free') {
+        summary.textContent = 'Free forever • $0.00 renew rate';
+        btnText.textContent = 'Complete Free Sign-Up';
+      } else {
+        const costStr = state.billingCycle === 'annual' ? `$${price * 12}/yr` : `$${price}/mo`;
+        summary.textContent = `Billed ${costStr} on Day 14 unless canceled`;
+        btnText.textContent = `Start Free 14-Day Trial ($0.00)`;
+      }
+
+      modal.classList.remove('hidden');
+      announceA11y(`Opened checkout for ${name}`);
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkout-modal').classList.add('hidden');
+    }
+
+    function setPaymentMethod(method) {
+      state.paymentMethod = method;
+      playToggleSound();
+      ['apple', 'google', 'card'].forEach(m => {
+        const btn = document.getElementById(`pm-${m}`);
+        if (m === method) {
+          btn.className = 'py-2.5 rounded-xl bg-brand-purple text-white text-xs font-bold border border-brand-purple flex items-center justify-center gap-1 shadow-sm';
+        } else {
+          btn.className = 'py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1';
+        }
+      });
+      announceA11y(`Payment method selected: ${method}`);
+    }
+
+    function confirmSubscription() {
+      playCelebrationFanfare();
+      triggerConfettiBurst();
+      closeCheckoutModal();
+
+      showToast('TRIAL ACTIVATED', 'Welcome to Synthetix Insights Pro! Check your inbox for your access credentials.');
+      announceA11y('Subscription confirmed. Celebration confetti activated.');
+    }
+
+    // ================= NEWSLETTER OPT-IN SUBMISSION =================
+    function handleNewsletterSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('newsletter-email').value;
+      playCelebrationFanfare();
+      triggerConfettiBurst();
+      document.getElementById('newsletter-email').value = '';
+
+      showToast('DISPATCH CONFIRMED', `Weekly briefings will be delivered to ${email}`);
+      announceA11y(`Subscribed to free newsletter with ${email}`);
+    }
+
+    // ================= IN-ARTICLE PAYWALL DEMO =================
+    function triggerPaywallDemo() {
+      playToggleSound();
+      document.getElementById('paywall-demo-modal').classList.remove('hidden');
+      announceA11y('Opened in-article paywall intercept demo');
+    }
+
+    function closePaywallDemo() {
+      document.getElementById('paywall-demo-modal').classList.add('hidden');
+    }
+
+    // ================= FEATURE COMPARISON TABLE TOGGLE =================
+    function toggleComparisonTable() {
+      playToggleSound();
+      const content = document.getElementById('comparison-table-content');
+      const icon = document.getElementById('comparison-toggle-icon');
+      content.classList.toggle('hidden');
+      icon.innerHTML = content.classList.contains('hidden') ? '<i data-lucide="chevron-down" class="w-4 h-4"></i>' : '<i data-lucide="chevron-up" class="w-4 h-4"></i>';
+      lucide.createIcons();
+    }
+
+    // ================= KEYBINDINGS MODAL =================
+    function openKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.remove('hidden');
+    }
+
+    function closeKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.add('hidden');
+    }
+
+    // ================= TOAST NOTIFICATION ENGINE =================
+    function showToast(title, message) {
+      const toast = document.getElementById('sub-toast');
+      document.getElementById('toast-title').textContent = title;
+      document.getElementById('toast-message').textContent = message;
+
+      toast.classList.remove('translate-y-32', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-32', 'opacity-0');
+      }, 4200);
+    }
+
+    // ================= CONFETTI PARTICLE PHYSICS ENGINE =================
+    function triggerConfettiBurst() {
+      const canvas = document.getElementById('confetti-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ['#7C3AED', '#EC4899', '#06B6D4', '#10B981', '#F59E0B', '#FFFFFF'];
+
+      for (let i = 0; i < 90; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          radius: Math.random() * 5 + 3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 16,
+          vy: (Math.random() - 0.5) * 16 - 3,
+          gravity: 0.28,
+          alpha: 1,
+          decay: Math.random() * 0.015 + 0.008
+        });
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+
+        particles.forEach(p => {
+          if (p.alpha > 0) {
+            active = true;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.alpha -= p.decay;
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = p.color;
+            ctx.fill();
+            ctx.restore();
+          }
+        });
+
+        if (active) {
+          requestAnimationFrame(render);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+      render();
+    }
+
+    // ================= KEYBOARD ACCESSIBILITY LISTENERS =================
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'Escape') {
+        closeCheckoutModal();
+        closePaywallDemo();
+        closeKeybindingsModal();
+      } else if (e.key.toLowerCase() === 't') {
+        setBillingCycle(state.billingCycle === 'annual' ? 'monthly' : 'annual');
+      } else if (e.key.toLowerCase() === 'p') {
+        triggerPaywallDemo();
+      } else if (e.key.toLowerCase() === 'm') {
+        document.getElementById('toggle-audio-btn').click();
+      } else if (e.key === '/') {
+        e.preventDefault();
+        document.getElementById('newsletter-email').focus();
+      } else if (e.key === '?') {
+        openKeybindingsModal();
+      }
+    });
+
+    // Initialize on DOM Ready
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+
+</body>
+</html>
