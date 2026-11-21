@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 027: Dropdown Menu & Contextual Action Suite | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter, Space Grotesk, Outfit, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nexus: {
+              purple: '#7C3AED',
+              purpleLight: '#A78BFA',
+              cyan: '#06B6D4',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E',
+              dark: '#05070E',
+              darkSurface: '#0C101D',
+              cardBg: '#111728',
+              menuBg: '#0F1524',
+              menuBorder: '#1E283D'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          animation: {
+            'menu-in': 'menuIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'sub-in': 'subIn 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'glow-pulse': 'glowPulse 3s ease-in-out infinite',
+          },
+          keyframes: {
+            menuIn: {
+              '0%': { opacity: '0', transform: 'scale(0.96) translateY(-6px)' },
+              '100%': { opacity: '1', transform: 'scale(1) translateY(0)' }
+            },
+            subIn: {
+              '0%': { opacity: '0', transform: 'translateX(-6px) scale(0.96)' },
+              '100%': { opacity: '1', transform: 'translateX(0) scale(1)' }
+            },
+            glowPulse: {
+              '0%, 100%': { opacity: '0.4', filter: 'blur(35px)' },
+              '50%': { opacity: '0.8', filter: 'blur(55px)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* macOS-grade Glassmorphic Dropdown Container */
+    .dropdown-glass {
+      background: rgba(15, 21, 36, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7),
+                  0 0 0 1px rgba(124, 58, 237, 0.15),
+                  0 0 20px rgba(124, 58, 237, 0.1);
+    }
+
+    /* Menu Item Hover & Focus Styling */
+    .menu-item {
+      transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
+      outline: none;
+    }
+    .menu-item:hover,
+    .menu-item:focus-visible,
+    .menu-item.active-item {
+      background: linear-gradient(90deg, rgba(124, 58, 237, 0.25) 0%, rgba(6, 182, 212, 0.15) 100%);
+      color: #FFFFFF;
+      border-left: 2px solid #A78BFA;
+    }
+    .menu-item.danger-item:hover,
+    .menu-item.danger-item:focus-visible {
+      background: rgba(244, 63, 94, 0.2);
+      color: #FDA4AF;
+      border-left: 2px solid #F43F5E;
+    }
+
+    /* Safe Mouse Triangle Corridor Area */
+    .submenu-trigger {
+      position: relative;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0C101D;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E283D;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #7C3AED;
+    }
+
+    /* Screen Reader Only Utility */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
+</head>
+<body class="bg-[#05070E] text-slate-100 min-h-screen font-sans selection:bg-nexus-purple selection:text-white antialiased overflow-x-hidden" onclick="handleGlobalClick(event)">
+
+  <!-- A11y Live Announcer for Screen Readers -->
+  <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Global Header Bar -->
+  <header class="border-b border-slate-800/80 bg-nexus-dark/90 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Project Header -->
+      <div class="flex items-center space-x-3.5">
+        <a href="../index.html" class="flex items-center space-x-2 text-slate-400 hover:text-white transition-colors" title="Back to Challenge Master Hub">
+          <div class="w-8 h-8 rounded-lg bg-nexus-darkSurface border border-slate-700/60 flex items-center justify-center text-nexus-purpleLight">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200 hidden sm:inline">Daily UI #027</span>
+        </a>
+        <div class="h-4 w-px bg-slate-800"></div>
+        <div class="flex items-center space-x-2">
+          <span class="font-display font-black text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-nexus-purpleLight to-nexus-cyan bg-clip-text text-transparent">
+            NEXUS UI &bull; DROPDOWN STUDIO
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest bg-nexus-purple/15 text-nexus-purpleLight border border-nexus-purple/30">
+            WAI-ARIA
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Actions Toolbar -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Audio Synthesizer Chime Toggle -->
+        <button id="toggle-audio-btn" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-nexus-purpleLight hover:border-nexus-purple/40 transition-all text-xs flex items-center space-x-1.5" title="Toggle Acoustic Menu Chimes (M)">
+          <i data-lucide="volume-2" id="audio-icon" class="w-4 h-4 text-nexus-purpleLight"></i>
+          <span class="hidden md:inline text-xs font-mono">Audio: ON</span>
+        </button>
+
+        <!-- Keyboard Hotkeys Modal -->
+        <button onclick="openKeybindingsModal()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors" title="Keyboard Shortcuts (?)">
+          <i data-lucide="keyboard" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Hero & Dropdown Interactive Showcase -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative">
+    
+    <!-- Ambient Background Lighting -->
+    <div class="absolute top-12 left-1/2 -translate-x-1/2 w-96 h-96 bg-nexus-purple/15 rounded-full blur-3xl pointer-events-none -z-10 animate-glow-pulse"></div>
+    <div class="absolute top-44 left-1/4 w-80 h-80 bg-nexus-cyan/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+    <!-- Section Intro Header -->
+    <div class="text-center max-w-3xl mx-auto space-y-3 mb-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-800 text-xs font-medium text-nexus-purpleLight">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        <span>Complete Menu &amp; Context Navigation Design System</span>
+      </div>
+      <h1 class="font-display font-black text-3xl sm:text-5xl tracking-tight text-white">
+        Precision Dropdowns &amp; Context Menus
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400 font-sans leading-relaxed">
+        Engineered with nested cascading submenus, diagonal aim corridors, searchable combobox filters, multi-column mega-menus, and desktop right-click viewport collision avoidance.
+      </p>
+    </div>
+
+    <!-- Dropdown Trigger Command Bar (5 Distinct Archetypes) -->
+    <section class="mb-10 p-4 sm:p-5 rounded-3xl bg-nexus-darkSurface/90 border border-slate-800 shadow-2xl backdrop-blur-xl relative z-30">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        
+        <div class="flex flex-wrap items-center gap-2.5">
+          
+          <!-- DROPDOWN 1: Cascading Submenu (macOS / Figma Style) -->
+          <div class="relative" id="dropdown-cascading-wrapper">
+            <button onclick="toggleDropdown('cascading', event)" id="btn-cascading" class="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-white text-xs font-semibold flex items-center space-x-2 transition-all shadow-sm" aria-haspopup="true" aria-expanded="false">
+              <i data-lucide="file-code-2" class="w-4 h-4 text-nexus-purpleLight"></i>
+              <span>File &amp; Actions</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform"></i>
+            </button>
+
+            <!-- Cascading Menu Container -->
+            <div id="menu-cascading" class="dropdown-glass hidden absolute left-0 mt-2 w-64 rounded-2xl p-1.5 z-40 animate-menu-in" role="menu" aria-orientation="vertical">
+              
+              <div class="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Document</div>
+              
+              <button onclick="triggerAction('New Project', '⌘N')" class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+                <span class="flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4 text-slate-400"></i> New Project</span>
+                <kbd class="text-[10px] font-mono text-slate-500">⌘N</kbd>
+              </button>
+
+              <button onclick="triggerAction('Duplicate Canvas', '⌘D')" class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+                <span class="flex items-center gap-2"><i data-lucide="copy" class="w-4 h-4 text-slate-400"></i> Duplicate</span>
+                <kbd class="text-[10px] font-mono text-slate-500">⌘D</kbd>
+              </button>
+
+              <!-- Nested Submenu Trigger: Export As -->
+              <div class="submenu-trigger relative group" id="submenu-export-wrapper" onmouseenter="openSubmenu('export')" onmouseleave="closeSubmenu('export')">
+                <button class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                  <span class="flex items-center gap-2"><i data-lucide="download" class="w-4 h-4 text-nexus-cyan"></i> Export Assets</span>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400"></i>
+                </button>
+
+                <!-- Submenu Flyout -->
+                <div id="submenu-export" class="dropdown-glass hidden absolute left-full top-0 ml-1.5 w-56 rounded-2xl p-1.5 z-50 animate-sub-in" role="menu">
+                  <div class="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Vector Formats</div>
+                  <button onclick="triggerAction('Export SVG (2x)', '⇧⌘S')" class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+                    <span>SVG Vector (2x)</span>
+                    <span class="text-[10px] font-mono text-nexus-cyan font-bold">XML</span>
+                  </button>
+                  <button onclick="triggerAction('Export PDF Vector', '⇧⌘P')" class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+                    <span>PDF Vector Print</span>
+                    <span class="text-[10px] font-mono text-amber-400 font-bold">PDF</span>
+                  </button>
+                  <div class="my-1 border-t border-slate-800"></div>
+                  <div class="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Design Tokens</div>
+                  <button onclick="triggerAction('Export Tailwind JSON Tokens', '⌘J')" class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+                    <span>Tailwind Tokens</span>
+                    <span class="text-[10px] font-mono text-nexus-purpleLight font-bold">JSON</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="my-1.5 border-t border-slate-800"></div>
+
+              <div class="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Version &amp; History</div>
+
+              <button onclick="triggerAction('Version History', '⌥⌘H')" class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+                <span class="flex items-center gap-2"><i data-lucide="history" class="w-4 h-4 text-slate-400"></i> Version History</span>
+                <kbd class="text-[10px] font-mono text-slate-500">⌥⌘H</kbd>
+              </button>
+
+              <div class="my-1.5 border-t border-slate-800"></div>
+
+              <button onclick="triggerAction('Archive Project', '⌫')" class="menu-item danger-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-rose-400 flex items-center justify-between" role="menuitem">
+                <span class="flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> Archive Canvas</span>
+                <kbd class="text-[10px] font-mono text-rose-500/80">⌫</kbd>
+              </button>
+
+            </div>
+          </div>
+
+          <!-- DROPDOWN 2: Searchable Combobox & Filter (Linear / Raycast Style) -->
+          <div class="relative" id="dropdown-combobox-wrapper">
+            <button onclick="toggleDropdown('combobox', event)" id="btn-combobox" class="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-white text-xs font-semibold flex items-center space-x-2 transition-all shadow-sm" aria-haspopup="true" aria-expanded="false">
+              <i data-lucide="users" class="w-4 h-4 text-nexus-cyan"></i>
+              <span id="combobox-label">Assignee (Alex R. +2)</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform"></i>
+            </button>
+
+            <!-- Combobox Container -->
+            <div id="menu-combobox" class="dropdown-glass hidden absolute left-0 mt-2 w-72 rounded-2xl p-2.5 z-40 animate-menu-in" role="menu">
+              
+              <!-- Search Input Field -->
+              <div class="relative mb-2">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3"></i>
+                <input type="text" id="combobox-search" placeholder="Filter teammates or roles..." onkeyup="filterCombobox(event)" class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-white placeholder-slate-500 outline-none focus:border-nexus-purple">
+              </div>
+
+              <!-- Options List -->
+              <div id="combobox-options" class="max-h-56 overflow-y-auto space-y-1">
+                
+                <div onclick="toggleAssignee('Alex Rivera (Lead Arch)')" class="menu-item p-2 rounded-xl flex items-center justify-between text-xs cursor-pointer" data-name="Alex Rivera Lead Arch">
+                  <div class="flex items-center space-x-2.5">
+                    <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">AR</div>
+                    <div>
+                      <div class="font-semibold text-white">Alex Rivera</div>
+                      <div class="text-[10px] text-slate-400 font-mono">Lead Architect</div>
+                    </div>
+                  </div>
+                  <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                </div>
+
+                <div onclick="toggleAssignee('Sarah Chen (Design Eng)')" class="menu-item p-2 rounded-xl flex items-center justify-between text-xs cursor-pointer" data-name="Sarah Chen Design Eng">
+                  <div class="flex items-center space-x-2.5">
+                    <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center text-[10px] font-bold text-white">SC</div>
+                    <div>
+                      <div class="font-semibold text-white">Sarah Chen</div>
+                      <div class="text-[10px] text-slate-400 font-mono">Design Engineer</div>
+                    </div>
+                  </div>
+                  <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                </div>
+
+                <div onclick="toggleAssignee('Marcus Vance (Frontend)')" class="menu-item p-2 rounded-xl flex items-center justify-between text-xs cursor-pointer" data-name="Marcus Vance Frontend">
+                  <div class="flex items-center space-x-2.5">
+                    <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-[10px] font-bold text-white">MV</div>
+                    <div>
+                      <div class="font-semibold text-white">Marcus Vance</div>
+                      <div class="text-[10px] text-slate-400 font-mono">Frontend UX</div>
+                    </div>
+                  </div>
+                  <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                </div>
+
+                <div onclick="toggleAssignee('Elena Rostova (AI Core)')" class="menu-item p-2 rounded-xl flex items-center justify-between text-xs cursor-pointer opacity-70" data-name="Elena Rostova AI Core">
+                  <div class="flex items-center space-x-2.5">
+                    <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-300">ER</div>
+                    <div>
+                      <div class="font-semibold text-slate-300">Elena Rostova</div>
+                      <div class="text-[10px] text-slate-500 font-mono">AI Infra</div>
+                    </div>
+                  </div>
+                  <span class="w-4 h-4 rounded border border-slate-700"></span>
+                </div>
+
+              </div>
+
+              <!-- Quick Selection Actions Footer -->
+              <div class="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <button onclick="selectAllAssignees()" class="hover:text-nexus-cyan">Select All</button>
+                <button onclick="clearAssignees()" class="hover:text-rose-400">Reset</button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- DROPDOWN 3: Mega-Menu (Stripe / Apple Multi-Column Style) -->
+          <div class="relative" id="dropdown-megamenu-wrapper">
+            <button onclick="toggleDropdown('megamenu', event)" id="btn-megamenu" class="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-white text-xs font-semibold flex items-center space-x-2 transition-all shadow-sm" aria-haspopup="true" aria-expanded="false">
+              <i data-lucide="layout-grid" class="w-4 h-4 text-amber-400"></i>
+              <span>Products Mega-Menu</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform"></i>
+            </button>
+
+            <!-- Mega-Menu Container (3-Column Bento Grid) -->
+            <div id="menu-megamenu" class="dropdown-glass hidden absolute left-0 sm:-left-24 mt-2 w-[340px] sm:w-[620px] rounded-3xl p-5 z-40 animate-menu-in" role="menu">
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                
+                <!-- Column 1: Core Engines -->
+                <div class="space-y-2">
+                  <div class="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Core Compute</div>
+                  
+                  <div onclick="triggerAction('Nexus Cloud Engines', 'Cloud Compute')" class="menu-item p-2.5 rounded-2xl cursor-pointer flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-xl bg-nexus-purple/20 text-nexus-purpleLight flex items-center justify-center shrink-0">
+                      <i data-lucide="cpu" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-white text-xs">Neural Inference Engine</div>
+                      <p class="text-[11px] text-slate-400">Distributed multi-GPU clusters</p>
+                    </div>
+                  </div>
+
+                  <div onclick="triggerAction('Nexus Vector DB', 'Database')" class="menu-item p-2.5 rounded-2xl cursor-pointer flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-xl bg-nexus-cyan/20 text-nexus-cyan flex items-center justify-center shrink-0">
+                      <i data-lucide="database" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-white text-xs">Vector Lakehouse</div>
+                      <p class="text-[11px] text-slate-400">Sub-millisecond similarity search</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Column 2: Developer Tooling -->
+                <div class="space-y-2">
+                  <div class="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Developer Tooling</div>
+                  
+                  <div onclick="triggerAction('SDK & REST APIs', 'Developer Docs')" class="menu-item p-2.5 rounded-2xl cursor-pointer flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                      <i data-lucide="terminal" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-white text-xs">TypeScript &amp; Python SDK</div>
+                      <p class="text-[11px] text-slate-400">Zero-latency WebSocket bindings</p>
+                    </div>
+                  </div>
+
+                  <div onclick="triggerAction('Observability Dashboard', 'Telemetry')" class="menu-item p-2.5 rounded-2xl cursor-pointer flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                      <i data-lucide="activity" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-white text-xs">Telemetry &amp; Tracing</div>
+                      <p class="text-[11px] text-slate-400">Full stack OpenTelemetry traces</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Mega-Menu Bottom Promo Banner -->
+              <div class="p-3 rounded-2xl bg-gradient-to-r from-nexus-purple/20 via-nexus-cardBg to-nexus-cyan/20 border border-slate-800 flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span class="text-white font-medium">Nexus 3.8 Ultra Model Launch Live</span>
+                </div>
+                <button onclick="triggerAction('View Release Notes', 'External Link')" class="text-nexus-cyan font-bold hover:underline">Read Changelog &rarr;</button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- DROPDOWN 4: User Profile & Org Switcher (Slack / GitHub Style) -->
+          <div class="relative" id="dropdown-user-wrapper">
+            <button onclick="toggleDropdown('user', event)" id="btn-user" class="px-3 py-1.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-white text-xs font-semibold flex items-center space-x-2 transition-all shadow-sm" aria-haspopup="true" aria-expanded="false">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-nexus-purple to-nexus-cyan flex items-center justify-center text-[10px] font-bold text-white shadow-inner">
+                KC
+              </div>
+              <span class="hidden sm:inline">Ketan Chandekar</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform"></i>
+            </button>
+
+            <!-- User Menu Container -->
+            <div id="menu-user" class="dropdown-glass hidden absolute right-0 mt-2 w-64 rounded-2xl p-2 z-40 animate-menu-in" role="menu">
+              
+              <!-- Account Header -->
+              <div class="p-2 border-b border-slate-800 mb-1">
+                <div class="font-bold text-white text-xs">Ketan Chandekar</div>
+                <div class="text-[11px] font-mono text-slate-400">ketan@synthetix.ai</div>
+                <div class="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-mono text-emerald-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>Active &bull; VIP Founder</span>
+                </div>
+              </div>
+
+              <!-- Workspace Switcher Section -->
+              <div class="px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Switch Organization</div>
+              
+              <div onclick="triggerAction('Switch Workspace: Synthetix Core', 'Org Change')" class="menu-item p-2 rounded-xl flex items-center justify-between text-xs cursor-pointer">
+                <div class="flex items-center space-x-2">
+                  <div class="w-5 h-5 rounded-md bg-nexus-purple text-white flex items-center justify-center font-bold text-[10px]">S</div>
+                  <span class="text-white font-medium">Synthetix Core</span>
+                </div>
+                <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i>
+              </div>
+
+              <div onclick="triggerAction('Switch Workspace: Acme Labs', 'Org Change')" class="menu-item p-2 rounded-xl flex items-center justify-between text-xs cursor-pointer">
+                <div class="flex items-center space-x-2">
+                  <div class="w-5 h-5 rounded-md bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-[10px]">A</div>
+                  <span class="text-slate-300">Acme Labs AI</span>
+                </div>
+              </div>
+
+              <div class="my-1 border-t border-slate-800"></div>
+
+              <button onclick="triggerAction('Account Settings', 'Preferences')" class="menu-item w-full px-2.5 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+                <span class="flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4 text-slate-400"></i> Settings &amp; Security</span>
+                <kbd class="text-[10px] font-mono text-slate-500">⌘,</kbd>
+              </button>
+
+              <button onclick="triggerAction('Sign Out of Synthetix', 'Session End')" class="menu-item danger-item w-full px-2.5 py-2 rounded-xl text-left text-xs font-medium text-rose-400 flex items-center justify-between" role="menuitem">
+                <span class="flex items-center gap-2"><i data-lucide="log-out" class="w-4 h-4"></i> Sign Out</span>
+                <kbd class="text-[10px] font-mono text-rose-500/80">⇧⌘Q</kbd>
+              </button>
+
+            </div>
+          </div>
+
+        </div>
+
+        <span class="text-xs font-mono text-slate-400 hidden lg:inline">
+          Click any button or right-click the canvas below
+        </span>
+
+      </div>
+    </section>
+
+    <!-- Interactive Workspace Canvas: Right-Click Context Menu Test Arena -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left 8 Cols: Interactive Right-Click Canvas -->
+      <div class="lg:col-span-8">
+        <div id="interactive-canvas" oncontextmenu="handleRightClick(event)" class="rounded-3xl bg-nexus-cardBg border-2 border-dashed border-slate-700/80 hover:border-nexus-purple/60 p-8 sm:p-12 min-h-[420px] flex flex-col items-center justify-center text-center relative overflow-hidden transition-all group select-none shadow-xl cursor-context-menu">
+          
+          <!-- Background Grid Matrix Lines -->
+          <div class="absolute inset-0 bg-[linear-gradient(to_right,#1f293d15_1px,transparent_1px),linear-gradient(to_bottom,#1f293d15_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+
+          <!-- Center Interactive Graphic -->
+          <div class="relative z-10 space-y-4 max-w-md">
+            <div class="w-16 h-16 rounded-3xl bg-nexus-purple/20 border border-nexus-purple/40 text-nexus-purpleLight mx-auto flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <i data-lucide="mouse-pointer-click" class="w-8 h-8"></i>
+            </div>
+            
+            <h2 class="font-display font-black text-2xl text-white">
+              Right-Click Anywhere on this Canvas
+            </h2>
+            
+            <p class="text-xs text-slate-400 leading-relaxed font-sans">
+              Demonstrates desktop OS-grade context menu positioning with automatic viewport edge detection and collision flips.
+            </p>
+
+            <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+              <span class="px-3 py-1 rounded-full bg-slate-950 text-slate-300 border border-slate-800 text-[11px] font-mono">
+                Smart Flip &bull; Edge Protected
+              </span>
+              <span class="px-3 py-1 rounded-full bg-slate-950 text-nexus-cyan border border-slate-800 text-[11px] font-mono">
+                Safe Mouse Diagonal Aim
+              </span>
+            </div>
+          </div>
+
+          <!-- Bottom Micro-Hint -->
+          <div class="absolute bottom-4 text-[10px] font-mono text-slate-500">
+            Touch devices: Tap and hold for 500ms to summon menu
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Right 4 Cols: Live Telemetry & Event Log Console -->
+      <div class="lg:col-span-4 space-y-4">
+        <div class="p-5 rounded-3xl bg-nexus-darkSurface border border-slate-800 shadow-xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+            <div class="flex items-center space-x-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+              <h3 class="font-display font-bold text-sm text-white">Action Telemetry Feed</h3>
+            </div>
+            <button onclick="clearTelemetry()" class="text-[10px] font-mono text-slate-400 hover:text-white">Clear</button>
+          </div>
+
+          <!-- Telemetry Feed Box -->
+          <div id="telemetry-log" class="space-y-2 max-h-80 overflow-y-auto font-mono text-[11px]">
+            <div class="p-2 rounded-xl bg-slate-950 border border-slate-800/80 text-slate-400">
+              <span class="text-nexus-cyan">[SYSTEM]</span> Ready. Select any dropdown or context action.
+            </div>
+          </div>
+        </div>
+
+        <!-- Heuristics Highlight Card -->
+        <div class="p-5 rounded-3xl bg-nexus-darkSurface/60 border border-slate-800/80 text-xs space-y-2">
+          <span class="font-mono text-[10px] text-nexus-purpleLight uppercase tracking-wider font-bold block">UX Engineering Heuristics</span>
+          <p class="text-slate-400 leading-relaxed">
+            Meets WCAG 2.1 AA specifications with full WAI-ARIA roles (<code class="text-slate-200">menu</code>, <code class="text-slate-200">menuitem</code>), focus-trapping, and <code class="text-slate-200">Esc</code> key dismissals.
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= FLOATING RIGHT-CLICK CONTEXT MENU ================= -->
+  <div id="context-menu" class="dropdown-glass fixed hidden rounded-2xl p-1.5 w-60 z-50 animate-menu-in select-none" role="menu">
+    <div class="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold">Canvas Selection</div>
+    
+    <button onclick="triggerAction('Inspect Element Properties', '⌥⌘I')" class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+      <span class="flex items-center gap-2"><i data-lucide="scan" class="w-4 h-4 text-slate-400"></i> Inspect Frame</span>
+      <kbd class="text-[10px] font-mono text-slate-500">⌥⌘I</kbd>
+    </button>
+
+    <button onclick="triggerAction('Copy CSS & Token Styles', '⌥⌘C')" class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+      <span class="flex items-center gap-2"><i data-lucide="code-2" class="w-4 h-4 text-nexus-cyan"></i> Copy Tailwind</span>
+      <kbd class="text-[10px] font-mono text-slate-500">⌥⌘C</kbd>
+    </button>
+
+    <div class="my-1 border-t border-slate-800"></div>
+
+    <button onclick="triggerAction('Send to Front Layer', '⌘]')" class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+      <span class="flex items-center gap-2"><i data-lucide="bring-to-front" class="w-4 h-4 text-slate-400"></i> Bring Forward</span>
+      <kbd class="text-[10px] font-mono text-slate-500">⌘]</kbd>
+    </button>
+
+    <button onclick="triggerAction('Send to Back Layer', '⌘[')" class="menu-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-slate-200 flex items-center justify-between" role="menuitem">
+      <span class="flex items-center gap-2"><i data-lucide="send-to-back" class="w-4 h-4 text-slate-400"></i> Send Backward</span>
+      <kbd class="text-[10px] font-mono text-slate-500">⌘[</kbd>
+    </button>
+
+    <div class="my-1 border-t border-slate-800"></div>
+
+    <button onclick="triggerAction('Delete Canvas Object', '⌫')" class="menu-item danger-item w-full px-3 py-2 rounded-xl text-left text-xs font-medium text-rose-400 flex items-center justify-between" role="menuitem">
+      <span class="flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> Delete</span>
+      <kbd class="text-[10px] font-mono text-rose-500/80">⌫</kbd>
+    </button>
+  </div>
+
+  <!-- ================= KEYBINDINGS MODAL ================= -->
+  <div id="keybindings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="keyboard" class="w-5 h-5 text-nexus-purpleLight"></i>
+          <h3 class="font-display font-bold text-lg text-white">Dropdown Keyboard Hotkeys</h3>
+        </div>
+        <button onclick="closeKeybindingsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2 text-xs font-mono">
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Navigate Menu Items</span>
+          <div class="space-x-1">
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-nexus-purpleLight border border-slate-700">&uarr;</kbd>
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-nexus-purpleLight border border-slate-700">&darr;</kbd>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Expand Nested Submenu</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-nexus-purpleLight border border-slate-700">&rarr;</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Collapse Submenu</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-nexus-purpleLight border border-slate-700">&larr;</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Select Item / Activate</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-nexus-purpleLight border border-slate-700">Enter / Space</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Close Active Dropdown</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-nexus-purpleLight border border-slate-700">Escape</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle Menu Sound Chimes</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-nexus-purpleLight border border-slate-700">M</kbd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vanilla JavaScript & Web Audio API Acoustic Engine -->
+  <script>
+    // State Management Architecture
+    const state = {
+      openDropdown: null,
+      openSubmenu: null,
+      isAudioEnabled: true,
+      audioCtx: null,
+      selectedAssignees: ['Alex Rivera (Lead Arch)', 'Sarah Chen (Design Eng)', 'Marcus Vance (Frontend)']
+    };
+
+    // A11y Live Announcer
+    function announceA11y(message) {
+      const el = document.getElementById('a11y-announcer');
+      if (el) el.textContent = message;
+    }
+
+    // ================= WEB AUDIO API SYNTHESIZER =================
+    function initAudioContext() {
+      if (!state.audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        state.audioCtx = new AudioContext();
+      }
+      if (state.audioCtx.state === 'suspended') {
+        state.audioCtx.resume();
+      }
+    }
+
+    // Sound 1: Menu Open Crisp Pop (650 Hz Sine)
+    function playOpenSound() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(650, now);
+        osc.frequency.exponentialRampToValueAtTime(850, now + 0.05);
+
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Sound 2: Action Trigger Confirmation Chime (Ascending Sine)
+    function playSelectSound() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(1046.50, now + 0.08);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Toggle Audio Handler
+    document.getElementById('toggle-audio-btn').addEventListener('click', () => {
+      state.isAudioEnabled = !state.isAudioEnabled;
+      const btn = document.getElementById('toggle-audio-btn');
+      const icon = document.getElementById('audio-icon');
+      if (state.isAudioEnabled) {
+        btn.querySelector('span').textContent = 'Audio: ON';
+        icon.classList.add('text-nexus-purpleLight');
+        playSelectSound();
+        announceA11y('Dropdown acoustic feedback enabled');
+      } else {
+        btn.querySelector('span').textContent = 'Audio: OFF';
+        icon.classList.remove('text-nexus-purpleLight');
+        announceA11y('Audio feedback muted');
+      }
+    });
+
+    // ================= DROPDOWN STATE CONTROLLER =================
+    function toggleDropdown(name, event) {
+      if (event) event.stopPropagation();
+
+      const menu = document.getElementById(`menu-${name}`);
+      const btn = document.getElementById(`btn-${name}`);
+
+      if (state.openDropdown === name) {
+        closeAllDropdowns();
+        return;
+      }
+
+      closeAllDropdowns();
+      state.openDropdown = name;
+      menu.classList.remove('hidden');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+
+      playOpenSound();
+      announceA11y(`Opened ${name} dropdown menu`);
+    }
+
+    function closeAllDropdowns() {
+      ['cascading', 'combobox', 'megamenu', 'user'].forEach(name => {
+        const menu = document.getElementById(`menu-${name}`);
+        const btn = document.getElementById(`btn-${name}`);
+        if (menu) menu.classList.add('hidden');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      });
+
+      closeSubmenu('export');
+      closeContextMenu();
+      state.openDropdown = null;
+    }
+
+    function openSubmenu(name) {
+      const sub = document.getElementById(`submenu-${name}`);
+      if (sub) {
+        sub.classList.remove('hidden');
+        state.openSubmenu = name;
+        playOpenSound();
+      }
+    }
+
+    function closeSubmenu(name) {
+      const sub = document.getElementById(`submenu-${name}`);
+      if (sub) {
+        sub.classList.add('hidden');
+        if (state.openSubmenu === name) state.openSubmenu = null;
+      }
+    }
+
+    // ================= RIGHT-CLICK CONTEXT MENU (COLLISION DETECTION) =================
+    function handleRightClick(e) {
+      e.preventDefault();
+      closeAllDropdowns();
+
+      const menu = document.getElementById('context-menu');
+      menu.classList.remove('hidden');
+
+      const menuWidth = 240;
+      const menuHeight = 220;
+      let x = e.clientX;
+      let y = e.clientY;
+
+      // Smart Edge Flipping
+      if (x + menuWidth > window.innerWidth) {
+        x = window.innerWidth - menuWidth - 16;
+      }
+      if (y + menuHeight > window.innerHeight) {
+        y = window.innerHeight - menuHeight - 16;
+      }
+
+      menu.style.left = `${x}px`;
+      menu.style.top = `${y}px`;
+
+      playOpenSound();
+      announceA11y('Opened context menu at cursor');
+    }
+
+    function closeContextMenu() {
+      const menu = document.getElementById('context-menu');
+      if (menu) menu.classList.add('hidden');
+    }
+
+    function handleGlobalClick(e) {
+      if (!e.target.closest('.dropdown-glass') && !e.target.closest('[onclick*="toggleDropdown"]')) {
+        closeAllDropdowns();
+      }
+    }
+
+    // ================= TELEMETRY ACTION TRIGGER LOGGER =================
+    function triggerAction(actionName, shortcut) {
+      playSelectSound();
+      closeAllDropdowns();
+
+      const log = document.getElementById('telemetry-log');
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0];
+
+      const entry = document.createElement('div');
+      entry.className = 'p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-slate-200 animate-menu-in';
+      entry.innerHTML = `
+        <span class="text-white font-semibold flex items-center gap-1.5">
+          <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> ${actionName}
+        </span>
+        <span class="text-slate-500 font-mono text-[10px]">${shortcut || timeStr}</span>
+      `;
+      log.prepend(entry);
+      lucide.createIcons();
+
+      announceA11y(`Action executed: ${actionName}`);
+    }
+
+    function clearTelemetry() {
+      const log = document.getElementById('telemetry-log');
+      log.innerHTML = `<div class="p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-500">[LOG CLEARED]</div>`;
+    }
+
+    // ================= COMBOBOX FILTER & SELECTION ENGINE =================
+    function filterCombobox(e) {
+      const query = e.target.value.toLowerCase();
+      document.querySelectorAll('#combobox-options .menu-item').forEach(item => {
+        const name = item.dataset.name.toLowerCase();
+        if (name.includes(query)) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+
+    function toggleAssignee(name) {
+      playSelectSound();
+      const idx = state.selectedAssignees.indexOf(name);
+      if (idx > -1) {
+        state.selectedAssignees.splice(idx, 1);
+      } else {
+        state.selectedAssignees.push(name);
+      }
+      updateComboboxLabel();
+      triggerAction(`Updated Assignees (${state.selectedAssignees.length})`, 'Filtered');
+    }
+
+    function selectAllAssignees() {
+      state.selectedAssignees = ['Alex Rivera (Lead Arch)', 'Sarah Chen (Design Eng)', 'Marcus Vance (Frontend)', 'Elena Rostova (AI Core)'];
+      updateComboboxLabel();
+      triggerAction('Selected All Assignees', 'Bulk Action');
+    }
+
+    function clearAssignees() {
+      state.selectedAssignees = [];
+      updateComboboxLabel();
+      triggerAction('Cleared Assignees', 'Reset');
+    }
+
+    function updateComboboxLabel() {
+      const label = document.getElementById('combobox-label');
+      if (state.selectedAssignees.length === 0) {
+        label.textContent = 'Assignee (Unassigned)';
+      } else if (state.selectedAssignees.length === 1) {
+        label.textContent = `Assignee (${state.selectedAssignees[0].split(' ')[0]})`;
+      } else {
+        label.textContent = `Assignee (${state.selectedAssignees[0].split(' ')[0]} +${state.selectedAssignees.length - 1})`;
+      }
+    }
+
+    // ================= KEYBINDINGS MODAL =================
+    function openKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.remove('hidden');
+    }
+
+    function closeKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.add('hidden');
+    }
+
+    // ================= KEYBOARD ACCESSIBILITY LISTENERS =================
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'Escape') {
+        closeAllDropdowns();
+        closeKeybindingsModal();
+      } else if (e.key.toLowerCase() === 'm') {
+        document.getElementById('toggle-audio-btn').click();
+      } else if (e.key === '?') {
+        openKeybindingsModal();
+      }
+    });
+
+    // Initialize on DOM Ready
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+
+</body>
+</html>
