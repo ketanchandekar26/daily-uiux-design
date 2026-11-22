@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 028: Contact Us & Interactive Help Center | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter, Space Grotesk, Outfit, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            support: {
+              purple: '#7C3AED',
+              purpleLight: '#A78BFA',
+              cyan: '#06B6D4',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E',
+              dark: '#05070E',
+              darkSurface: '#0B0F1B',
+              cardBg: '#101626',
+              border: '#1C253B'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          animation: {
+            'glow-pulse': 'glowPulse 3.5s ease-in-out infinite',
+            'chat-in': 'chatIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'radar-pulse': 'radarPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+          },
+          keyframes: {
+            glowPulse: {
+              '0%, 100%': { opacity: '0.4', filter: 'blur(40px)' },
+              '50%': { opacity: '0.8', filter: 'blur(60px)' }
+            },
+            chatIn: {
+              '0%': { opacity: '0', transform: 'scale(0.92) translateY(16px)' },
+              '100%': { opacity: '1', transform: 'scale(1) translateY(0)' }
+            },
+            radarPulse: {
+              '0%': { transform: 'scale(0.95)', opacity: '0.8' },
+              '50%': { transform: 'scale(1.25)', opacity: '0.2' },
+              '100%': { transform: 'scale(1.4)', opacity: '0' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0F1B;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1C253B;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #7C3AED;
+    }
+
+    /* Screen Reader Only Utility */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
+</head>
+<body class="bg-[#05070E] text-slate-100 min-h-screen font-sans selection:bg-support-purple selection:text-white antialiased overflow-x-hidden">
+
+  <!-- A11y Live Announcer for Screen Readers -->
+  <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Global Header Bar -->
+  <header class="border-b border-slate-800/80 bg-support-dark/90 backdrop-blur-xl sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & Navigation Hub Link -->
+      <div class="flex items-center space-x-3.5">
+        <a href="../index.html" class="flex items-center space-x-2 text-slate-400 hover:text-white transition-colors" title="Back to Challenge Master Hub">
+          <div class="w-8 h-8 rounded-lg bg-support-darkSurface border border-slate-700/60 flex items-center justify-center text-support-purpleLight">
+            <i data-lucide="headphones" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200 hidden sm:inline">Daily UI #028</span>
+        </a>
+        <div class="h-4 w-px bg-slate-800"></div>
+        <div class="flex items-center space-x-2">
+          <span class="font-display font-black text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-support-purpleLight to-support-cyan bg-clip-text text-transparent">
+            SYNTHETIX SUPPORT
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            LIVE HELP
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Audio Acoustic Chime Toggle -->
+        <button id="toggle-audio-btn" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-support-purpleLight hover:border-support-purple/40 transition-all text-xs flex items-center space-x-1.5" title="Toggle Sound Feedback (M)">
+          <i data-lucide="volume-2" id="audio-icon" class="w-4 h-4 text-support-purpleLight"></i>
+          <span class="hidden md:inline text-xs font-mono">Audio: ON</span>
+        </button>
+
+        <!-- Live Chat Quick Trigger -->
+        <button onclick="toggleLiveChat()" class="px-3 py-1.5 rounded-xl bg-support-purple/20 border border-support-purple/40 text-support-purpleLight hover:bg-support-purple/30 transition-all text-xs font-semibold flex items-center space-x-1.5" title="Open Live Concierge Chat (C)">
+          <i data-lucide="message-square" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Live Chat (C)</span>
+        </button>
+
+        <!-- Keyboard Shortcuts Modal -->
+        <button onclick="openKeybindingsModal()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors" title="Keyboard Shortcuts (?)">
+          <i data-lucide="keyboard" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Live System Health & SLA Status Ribbon -->
+  <div id="system-status-banner" class="bg-gradient-to-r from-support-darkSurface via-[#0F162A] to-support-darkSurface border-b border-slate-800/80 px-4 py-2.5 text-xs transition-colors">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center space-x-2.5">
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        </span>
+        <span class="font-mono font-bold text-white" id="status-title">All Systems Fully Operational</span>
+        <span class="text-slate-500 hidden sm:inline">&bull;</span>
+        <span class="text-slate-400 hidden sm:inline">Global API Uptime: <strong class="text-emerald-400 font-mono">99.99%</strong></span>
+        <span class="text-slate-500 hidden md:inline">&bull;</span>
+        <span class="text-slate-400 hidden md:inline">Average Ticket First Response: <strong class="text-support-cyan font-mono">&lt; 4 mins</strong></span>
+      </div>
+
+      <div class="flex items-center space-x-3 text-[11px] font-mono text-slate-400">
+        <button onclick="toggleIncidentSimulation()" id="btn-incident-sim" class="text-support-purpleLight hover:underline font-sans font-semibold">
+          Simulate Incident Alert
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Showcase Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative">
+    
+    <!-- Ambient Background Blur Glows -->
+    <div class="absolute top-16 left-1/2 -translate-x-1/2 w-96 h-96 bg-support-purple/15 rounded-full blur-3xl pointer-events-none -z-10 animate-glow-pulse"></div>
+    <div class="absolute top-44 left-1/4 w-80 h-80 bg-support-cyan/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="absolute top-44 right-1/4 w-80 h-80 bg-support-emerald/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+    <!-- Hero Title -->
+    <div class="text-center max-w-3xl mx-auto space-y-3 mb-10">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900/80 border border-slate-800 text-xs font-medium text-support-purpleLight">
+        <i data-lucide="sparkle" class="w-3.5 h-3.5"></i>
+        <span>24/7 Dedicated Technical Concierge</span>
+      </div>
+      <h1 class="font-display font-black text-3xl sm:text-5xl tracking-tight text-white">
+        How Can Our Team Help You Today?
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400 font-sans leading-relaxed">
+        Direct routing to senior distributed systems engineers, billing coordinators, and architects. Select a pathway below or open a prioritized engineering ticket.
+      </p>
+    </div>
+
+    <!-- Omnichannel Contact Channels Bento (3 Interactive Gateways) -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
+      
+      <!-- Channel 1: Live Chat Concierge -->
+      <div onclick="toggleLiveChat()" class="p-6 rounded-3xl bg-support-darkSurface/90 border border-slate-800 hover:border-support-purple/60 cursor-pointer transition-all shadow-xl group relative overflow-hidden backdrop-blur-md">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-10 h-10 rounded-2xl bg-support-purple/20 text-support-purpleLight flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i data-lucide="message-square-dot" class="w-5 h-5"></i>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span> Available Now
+          </span>
+        </div>
+        <h3 class="font-display font-bold text-lg text-white">Live Concierge Chat</h3>
+        <p class="text-xs text-slate-400 font-sans mt-1 mb-4">
+          Chat directly with on-duty engineers in real time. Ideal for quick debugging and configuration tips.
+        </p>
+        <span class="text-xs font-mono font-bold text-support-purpleLight flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+          Start Conversation &rarr;
+        </span>
+      </div>
+
+      <!-- Channel 2: Book an Architecture Advisory Call -->
+      <div onclick="openScheduleModal()" class="p-6 rounded-3xl bg-support-darkSurface/90 border border-slate-800 hover:border-support-cyan/60 cursor-pointer transition-all shadow-xl group relative overflow-hidden backdrop-blur-md">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-10 h-10 rounded-2xl bg-support-cyan/20 text-support-cyan flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i data-lucide="calendar" class="w-5 h-5"></i>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30">
+            1-on-1 Zoom
+          </span>
+        </div>
+        <h3 class="font-display font-bold text-lg text-white">Schedule Strategy Call</h3>
+        <p class="text-xs text-slate-400 font-sans mt-1 mb-4">
+          Book a 30-minute deep-dive video call with a Principal Solutions Architect for infrastructure reviews.
+        </p>
+        <span class="text-xs font-mono font-bold text-support-cyan flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+          View Available Slots &rarr;
+        </span>
+      </div>
+
+      <!-- Channel 3: Security & Enterprise Hotline -->
+      <div onclick="openHotlineModal()" class="p-6 rounded-3xl bg-support-darkSurface/90 border border-slate-800 hover:border-amber-400/60 cursor-pointer transition-all shadow-xl group relative overflow-hidden backdrop-blur-md">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            P1 Critical
+          </span>
+        </div>
+        <h3 class="font-display font-bold text-lg text-white">Security &amp; Emergency Hotline</h3>
+        <p class="text-xs text-slate-400 font-sans mt-1 mb-4">
+          Dedicated 24/7 emergency dispatch line for CVE security vulnerabilities and production outages.
+        </p>
+        <span class="text-xs font-mono font-bold text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+          Emergency Dispatch &rarr;
+        </span>
+      </div>
+
+    </section>
+
+    <!-- Interactive Ticket Submission & AI Deflection Grid -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-16">
+      
+      <!-- Left 7 Cols: The Priority Ticket Form with AI Deflection -->
+      <div class="lg:col-span-7 rounded-3xl bg-support-cardBg border border-slate-800 p-6 sm:p-8 shadow-2xl relative">
+        
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+          <div>
+            <span class="text-[10px] font-mono uppercase tracking-wider text-support-purpleLight font-bold">Standard Ticket Flow</span>
+            <h2 class="font-display font-extrabold text-xl sm:text-2xl text-white mt-0.5">Open Support Ticket</h2>
+          </div>
+          <span class="text-[11px] font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded-xl border border-slate-800">
+            SLA: &lt; 15 mins
+          </span>
+        </div>
+
+        <!-- The Ticket Form -->
+        <form id="contact-ticket-form" onsubmit="handleTicketSubmit(event)" class="space-y-4">
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Full Name -->
+            <div>
+              <label for="ticket-name" class="block text-xs font-medium text-slate-300 mb-1.5">Your Full Name</label>
+              <input type="text" id="ticket-name" required value="Ketan Chandekar" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-support-purple text-xs font-sans text-white outline-none transition-colors">
+            </div>
+
+            <!-- Email Address -->
+            <div>
+              <label for="ticket-email" class="block text-xs font-medium text-slate-300 mb-1.5">Work Email Address</label>
+              <input type="email" id="ticket-email" required value="ketan@synthetix.ai" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-support-purple text-xs font-sans text-white outline-none transition-colors">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Department Category -->
+            <div>
+              <label for="ticket-dept" class="block text-xs font-medium text-slate-300 mb-1.5">Department Category</label>
+              <select id="ticket-dept" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-support-purple text-xs font-sans text-white outline-none transition-colors">
+                <option value="infra">Core Cloud &amp; Distributed Infra</option>
+                <option value="api">API Gateways &amp; SDKs</option>
+                <option value="billing">Invoices, Billing &amp; Subscription</option>
+                <option value="security">Vulnerability &amp; Security Disclosure</option>
+              </select>
+            </div>
+
+            <!-- Severity SLA Level -->
+            <div>
+              <label for="ticket-severity" class="block text-xs font-medium text-slate-300 mb-1.5">Urgency / Severity</label>
+              <select id="ticket-severity" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-support-purple text-xs font-sans text-white outline-none transition-colors">
+                <option value="p3">P3 &bull; Standard Inquiry (24h SLA)</option>
+                <option value="p2">P2 &bull; High Priority Issue (2h SLA)</option>
+                <option value="p1">P1 &bull; Production System Down (&lt;15m SLA)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Subject Line with Dynamic AI Knowledge Deflection -->
+          <div class="relative">
+            <label for="ticket-subject" class="block text-xs font-medium text-slate-300 mb-1.5">
+              Subject Summary <span class="text-support-purpleLight font-mono text-[10px]">(AI Suggestion Active)</span>
+            </label>
+            <input type="text" id="ticket-subject" required placeholder="e.g. How to increase rate limit quota or webhook retries" onkeyup="handleSubjectInput(event)" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-support-purple text-xs font-sans text-white outline-none transition-colors">
+
+            <!-- AI Deflection Instant Suggestion Card -->
+            <div id="ai-deflection-card" class="hidden mt-2 p-3.5 rounded-2xl bg-slate-900 border border-support-purple/50 shadow-xl space-y-2 animate-chat-in">
+              <div class="flex items-center justify-between text-[11px] font-mono text-support-purpleLight">
+                <span class="flex items-center gap-1.5 font-bold">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-support-purpleLight"></i>
+                  Suggested Instant Solutions
+                </span>
+                <span class="text-slate-400">Save waiting time</span>
+              </div>
+              <div id="deflection-articles" class="space-y-1.5 text-xs text-slate-300 font-sans">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Description Textarea -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="ticket-body" class="block text-xs font-medium text-slate-300">Detailed Problem Description</label>
+              <span id="char-count" class="text-[10px] font-mono text-slate-500">0 / 2,000 chars</span>
+            </div>
+            <textarea id="ticket-body" rows="4" required placeholder="Describe steps to reproduce, request payload, error tracebacks, or invoice questions..." onkeyup="updateCharCount(event)" class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-support-purple text-xs font-sans text-white outline-none transition-colors"></textarea>
+          </div>
+
+          <!-- Attachment Drag & Drop Area -->
+          <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-dashed border-slate-800 hover:border-slate-700 flex items-center justify-center space-x-2 text-xs text-slate-400 cursor-pointer transition-colors" onclick="simulateFileUpload()">
+            <i data-lucide="paperclip" class="w-4 h-4 text-support-purpleLight"></i>
+            <span id="upload-status-text">Attach log file, screenshot, or HAR trace (Max 25MB)</span>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="submit-ticket-btn" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-support-purple to-support-cyan hover:opacity-95 text-white font-display font-bold text-xs tracking-wide shadow-xl shadow-support-purple/20 transition-all flex items-center justify-center gap-2">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            <span>Submit Engineering Ticket</span>
+          </button>
+
+        </form>
+
+      </div>
+
+      <!-- Right 5 Cols: Global Offices, Live World Clocks & Resolution Tracker -->
+      <div class="lg:col-span-5 space-y-6">
+
+        <!-- Card: Real-time Ticket Resolution Status (Updates on Submit) -->
+        <div id="active-ticket-card" class="p-6 rounded-3xl bg-support-cardBg border border-slate-800 shadow-xl backdrop-blur-md">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+            <div class="flex items-center space-x-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+              <h3 class="font-display font-bold text-sm text-white">Live Ticket Status</h3>
+            </div>
+            <span id="ticket-id-badge" class="text-[11px] font-mono font-bold text-support-cyan">#NX-88214</span>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Assigned Engineer:</span>
+              <span id="assigned-engineer-name" class="font-semibold text-white flex items-center gap-1.5">
+                <span class="w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center text-[9px] font-bold">AR</span>
+                Alex Rivera (Lead DevOps)
+              </span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400">
+              <span>SLA Target:</span>
+              <span id="sla-countdown" class="font-mono text-emerald-400 font-bold">14m 22s remaining</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Status:</span>
+              <span id="ticket-stage-pill" class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[10px] font-bold border border-emerald-500/20">
+                ACTIVE IN REVIEW
+              </span>
+            </div>
+          </div>
+
+          <!-- Progression Stepper -->
+          <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-3 gap-2 text-center text-[10px] font-mono">
+            <div class="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold">1. Received</div>
+            <div class="p-1.5 rounded-xl bg-support-purple/20 text-support-purpleLight font-bold animate-pulse">2. Triage</div>
+            <div class="p-1.5 rounded-xl bg-slate-900 text-slate-500">3. Resolved</div>
+          </div>
+        </div>
+
+        <!-- Card: Global Physical Offices & Live World Clocks -->
+        <div class="p-6 rounded-3xl bg-support-cardBg border border-slate-800 shadow-xl backdrop-blur-md">
+          <div class="flex items-center space-x-2.5 mb-4">
+            <div class="w-8 h-8 rounded-xl bg-support-purple/20 text-support-purpleLight flex items-center justify-center">
+              <i data-lucide="globe" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="font-display font-bold text-sm text-white">Global Engineering Hubs</h3>
+              <p class="text-[11px] font-mono text-slate-400">Follow-the-Sun Engineering Rotation</p>
+            </div>
+          </div>
+
+          <div class="space-y-3 font-mono text-xs">
+            
+            <!-- San Francisco HQ -->
+            <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
+              <div>
+                <span class="text-white font-bold block">San Francisco (HQ)</span>
+                <span class="text-[11px] text-slate-400">Market St &bull; Level 28</span>
+              </div>
+              <div class="text-right">
+                <span id="clock-sf" class="text-white font-bold block text-sm">18:16 PST</span>
+                <span class="text-[10px] text-emerald-400 font-semibold">&bull; OPEN NOW</span>
+              </div>
+            </div>
+
+            <!-- London EMEA -->
+            <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
+              <div>
+                <span class="text-white font-bold block">London (EMEA)</span>
+                <span class="text-[11px] text-slate-400">Shoreditch Tech City</span>
+              </div>
+              <div class="text-right">
+                <span id="clock-london" class="text-white font-bold block text-sm">02:16 GMT</span>
+                <span class="text-[10px] text-amber-400 font-semibold">&bull; ON-CALL ONLY</span>
+              </div>
+            </div>
+
+            <!-- Tokyo APAC -->
+            <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
+              <div>
+                <span class="text-white font-bold block">Tokyo (APAC)</span>
+                <span class="text-[11px] text-slate-400">Roppongi Hills Mori</span>
+              </div>
+              <div class="text-right">
+                <span id="clock-tokyo" class="text-white font-bold block text-sm">11:16 JST</span>
+                <span class="text-[10px] text-emerald-400 font-semibold">&bull; OPEN NOW</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= FLOATING LIVE CHAT DOCK (INTERCOM / LINEAR STYLE) ================= -->
+  <div id="live-chat-dock" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    
+    <!-- Expandable Chat Window -->
+    <div id="live-chat-window" class="hidden w-[360px] sm:w-[380px] h-[520px] rounded-3xl bg-support-darkSurface/95 border border-slate-800 shadow-2xl backdrop-blur-2xl flex flex-col justify-between overflow-hidden mb-3.5 animate-chat-in">
+      
+      <!-- Chat Header -->
+      <div class="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="relative">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-support-purple to-support-cyan flex items-center justify-center font-bold text-white text-xs shadow-inner">
+              SC
+            </div>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 absolute -bottom-0.5 -right-0.5 border-2 border-slate-900"></span>
+          </div>
+          <div>
+            <h4 class="font-display font-bold text-sm text-white">Sarah Chen</h4>
+            <p class="text-[10px] font-mono text-emerald-400">Senior Support Engineer &bull; Online</p>
+          </div>
+        </div>
+        <button onclick="toggleLiveChat()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Chat Messages Scroll Area -->
+      <div id="chat-messages-container" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs font-sans">
+        
+        <!-- Bot Welcome Message -->
+        <div class="flex items-start space-x-2 max-w-[85%]">
+          <div class="w-6 h-6 rounded-full bg-support-purple text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">AI</div>
+          <div class="p-3 rounded-2xl rounded-tl-sm bg-slate-900 border border-slate-800 text-slate-200">
+            Hello Ketan! 👋 I’m monitoring active cloud health. What can I debug or look up for you?
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Canned Quick Replies -->
+      <div class="px-3 py-1.5 border-t border-slate-800 flex gap-1.5 overflow-x-auto no-scrollbar text-[11px] font-mono">
+        <button onclick="sendQuickReply('Check API Rate Limits')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-support-purpleLight border border-slate-800 shrink-0">API Quotas</button>
+        <button onclick="sendQuickReply('Request Invoice PDF')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-support-cyan border border-slate-800 shrink-0">Invoicing</button>
+        <button onclick="sendQuickReply('Report Incident')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-rose-400 border border-slate-800 shrink-0">Outage Alert</button>
+      </div>
+
+      <!-- Chat Input Field -->
+      <form onsubmit="handleChatSubmit(event)" class="p-3 bg-slate-950 border-t border-slate-800 flex items-center space-x-2">
+        <input type="text" id="chat-input" placeholder="Type your message..." class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-sans text-white placeholder-slate-500 outline-none focus:border-support-purple">
+        <button type="submit" class="p-2 rounded-xl bg-support-purple text-white hover:bg-purple-600 transition-colors">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+    </div>
+
+    <!-- Floating Dock Trigger Pill -->
+    <button onclick="toggleLiveChat()" class="px-4 py-3 rounded-full bg-gradient-to-r from-support-purple to-support-cyan text-white font-display font-bold text-xs flex items-center space-x-2 shadow-2xl hover:scale-105 active:scale-95 transition-all">
+      <i data-lucide="message-square" class="w-4 h-4"></i>
+      <span>Live Support Chat</span>
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+    </button>
+
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Modal 1: 1-on-1 Architecture Schedule Modal -->
+  <div id="schedule-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="calendar" class="w-5 h-5 text-support-cyan"></i>
+          <h3 class="font-display font-bold text-lg text-white">Book 30-Min Architecture Call</h3>
+        </div>
+        <button onclick="closeScheduleModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 mb-4">Select an open slot with our Principal Solutions Architecture team.</p>
+
+      <div class="grid grid-cols-2 gap-2 mb-4 font-mono text-xs">
+        <button onclick="confirmSlot('Tomorrow, 10:00 AM PST')" class="p-3 rounded-xl bg-slate-950 hover:bg-support-purple/20 border border-slate-800 text-left text-white font-bold">
+          <span>Tomorrow &bull; 10:00 AM</span>
+          <span class="text-[10px] text-emerald-400 block font-normal">Available</span>
+        </button>
+        <button onclick="confirmSlot('Tomorrow, 2:30 PM PST')" class="p-3 rounded-xl bg-slate-950 hover:bg-support-purple/20 border border-slate-800 text-left text-white font-bold">
+          <span>Tomorrow &bull; 2:30 PM</span>
+          <span class="text-[10px] text-emerald-400 block font-normal">Available</span>
+        </button>
+        <button onclick="confirmSlot('Thursday, 11:15 AM PST')" class="p-3 rounded-xl bg-slate-950 hover:bg-support-purple/20 border border-slate-800 text-left text-white font-bold">
+          <span>Thursday &bull; 11:15 AM</span>
+          <span class="text-[10px] text-emerald-400 block font-normal">Available</span>
+        </button>
+        <button onclick="confirmSlot('Friday, 4:00 PM PST')" class="p-3 rounded-xl bg-slate-950 hover:bg-support-purple/20 border border-slate-800 text-left text-white font-bold">
+          <span>Friday &bull; 4:00 PM</span>
+          <span class="text-[10px] text-emerald-400 block font-normal">Available</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Emergency Dispatch Hotline Modal -->
+  <div id="hotline-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-amber-500/40 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="phone-call" class="w-5 h-5 text-amber-400"></i>
+          <h3 class="font-display font-bold text-lg text-white">Emergency P1 Hotline</h3>
+        </div>
+        <button onclick="closeHotlineModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-300 mb-4 font-sans">
+        Reserved for active cluster outages, database corruption, or urgent security disclosure.
+      </p>
+
+      <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs font-mono">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400">North America Toll-Free:</span>
+          <span class="text-white font-bold">+1 (800) 555-0199</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400">EMEA Emergency Dispatch:</span>
+          <span class="text-white font-bold">+44 20 7946 0991</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400">APAC Operations Desk:</span>
+          <span class="text-white font-bold">+81 3 5555 0142</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Keybindings Guide -->
+  <div id="keybindings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="keyboard" class="w-5 h-5 text-support-purpleLight"></i>
+          <h3 class="font-display font-bold text-lg text-white">Keyboard Shortcuts</h3>
+        </div>
+        <button onclick="closeKeybindingsModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2 text-xs font-mono">
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle Live Support Chat</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-support-purpleLight border border-slate-700">C</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle Audio Chimes</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-support-purpleLight border border-slate-700">M</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Simulate Incident Warning</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-support-purpleLight border border-slate-700">I</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Close Modals / Overlays</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-support-purpleLight border border-slate-700">Esc</kbd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Banner -->
+  <div id="support-toast" class="fixed top-20 right-8 z-50 bg-slate-900 border-2 border-support-purple text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-3 transition-all duration-300 translate-y-[-100px] opacity-0 pointer-events-none">
+    <div class="w-8 h-8 rounded-lg bg-support-purple/20 flex items-center justify-center text-support-purpleLight">
+      <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
+    </div>
+    <span id="toast-message" class="text-xs font-semibold">Action confirmed</span>
+  </div>
+
+  <!-- Vanilla JavaScript & Web Audio API Acoustic Engine -->
+  <script>
+    // State Management Architecture
+    const state = {
+      isAudioEnabled: true,
+      isChatOpen: false,
+      isIncidentSimulated: false,
+      activeTicketCount: 88214,
+      audioCtx: null
+    };
+
+    // A11y Live Announcer
+    function announceA11y(message) {
+      const el = document.getElementById('a11y-announcer');
+      if (el) el.textContent = message;
+    }
+
+    // ================= WEB AUDIO API SYNTHESIZER =================
+    function initAudioContext() {
+      if (!state.audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        state.audioCtx = new AudioContext();
+      }
+      if (state.audioCtx.state === 'suspended') {
+        state.audioCtx.resume();
+      }
+    }
+
+    // Sound 1: Support Ticket Submit Celebration (Ascending Two-Tone Chime)
+    function playTicketChime() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, now); // D5
+        osc.frequency.setValueAtTime(880.00, now + 0.12); // A5
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.45);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Sound 2: Chat Message Pop
+    function playChatPop() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(700, now);
+        osc.frequency.exponentialRampToValueAtTime(450, now + 0.06);
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Audio Toggle
+    document.getElementById('toggle-audio-btn').addEventListener('click', () => {
+      state.isAudioEnabled = !state.isAudioEnabled;
+      const btn = document.getElementById('toggle-audio-btn');
+      const icon = document.getElementById('audio-icon');
+      if (state.isAudioEnabled) {
+        btn.querySelector('span').textContent = 'Audio: ON';
+        icon.classList.add('text-support-purpleLight');
+        playTicketChime();
+        announceA11y('Acoustic chimes enabled');
+      } else {
+        btn.querySelector('span').textContent = 'Audio: OFF';
+        icon.classList.remove('text-support-purpleLight');
+        announceA11y('Acoustic chimes muted');
+      }
+    });
+
+    // ================= DYNAMIC AI KNOWLEDGE DEFLECTION =================
+    const KNOWLEDGE_BASE = [
+      {
+        keyword: 'rate limit',
+        articles: [
+          'Docs: Increasing API rate limit headers from 1,000 to 10,000 req/min',
+          'Guide: Implementing Exponential Backoff & Jitter in Python SDK'
+        ]
+      },
+      {
+        keyword: 'invoice',
+        articles: [
+          'Billing: Instant self-serve VAT invoice generator from settings',
+          'Guide: Updating company tax ID and billing email'
+        ]
+      },
+      {
+        keyword: 'webhook',
+        articles: [
+          'Troubleshooting: Resolving 403 Invalid Signature on Webhooks',
+          'Reference: Webhook automatic retry intervals & payload schemas'
+        ]
+      },
+      {
+        keyword: 'outage',
+        articles: [
+          'Incident Report: Cluster us-east-1 maintenance window status',
+          'Telemetry: Real-time region failover health checks'
+        ]
+      }
+    ];
+
+    function handleSubjectInput(e) {
+      const val = e.target.value.toLowerCase();
+      const card = document.getElementById('ai-deflection-card');
+      const container = document.getElementById('deflection-articles');
+
+      let matched = null;
+      for (const item of KNOWLEDGE_BASE) {
+        if (val.includes(item.keyword)) {
+          matched = item;
+          break;
+        }
+      }
+
+      if (matched) {
+        container.innerHTML = matched.articles.map(art => `
+          <div class="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 cursor-pointer flex items-center justify-between text-slate-200">
+            <span class="flex items-center gap-2"><i data-lucide="book-open" class="w-3.5 h-3.5 text-support-cyan"></i> ${art}</span>
+            <span class="text-[10px] text-support-purpleLight font-bold">View &rarr;</span>
+          </div>
+        `).join('');
+        card.classList.remove('hidden');
+        lucide.createIcons();
+      } else {
+        card.classList.add('hidden');
+      }
+    }
+
+    function updateCharCount(e) {
+      const len = e.target.value.length;
+      document.getElementById('char-count').textContent = `${len} / 2,000 chars`;
+    }
+
+    // ================= TICKET SUBMISSION WORKFLOW =================
+    function handleTicketSubmit(e) {
+      e.preventDefault();
+      playTicketChime();
+
+      state.activeTicketCount++;
+      const ticketId = `#NX-${state.activeTicketCount}`;
+      const name = document.getElementById('ticket-name').value;
+      const subject = document.getElementById('ticket-subject').value;
+
+      document.getElementById('ticket-id-badge').textContent = ticketId;
+      document.getElementById('ticket-stage-pill').textContent = 'P1 TRIAGE DISPATCHED';
+      document.getElementById('sla-countdown').textContent = '14m 59s remaining';
+
+      showToast(`Ticket ${ticketId} created! Confirmation dispatched to email.`);
+      announceA11y(`Support ticket created with ID ${ticketId}. Our team has been notified.`);
+      document.getElementById('contact-ticket-form').reset();
+      document.getElementById('ai-deflection-card').classList.add('hidden');
+    }
+
+    function simulateFileUpload() {
+      playChatPop();
+      const label = document.getElementById('upload-status-text');
+      label.innerHTML = '<span class="text-emerald-400 font-bold">&check; sys-trace-error.log (1.4MB) attached</span>';
+      showToast('File sys-trace-error.log attached successfully');
+    }
+
+    // ================= INCIDENT SIMULATION TOGGLE =================
+    function toggleIncidentSimulation() {
+      state.isIncidentSimulated = !state.isIncidentSimulated;
+      playChatPop();
+
+      const banner = document.getElementById('system-status-banner');
+      const title = document.getElementById('status-title');
+      const btn = document.getElementById('btn-incident-sim');
+
+      if (state.isIncidentSimulated) {
+        banner.className = 'bg-rose-950/80 border-b border-rose-500/50 px-4 py-2.5 text-xs transition-colors';
+        title.innerHTML = '<span class="text-rose-400 font-bold">Investigating US-East Latency Spike &bull; Incident #INC-4412</span>';
+        btn.textContent = 'Resolve Incident';
+        announceA11y('Simulated incident banner displayed: US-East latency spike.');
+      } else {
+        banner.className = 'bg-gradient-to-r from-support-darkSurface via-[#0F162A] to-support-darkSurface border-b border-slate-800/80 px-4 py-2.5 text-xs transition-colors';
+        title.innerHTML = 'All Systems Fully Operational';
+        btn.textContent = 'Simulate Incident Alert';
+        announceA11y('Incident cleared. All systems operational.');
+      }
+    }
+
+    // ================= LIVE CHAT CONCIERGE =================
+    function toggleLiveChat() {
+      state.isChatOpen = !state.isChatOpen;
+      const windowEl = document.getElementById('live-chat-window');
+      playChatPop();
+
+      if (state.isChatOpen) {
+        windowEl.classList.remove('hidden');
+        announceA11y('Opened live support chat window');
+        document.getElementById('chat-input').focus();
+      } else {
+        windowEl.classList.add('hidden');
+        announceA11y('Closed live support chat window');
+      }
+    }
+
+    function handleChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendChatMessage('user', text);
+      input.value = '';
+      playChatPop();
+
+      setTimeout(() => {
+        appendChatMessage('agent', "Thanks for flagging this! I'm reviewing your active node telemetry now. One moment while I pull the cluster trace.");
+        playTicketChime();
+      }, 900);
+    }
+
+    function sendQuickReply(replyText) {
+      appendChatMessage('user', replyText);
+      playChatPop();
+      setTimeout(() => {
+        appendChatMessage('agent', `I can help with "${replyText}". Let me generate the secure authorization token for your session.`);
+        playTicketChime();
+      }, 800);
+    }
+
+    function appendChatMessage(sender, message) {
+      const container = document.getElementById('chat-messages-container');
+      const div = document.createElement('div');
+      
+      if (sender === 'user') {
+        div.className = 'flex items-start justify-end space-x-2';
+        div.innerHTML = `
+          <div class="p-3 rounded-2xl rounded-tr-sm bg-support-purple text-white text-xs max-w-[85%]">
+            ${message}
+          </div>
+        `;
+      } else {
+        div.className = 'flex items-start space-x-2 max-w-[85%]';
+        div.innerHTML = `
+          <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-support-purple to-support-cyan text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">SC</div>
+          <div class="p-3 rounded-2xl rounded-tl-sm bg-slate-900 border border-slate-800 text-slate-200 text-xs">
+            ${message}
+          </div>
+        `;
+      }
+
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // ================= MODAL CONTROLS =================
+    function openScheduleModal() {
+      document.getElementById('schedule-modal').classList.remove('hidden');
+      playChatPop();
+    }
+    function closeScheduleModal() {
+      document.getElementById('schedule-modal').classList.add('hidden');
+    }
+    function confirmSlot(slot) {
+      playTicketChime();
+      closeScheduleModal();
+      showToast(`Call confirmed for ${slot}! Calendar invite dispatched.`);
+    }
+
+    function openHotlineModal() {
+      document.getElementById('hotline-modal').classList.remove('hidden');
+      playChatPop();
+    }
+    function closeHotlineModal() {
+      document.getElementById('hotline-modal').classList.add('hidden');
+    }
+
+    function openKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.remove('hidden');
+    }
+    function closeKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('support-toast');
+      document.getElementById('toast-message').textContent = msg;
+      toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-[-100px]', 'opacity-0');
+      }, 3500);
+    }
+
+    // ================= RUNNING WORLD CLOCKS =================
+    setInterval(() => {
+      const now = new Date();
+      const sfTime = now.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', hour12: false }) + ' PST';
+      const lonTime = now.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false }) + ' GMT';
+      const tokTime = now.toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false }) + ' JST';
+
+      const sfEl = document.getElementById('clock-sf');
+      const lonEl = document.getElementById('clock-london');
+      const tokEl = document.getElementById('clock-tokyo');
+
+      if (sfEl) sfEl.textContent = sfTime;
+      if (lonEl) lonEl.textContent = lonTime;
+      if (tokEl) tokEl.textContent = tokTime;
+    }, 1000);
+
+    // ================= KEYBOARD ACCESSIBILITY LISTENERS =================
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'Escape') {
+        closeScheduleModal();
+        closeHotlineModal();
+        closeKeybindingsModal();
+        if (state.isChatOpen) toggleLiveChat();
+      } else if (e.key.toLowerCase() === 'c') {
+        toggleLiveChat();
+      } else if (e.key.toLowerCase() === 'm') {
+        document.getElementById('toggle-audio-btn').click();
+      } else if (e.key.toLowerCase() === 'i') {
+        toggleIncidentSimulation();
+      } else if (e.key === '?') {
+        openKeybindingsModal();
+      }
+    });
+
+    // Initialize on Page Load
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+
+</body>
+</html>
