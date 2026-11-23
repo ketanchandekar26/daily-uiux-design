@@ -47,7 +47,8 @@ Every daily challenge is executed under four core engineering pillars:
 | **026** | **Subscribe & Membership Subscription Suite** | Growth / Monetization | [Day 026 Prototype](./day-026-subscribe/index.html) | ✅ Completed |
 | **027** | **Dropdown Menu & Contextual Action Suite** | Navigation / Systems | [Day 027 Prototype](./day-027-dropdown-menu/index.html) | ✅ Completed |
 | **028** | **Contact Us & Interactive Help Center** | Support / Communication | [Day 028 Prototype](./day-028-contact-us/index.html) | ✅ Completed |
-| **029** | Interactive Map & Geospatial Route Explorer | Maps / Navigation | *Upcoming* | ⏳ Queued |
+| **029** | **Interactive Map & Geospatial Route Explorer** | Maps / Navigation | [Day 029 Prototype](./day-029-map/index.html) | ✅ Completed |
+| **030** | Dynamic Pricing Calculator & Plan Customizer | SaaS / Billing | *Upcoming* | ⏳ Queued |
 
 ---
 

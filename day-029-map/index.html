@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 029: Interactive Map & Geospatial Route Explorer | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter, Space Grotesk, Outfit, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            geomap: {
+              purple: '#7C3AED',
+              purpleLight: '#A78BFA',
+              cyan: '#06B6D4',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E',
+              dark: '#05070E',
+              darkSurface: '#0A0E1A',
+              cardBg: '#0F1424',
+              border: '#1C2438'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          animation: {
+            'radar-sweep': 'radarSweep 3s linear infinite',
+            'beacon-pulse': 'beaconPulse 1.8s cubic-bezier(0, 0, 0.2, 1) infinite',
+            'dash-move': 'dashMove 1.5s linear infinite',
+          },
+          keyframes: {
+            radarSweep: {
+              '0%': { transform: 'rotate(0deg)' },
+              '100%': { transform: 'rotate(360deg)' }
+            },
+            beaconPulse: {
+              '0%': { transform: 'scale(0.95)', opacity: '0.9' },
+              '50%': { transform: 'scale(1.35)', opacity: '0.3' },
+              '100%': { transform: 'scale(1.5)', opacity: '0' }
+            },
+            dashMove: {
+              '0%': { strokeDashoffset: '24' },
+              '100%': { strokeDashoffset: '0' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Glassmorphic Map HUD Containers */
+    .hud-glass {
+      background: rgba(10, 14, 26, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7),
+                  0 0 0 1px rgba(6, 182, 212, 0.15);
+    }
+
+    /* Interactive Map Canvas Cursor */
+    .map-grabbable {
+      cursor: grab;
+    }
+    .map-grabbable:active {
+      cursor: grabbing;
+    }
+
+    /* Screen Reader Only Utility */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0A0E1A;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1C2438;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #06B6D4;
+    }
+  </style>
+</head>
+<body class="bg-[#05070E] text-slate-100 min-h-screen font-sans selection:bg-geomap-cyan selection:text-slate-950 antialiased overflow-hidden">
+
+  <!-- A11y Live Announcer for Screen Readers -->
+  <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Global Header Bar -->
+  <header class="border-b border-slate-800/80 bg-geomap-dark/90 backdrop-blur-xl absolute top-0 left-0 right-0 z-40 h-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+      
+      <!-- Brand & Hub Nav -->
+      <div class="flex items-center space-x-3.5">
+        <a href="../index.html" class="flex items-center space-x-2 text-slate-400 hover:text-white transition-colors" title="Back to Challenge Master Hub">
+          <div class="w-8 h-8 rounded-lg bg-geomap-darkSurface border border-slate-700/60 flex items-center justify-center text-geomap-cyan">
+            <i data-lucide="map" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200 hidden sm:inline">Daily UI #029</span>
+        </a>
+        <div class="h-4 w-px bg-slate-800"></div>
+        <div class="flex items-center space-x-2">
+          <span class="font-display font-black text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-geomap-cyan to-geomap-purpleLight bg-clip-text text-transparent">
+            NEXUS GEOMAP STUDIO
+          </span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest bg-geomap-cyan/15 text-geomap-cyan border border-geomap-cyan/30">
+            VECTOR 3D
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Actions Toolbar -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Audio Synthesizer Chime Toggle -->
+        <button id="toggle-audio-btn" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-geomap-cyan hover:border-geomap-cyan/40 transition-all text-xs flex items-center space-x-1.5" title="Toggle Navigation Chimes (M)">
+          <i data-lucide="volume-2" id="audio-icon" class="w-4 h-4 text-geomap-cyan"></i>
+          <span class="hidden md:inline text-xs font-mono">Audio: ON</span>
+        </button>
+
+        <!-- Route Simulation Trigger -->
+        <button onclick="toggleRouteSimulation()" id="btn-sim-route" class="px-3.5 py-1.5 rounded-xl bg-geomap-cyan/20 border border-geomap-cyan/40 text-geomap-cyan hover:bg-geomap-cyan/30 transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-sm" title="Simulate Turn-by-Turn GPS Vehicle (R)">
+          <i data-lucide="navigation-2" class="w-4 h-4"></i>
+          <span class="hidden sm:inline" id="btn-sim-text">Simulate Route (R)</span>
+        </button>
+
+        <!-- Keyboard Shortcuts Modal -->
+        <button onclick="openKeybindingsModal()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors" title="Keyboard Shortcuts (?)">
+          <i data-lucide="keyboard" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Fullscreen Interactive Vector Map Viewport Container -->
+  <div id="map-viewport" class="relative w-full h-screen pt-16 map-grabbable select-none overflow-hidden bg-[#070B16]">
+    
+    <!-- SVG Vector Map Graphic (Detailed High-Resolution City & Transit Grids) -->
+    <svg id="vector-map-svg" class="w-full h-full transition-transform duration-300" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      
+      <!-- Water Bodies / Ocean & Bay Polygons -->
+      <path d="M 0,0 L 420,0 C 450,180 560,340 510,580 C 470,760 380,880 340,1000 L 0,1000 Z" fill="#040814" stroke="#081024" stroke-width="2"/>
+      <path d="M 1200,0 C 1260,180 1340,320 1310,520 C 1280,720 1380,860 1440,1000 L 1600,1000 L 1600,0 Z" fill="#040814" stroke="#081024" stroke-width="2"/>
+
+      <!-- Coastline Ambient Radar Glow Ring -->
+      <path d="M 420,0 C 450,180 560,340 510,580 C 470,760 380,880 340,1000" fill="none" stroke="#06B6D4" stroke-width="1.5" stroke-opacity="0.25"/>
+
+      <!-- Topographic Contour Elevation Isobars -->
+      <g fill="none" stroke="#1E2840" stroke-width="1" stroke-dasharray="2,3" opacity="0.6">
+        <ellipse cx="880" cy="380" rx="220" ry="140"/>
+        <ellipse cx="880" cy="380" rx="160" ry="100"/>
+        <ellipse cx="880" cy="380" rx="100" ry="60"/>
+        <ellipse cx="880" cy="380" rx="50" ry="30"/>
+
+        <ellipse cx="720" cy="740" rx="180" ry="110"/>
+        <ellipse cx="720" cy="740" rx="120" ry="70"/>
+      </g>
+
+      <!-- Urban Park Nature Reserve Polygons -->
+      <polygon points="620,180 780,160 840,280 690,320 590,240" fill="#061A18" stroke="#10B981" stroke-width="1" stroke-opacity="0.3"/>
+      <polygon points="980,620 1140,590 1200,740 1020,780" fill="#061A18" stroke="#10B981" stroke-width="1" stroke-opacity="0.3"/>
+
+      <!-- City Secondary Road Grids (Thin Slate Lines) -->
+      <g stroke="#131C30" stroke-width="2">
+        <!-- Horizontal Streets -->
+        <line x1="480" y1="120" x2="1320" y2="120"/>
+        <line x1="460" y1="200" x2="1340" y2="200"/>
+        <line x1="490" y1="280" x2="1310" y2="280"/>
+        <line x1="510" y1="360" x2="1300" y2="360"/>
+        <line x1="490" y1="440" x2="1310" y2="440"/>
+        <line x1="470" y1="520" x2="1320" y2="520"/>
+        <line x1="450" y1="600" x2="1340" y2="600"/>
+        <line x1="430" y1="680" x2="1360" y2="680"/>
+        <line x1="400" y1="760" x2="1380" y2="760"/>
+        <line x1="380" y1="840" x2="1400" y2="840"/>
+
+        <!-- Vertical Avenues -->
+        <line x1="560" y1="80" x2="560" y2="920"/>
+        <line x1="660" y1="80" x2="660" y2="920"/>
+        <line x1="760" y1="80" x2="760" y2="920"/>
+        <line x1="860" y1="80" x2="860" y2="920"/>
+        <line x1="960" y1="80" x2="960" y2="920"/>
+        <line x1="1060" y1="80" x2="1060" y2="920"/>
+        <line x1="1160" y1="80" x2="1160" y2="920"/>
+        <line x1="1260" y1="80" x2="1260" y2="920"/>
+      </g>
+
+      <!-- Primary Arterial Highways & Express Corridors -->
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Arterial Highway 101 North-South (Thick Neon Stroke) -->
+        <path d="M 520,20 C 580,240 680,480 840,680 C 940,820 1120,940 1280,980" stroke="#1F2E4D" stroke-width="8"/>
+        <path d="M 520,20 C 580,240 680,480 840,680 C 940,820 1120,940 1280,980" stroke="#0EA5E9" stroke-width="2" stroke-opacity="0.7"/>
+
+        <!-- Trans-Bay Expressway Diagonal -->
+        <path d="M 420,440 L 760,440 L 1060,280 L 1340,280" stroke="#1F2E4D" stroke-width="8"/>
+        <path d="M 420,440 L 760,440 L 1060,280 L 1340,280" stroke="#A78BFA" stroke-width="2" stroke-opacity="0.7"/>
+      </g>
+
+      <!-- Live GPS Navigation Route Polyline (Green Flowing Dash Stroke) -->
+      <g fill="none">
+        <!-- Route Shadow / Glow Layer -->
+        <path id="nav-route-glow" d="M 660,680 L 760,680 L 860,520 L 860,360 L 1060,280 L 1160,280" stroke="#06B6D4" stroke-width="10" stroke-opacity="0.3" stroke-linecap="round" stroke-linejoin="round"/>
+        
+        <!-- Core Route Path -->
+        <path id="nav-route-path" d="M 660,680 L 760,680 L 860,520 L 860,360 L 1060,280 L 1160,280" stroke="#06B6D4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        
+        <!-- Dynamic Pulse Flow Animation on Active Route -->
+        <path d="M 660,680 L 760,680 L 860,520 L 860,360 L 1060,280 L 1160,280" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="8,16" class="animate-dash-move" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+
+      <!-- Animated Moving Vehicle / Autonomous GPS Beacon -->
+      <g id="vehicle-marker" transform="translate(660, 680)">
+        <!-- Beacon Radar Rings -->
+        <circle cx="0" cy="0" r="18" fill="#06B6D4" fill-opacity="0.25" class="animate-beacon-pulse"/>
+        <!-- Vehicle Arrow Pod -->
+        <circle cx="0" cy="0" r="9" fill="#06B6D4" stroke="#FFFFFF" stroke-width="2.5" shadow="0 0 10px #06B6D4"/>
+        <polygon points="0,-4 3,3 0,1 -3,3" fill="#FFFFFF"/>
+      </g>
+
+      <!-- Interactive Points of Interest (POIs) Markers on Map -->
+      
+      <!-- POI 1: Autonomous EV Supercharger Station -->
+      <g onclick="selectPOI(0)" class="cursor-pointer group" transform="translate(760, 680)">
+        <circle cx="0" cy="0" r="14" fill="#10B981" fill-opacity="0.2" class="group-hover:scale-125 transition-transform"/>
+        <circle cx="0" cy="0" r="6" fill="#10B981" stroke="#FFFFFF" stroke-width="1.5"/>
+        <text x="10" y="-10" fill="#10B981" font-family="JetBrains Mono" font-size="11" font-weight="bold">EV Supercharger (350kW)</text>
+      </g>
+
+      <!-- POI 2: Quantum AI Datacenter Campus -->
+      <g onclick="selectPOI(1)" class="cursor-pointer group" transform="translate(860, 360)">
+        <circle cx="0" cy="0" r="14" fill="#7C3AED" fill-opacity="0.2" class="group-hover:scale-125 transition-transform"/>
+        <circle cx="0" cy="0" r="6" fill="#7C3AED" stroke="#FFFFFF" stroke-width="1.5"/>
+        <text x="10" y="-10" fill="#A78BFA" font-family="JetBrains Mono" font-size="11" font-weight="bold">Nexus Quantum Datacenter</text>
+      </g>
+
+      <!-- POI 3: Mission Skyport & Rooftop Helipad -->
+      <g onclick="selectPOI(2)" class="cursor-pointer group" transform="translate(1160, 280)">
+        <circle cx="0" cy="0" r="16" fill="#F59E0B" fill-opacity="0.25" class="animate-ping"/>
+        <circle cx="0" cy="0" r="7" fill="#F59E0B" stroke="#FFFFFF" stroke-width="2"/>
+        <text x="12" y="-12" fill="#F59E0B" font-family="JetBrains Mono" font-size="12" font-weight="bold">Mission Skyport Terminal [DEST]</text>
+      </g>
+
+      <!-- POI 4: Blue Bottle Artisan Coffee Bar -->
+      <g onclick="selectPOI(3)" class="cursor-pointer group" transform="translate(680, 220)">
+        <circle cx="0" cy="0" r="12" fill="#0EA5E9" fill-opacity="0.2" class="group-hover:scale-125 transition-transform"/>
+        <circle cx="0" cy="0" r="5" fill="#0EA5E9" stroke="#FFFFFF" stroke-width="1.5"/>
+        <text x="10" y="-8" fill="#38BDF8" font-family="JetBrains Mono" font-size="11">Artisan Coffee Bar</text>
+      </g>
+
+    </svg>
+
+    <!-- ================= FLOATING MAP HEADS-UP DISPLAY (HUD) ================= -->
+
+    <!-- Top Left: Turn-by-Turn Navigation Instruction Card -->
+    <aside id="turn-by-turn-card" class="hud-glass absolute top-20 left-4 sm:left-6 max-w-sm w-full rounded-3xl p-4 sm:p-5 z-30 transition-all duration-300">
+      
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-2xl bg-geomap-cyan/20 border border-geomap-cyan/40 text-geomap-cyan flex items-center justify-center text-xl shadow-lg">
+            <i data-lucide="corner-up-right" id="maneuver-icon" class="w-6 h-6 stroke-[2.5]"></i>
+          </div>
+          <div>
+            <span class="text-[10px] font-mono uppercase tracking-wider text-geomap-cyan font-bold block" id="maneuver-distance">In 450 meters</span>
+            <h2 class="font-display font-black text-base sm:text-lg text-white leading-tight" id="maneuver-street">Turn Right onto Embarcadero Blvd</h2>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Trip Telemetry Metrics -->
+      <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800/80 font-mono text-center">
+        <div class="p-2 rounded-2xl bg-slate-950/80 border border-slate-800">
+          <span class="text-[9px] text-slate-400 block uppercase">ETA</span>
+          <span class="font-black text-sm text-emerald-400" id="trip-eta">18 mins</span>
+          <span class="text-[9px] text-emerald-500/80 block">On Time</span>
+        </div>
+        <div class="p-2 rounded-2xl bg-slate-950/80 border border-slate-800">
+          <span class="text-[9px] text-slate-400 block uppercase">Distance</span>
+          <span class="font-black text-sm text-white" id="trip-dist">14.2 km</span>
+          <span class="text-[9px] text-slate-400 block">Remaining</span>
+        </div>
+        <div class="p-2 rounded-2xl bg-slate-950/80 border border-slate-800">
+          <span class="text-[9px] text-slate-400 block uppercase">Speed</span>
+          <span class="font-black text-sm text-cyan-400" id="trip-speed">48 km/h</span>
+          <span class="text-[9px] text-slate-400 block">Limit: 50</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Top Right: Search & City Presets Selector -->
+    <div class="absolute top-20 right-4 sm:right-6 z-30 flex flex-col items-end space-y-2.5">
+      
+      <!-- Search Input Bar -->
+      <div class="hud-glass p-1.5 rounded-2xl flex items-center space-x-2 w-64 sm:w-80 shadow-2xl">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 ml-2"></i>
+        <input type="text" id="map-search" placeholder="Search coordinates, POIs..." onkeyup="handleMapSearch(event)" class="w-full bg-transparent text-xs font-mono text-white placeholder-slate-500 outline-none">
+        <button onclick="clearSearch()" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- City Camera Preset Pills -->
+      <div class="hud-glass p-1 rounded-xl flex items-center space-x-1 text-xs font-mono">
+        <button onclick="setCityPreset('sf')" id="city-btn-sf" class="px-2.5 py-1 rounded-lg bg-geomap-cyan text-slate-950 font-bold transition-all">SF Bay</button>
+        <button onclick="setCityPreset('tokyo')" id="city-btn-tokyo" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all">Tokyo</button>
+        <button onclick="setCityPreset('zurich')" id="city-btn-zurich" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all">Zurich</button>
+        <button onclick="setCityPreset('nyc')" id="city-btn-nyc" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all">Manhattan</button>
+      </div>
+
+    </div>
+
+    <!-- Bottom Left: Selected Point of Interest (POI) Inspection Drawer -->
+    <div id="poi-drawer" class="hud-glass absolute bottom-6 left-4 sm:left-6 max-w-sm w-full rounded-3xl p-5 z-30 hidden animate-chat-in">
+      <div class="flex items-start justify-between border-b border-slate-800 pb-3 mb-3">
+        <div>
+          <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-geomap-cyan" id="poi-category">Energy &bull; EV Fast Charging</span>
+          <h3 class="font-display font-black text-lg text-white mt-0.5" id="poi-title">EV Supercharger Station</h3>
+        </div>
+        <button onclick="closePOIDrawer()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-300 mb-3" id="poi-description">
+        Tesla V4 &amp; CCS2 350kW liquid-cooled fast stalls. 8 of 12 dispensers available.
+      </p>
+
+      <div class="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-300 mb-4">
+        <div class="p-2 rounded-xl bg-slate-950 flex items-center justify-between">
+          <span class="text-slate-500">Rating:</span>
+          <span class="text-amber-400 font-bold" id="poi-rating">4.9 &starf;</span>
+        </div>
+        <div class="p-2 rounded-xl bg-slate-950 flex items-center justify-between">
+          <span class="text-slate-500">Status:</span>
+          <span class="text-emerald-400 font-bold" id="poi-status">Open 24/7</span>
+        </div>
+      </div>
+
+      <button onclick="rerouteToPOI()" class="w-full py-2.5 rounded-xl bg-geomap-cyan hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-geomap-cyan/20">
+        <i data-lucide="navigation" class="w-4 h-4 fill-slate-950"></i>
+        <span>Reroute Navigation Here</span>
+      </button>
+    </div>
+
+    <!-- Bottom Right: Map Zoom, Compass & Layer Toggles -->
+    <div class="absolute bottom-6 right-4 sm:right-6 z-30 flex flex-col items-end space-y-3">
+      
+      <!-- Compass Widget -->
+      <button onclick="resetCompass()" class="hud-glass p-3 rounded-2xl text-slate-300 hover:text-white transition-all shadow-xl flex items-center justify-center group" title="Reorient North">
+        <i data-lucide="compass" id="compass-icon" class="w-5 h-5 text-geomap-cyan group-hover:rotate-45 transition-transform duration-300"></i>
+      </button>
+
+      <!-- Zoom Controls (+ / -) -->
+      <div class="hud-glass p-1.5 rounded-2xl flex flex-col space-y-1 shadow-xl">
+        <button onclick="zoomMap(1.2)" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-colors" title="Zoom In (+)">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+        </button>
+        <button onclick="zoomMap(0.8)" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-colors" title="Zoom Out (-)">
+          <i data-lucide="minus" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Map Layer Mode Selector -->
+      <div class="hud-glass p-1.5 rounded-2xl flex items-center space-x-1 text-xs font-mono">
+        <button onclick="setMapLayer('dark')" id="layer-btn-dark" class="px-2.5 py-1.5 rounded-xl bg-geomap-cyan text-slate-950 font-bold transition-all">Vector</button>
+        <button onclick="setMapLayer('satellite')" id="layer-btn-satellite" class="px-2.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all">Radar</button>
+        <button onclick="setMapLayer('traffic')" id="layer-btn-traffic" class="px-2.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all">Traffic</button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ================= MODALS & OVERLAYS ================= -->
+
+  <!-- Keybindings Help Modal -->
+  <div id="keybindings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="keyboard" class="w-5 h-5 text-geomap-cyan"></i>
+          <h3 class="font-display font-bold text-lg text-white">Geospatial Map Shortcuts</h3>
+        </div>
+        <button onclick="closeKeybindingsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2 text-xs font-mono">
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Zoom In / Zoom Out</span>
+          <div class="space-x-1">
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">+</kbd>
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">-</kbd>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Pan Map Camera</span>
+          <div class="space-x-1">
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">&uarr;</kbd>
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">&darr;</kbd>
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">&larr;</kbd>
+            <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">&rarr;</kbd>
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle Vehicle Route Simulation</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">R</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Toggle Audio Chimes</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">M</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Cycle Map Theme Layers</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">L</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Focus Search Bar</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">/</kbd>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950">
+          <span class="text-slate-300">Close Drawers / Modals</span>
+          <kbd class="px-2 py-1 rounded bg-slate-800 text-geomap-cyan border border-slate-700">Esc</kbd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulated Toast Notification Banner -->
+  <div id="geomap-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border-2 border-geomap-cyan text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-3 transition-all duration-300 translate-y-[-100px] opacity-0 pointer-events-none">
+    <div class="w-8 h-8 rounded-lg bg-geomap-cyan/20 flex items-center justify-center text-geomap-cyan">
+      <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
+    </div>
+    <span id="toast-message" class="text-xs font-semibold">GPS Route Calculated</span>
+  </div>
+
+  <!-- Vanilla JavaScript & Web Audio API Acoustic Engine -->
+  <script>
+    // Points of Interest Database
+    const POIS = [
+      {
+        id: 0,
+        title: "EV Supercharger (350kW)",
+        category: "Energy • EV Ultra-Fast Charging",
+        description: "Tesla V4 & CCS2 350kW liquid-cooled fast stalls. 8 of 12 dispensers available.",
+        rating: "4.9 ★",
+        status: "Open 24/7",
+        coords: { x: 760, y: 680 }
+      },
+      {
+        id: 1,
+        title: "Nexus Quantum Datacenter",
+        category: "Infrastructure • Tier 4 Computing",
+        description: "Primary neural inference cluster with redundant fiber rings and liquid nitrogen cooling.",
+        rating: "5.0 ★",
+        status: "High Security Access Only",
+        coords: { x: 860, y: 360 }
+      },
+      {
+        id: 2,
+        title: "Mission Skyport Terminal",
+        category: "Transit • eVTOL & Helipad",
+        description: "Rooftop autonomous passenger drone launchpad and executive passenger lounge.",
+        rating: "4.8 ★",
+        status: "Departures Active",
+        coords: { x: 1160, y: 280 }
+      },
+      {
+        id: 3,
+        title: "Artisan Coffee Bar",
+        category: "Dining • Specialty Roastery",
+        description: "Single-origin pour-overs, nitro cold brew, and fresh organic sourdough pastries.",
+        rating: "4.7 ★",
+        status: "Open until 7:00 PM",
+        coords: { x: 680, y: 220 }
+      }
+    ];
+
+    // State Management Architecture
+    const state = {
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      isSimulatingRoute: false,
+      activeLayer: 'dark',
+      activeCity: 'sf',
+      isAudioEnabled: true,
+      audioCtx: null,
+      routeProgress: 0,
+      simInterval: null,
+      selectedPOI: null
+    };
+
+    // A11y Live Announcer
+    function announceA11y(message) {
+      const el = document.getElementById('a11y-announcer');
+      if (el) el.textContent = message;
+    }
+
+    // ================= WEB AUDIO API SYNTHESIZER =================
+    function initAudioContext() {
+      if (!state.audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        state.audioCtx = new AudioContext();
+      }
+      if (state.audioCtx.state === 'suspended') {
+        state.audioCtx.resume();
+      }
+    }
+
+    // Sound 1: Turn Maneuver Acoustic Chime (Two-Tone High Chime)
+    function playTurnChime() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(659.25, now); // E5
+        osc.frequency.setValueAtTime(880.00, now + 0.12); // A5
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.45);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Sound 2: Map Pin Selection Spatial Tick
+    function playPinTick() {
+      if (!state.isAudioEnabled) return;
+      try {
+        initAudioContext();
+        const now = state.audioCtx.currentTime;
+        const osc = state.audioCtx.createOscillator();
+        const gain = state.audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(320, now + 0.05);
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+        osc.connect(gain);
+        gain.connect(state.audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Audio Toggle Handler
+    document.getElementById('toggle-audio-btn').addEventListener('click', () => {
+      state.isAudioEnabled = !state.isAudioEnabled;
+      const btn = document.getElementById('toggle-audio-btn');
+      const icon = document.getElementById('audio-icon');
+      if (state.isAudioEnabled) {
+        btn.querySelector('span').textContent = 'Audio: ON';
+        icon.classList.add('text-geomap-cyan');
+        playTurnChime();
+        announceA11y('Map navigation acoustic feedback enabled');
+      } else {
+        btn.querySelector('span').textContent = 'Audio: OFF';
+        icon.classList.remove('text-geomap-cyan');
+        announceA11y('Map audio muted');
+      }
+    });
+
+    // ================= MAP ZOOM & PAN CONTROLS =================
+    function zoomMap(factor) {
+      state.zoom = Math.max(0.6, Math.min(2.5, state.zoom * factor));
+      applyMapTransform();
+      playPinTick();
+      announceA11y(`Map zoom level: ${Math.round(state.zoom * 100)}%`);
+    }
+
+    function panMap(dx, dy) {
+      state.panX += dx;
+      state.panY += dy;
+      applyMapTransform();
+      playPinTick();
+    }
+
+    function applyMapTransform() {
+      const svg = document.getElementById('vector-map-svg');
+      svg.style.transform = `scale(${state.zoom}) translate(${state.panX}px, ${state.panY}px)`;
+    }
+
+    function resetCompass() {
+      state.panX = 0;
+      state.panY = 0;
+      state.zoom = 1;
+      applyMapTransform();
+      playTurnChime();
+      showToast('Camera Reoriented True North');
+      announceA11y('Map reset to default center and True North.');
+    }
+
+    // ================= INTERACTIVE DRAG PANNING =================
+    let isDragging = false;
+    let startX = 0, startY = 0;
+
+    const viewport = document.getElementById('map-viewport');
+    viewport.addEventListener('mousedown', (e) => {
+      if (e.target.closest('aside') || e.target.closest('button') || e.target.closest('input')) return;
+      isDragging = true;
+      startX = e.clientX - state.panX;
+      startY = e.clientY - state.panY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      state.panX = (e.clientX - startX) * 0.8;
+      state.panY = (e.clientY - startY) * 0.8;
+      applyMapTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    // ================= POI SELECTION & INSPECTION DRAWER =================
+    function selectPOI(id) {
+      const poi = POIS[id];
+      if (!poi) return;
+      state.selectedPOI = poi;
+      playPinTick();
+
+      document.getElementById('poi-title').textContent = poi.title;
+      document.getElementById('poi-category').textContent = poi.category;
+      document.getElementById('poi-description').textContent = poi.description;
+      document.getElementById('poi-rating').textContent = poi.rating;
+      document.getElementById('poi-status').textContent = poi.status;
+
+      document.getElementById('poi-drawer').classList.remove('hidden');
+      announceA11y(`Inspecting ${poi.title}. ${poi.category}`);
+    }
+
+    function closePOIDrawer() {
+      document.getElementById('poi-drawer').classList.add('hidden');
+      state.selectedPOI = null;
+    }
+
+    function rerouteToPOI() {
+      playTurnChime();
+      showToast(`Rerouting GPS destination to ${state.selectedPOI.title}...`);
+      closePOIDrawer();
+      announceA11y(`Navigation rerouted to ${state.selectedPOI.title}`);
+    }
+
+    // ================= VEHICLE GPS ROUTE SIMULATOR =================
+    const WAYPOINTS = [
+      { x: 660, y: 680, street: "Turn Right onto Embarcadero Blvd", dist: "In 450 meters", icon: "corner-up-right", speed: "48 km/h" },
+      { x: 760, y: 680, street: "Continue straight on Folsom St", dist: "In 800 meters", icon: "arrow-up", speed: "52 km/h" },
+      { x: 860, y: 520, street: "Keep Left onto Mission Expressway", dist: "In 1.2 km", icon: "corner-up-left", speed: "64 km/h" },
+      { x: 860, y: 360, street: "Take Exit 14 toward Skyport", dist: "In 600 meters", icon: "signpost", speed: "42 km/h" },
+      { x: 1060, y: 280, street: "Approaching Destination on Right", dist: "In 200 meters", icon: "map-pin", speed: "25 km/h" },
+      { x: 1160, y: 280, street: "Arrived at Mission Skyport Terminal", dist: "Destination Reached", icon: "check-circle", speed: "0 km/h" }
+    ];
+
+    function toggleRouteSimulation() {
+      state.isSimulatingRoute = !state.isSimulatingRoute;
+      const btn = document.getElementById('btn-sim-text');
+
+      if (state.isSimulatingRoute) {
+        btn.textContent = 'Pause Route';
+        playTurnChime();
+        startSimulationLoop();
+        showToast('Autonomous Navigation Simulation Active');
+        announceA11y('Started vehicle turn-by-turn route simulation.');
+      } else {
+        btn.textContent = 'Resume Route (R)';
+        clearInterval(state.simInterval);
+        playPinTick();
+        announceA11y('Navigation simulation paused.');
+      }
+    }
+
+    function startSimulationLoop() {
+      clearInterval(state.simInterval);
+      state.simInterval = setInterval(() => {
+        state.routeProgress = (state.routeProgress + 1) % WAYPOINTS.length;
+        const current = WAYPOINTS[state.routeProgress];
+
+        // Move Vehicle Marker
+        const vehicle = document.getElementById('vehicle-marker');
+        if (vehicle) {
+          vehicle.setAttribute('transform', `translate(${current.x}, ${current.y})`);
+        }
+
+        // Update HUD Card
+        document.getElementById('maneuver-street').textContent = current.street;
+        document.getElementById('maneuver-distance').textContent = current.dist;
+        document.getElementById('trip-speed').textContent = current.speed;
+        document.getElementById('maneuver-icon').setAttribute('data-lucide', current.icon);
+        lucide.createIcons();
+
+        playTurnChime();
+        announceA11y(`${current.dist}: ${current.street}`);
+      }, 3200);
+    }
+
+    // ================= CITY CAMERA PRESETS =================
+    function setCityPreset(city) {
+      state.activeCity = city;
+      playPinTick();
+
+      ['sf', 'tokyo', 'zurich', 'nyc'].forEach(c => {
+        const btn = document.getElementById(`city-btn-${c}`);
+        if (btn) btn.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all';
+      });
+      document.getElementById(`city-btn-${city}`).className = 'px-2.5 py-1 rounded-lg bg-geomap-cyan text-slate-950 font-bold transition-all';
+
+      if (city === 'sf') {
+        state.panX = 0; state.panY = 0; state.zoom = 1;
+        showToast('Viewing San Francisco Bay Corridor');
+      } else if (city === 'tokyo') {
+        state.panX = -120; state.panY = -40; state.zoom = 1.25;
+        showToast('Viewing Tokyo Shinjuku Metro Grid');
+      } else if (city === 'zurich') {
+        state.panX = 140; state.panY = 80; state.zoom = 1.1;
+        showToast('Viewing Zurich Alpine High-Speed Pass');
+      } else {
+        state.panX = -60; state.panY = 110; state.zoom = 1.35;
+        showToast('Viewing Manhattan Transit Matrix');
+      }
+      applyMapTransform();
+      announceA11y(`Camera centered on ${city.toUpperCase()} preset.`);
+    }
+
+    // ================= MAP LAYER SWITCHER =================
+    function setMapLayer(layer) {
+      state.activeLayer = layer;
+      playPinTick();
+
+      ['dark', 'satellite', 'traffic'].forEach(l => {
+        const btn = document.getElementById(`layer-btn-${l}`);
+        if (btn) btn.className = 'px-2.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all';
+      });
+      document.getElementById(`layer-btn-${layer}`).className = 'px-2.5 py-1.5 rounded-xl bg-geomap-cyan text-slate-950 font-bold transition-all';
+
+      const svg = document.getElementById('vector-map-svg');
+      if (layer === 'satellite') {
+        svg.style.filter = 'contrast(1.2) hue-rotate(180deg)';
+        showToast('Synthetic Radar Topology Layer Active');
+      } else if (layer === 'traffic') {
+        svg.style.filter = 'saturate(2) brightness(1.1)';
+        showToast('Real-Time Highway Congestion Heatmap Active');
+      } else {
+        svg.style.filter = 'none';
+        showToast('Standard Obsidian Vector Cartography');
+      }
+      announceA11y(`Map layer switched to ${layer}.`);
+    }
+
+    // ================= SEARCH BAR CONTROLLER =================
+    function handleMapSearch(e) {
+      const query = e.target.value.toLowerCase();
+      if (e.key === 'Enter' && query) {
+        const found = POIS.find(p => p.title.toLowerCase().includes(query) || p.category.toLowerCase().includes(query));
+        if (found) {
+          selectPOI(found.id);
+          state.panX = (800 - found.coords.x) * 0.8;
+          state.panY = (500 - found.coords.y) * 0.8;
+          state.zoom = 1.4;
+          applyMapTransform();
+          showToast(`Located ${found.title}`);
+        } else {
+          showToast(`No exact coordinates found for "${query}"`);
+        }
+      }
+    }
+
+    function clearSearch() {
+      document.getElementById('map-search').value = '';
+    }
+
+    // ================= MODAL & TOAST ENGINE =================
+    function openKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.remove('hidden');
+    }
+    function closeKeybindingsModal() {
+      document.getElementById('keybindings-modal').classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('geomap-toast');
+      document.getElementById('toast-message').textContent = msg;
+      toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-[-100px]', 'opacity-0');
+      }, 3200);
+    }
+
+    // ================= KEYBOARD ACCESSIBILITY LISTENERS =================
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'Escape') {
+        closePOIDrawer();
+        closeKeybindingsModal();
+      } else if (e.key === '+' || e.key === '=') {
+        zoomMap(1.2);
+      } else if (e.key === '-' || e.key === '_') {
+        zoomMap(0.8);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        panMap(0, 50);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        panMap(0, -50);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        panMap(50, 0);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        panMap(-50, 0);
+      } else if (e.key.toLowerCase() === 'r') {
+        toggleRouteSimulation();
+      } else if (e.key.toLowerCase() === 'm') {
+        document.getElementById('toggle-audio-btn').click();
+      } else if (e.key.toLowerCase() === 'l') {
+        const layers = ['dark', 'satellite', 'traffic'];
+        const next = layers[(layers.indexOf(state.activeLayer) + 1) % layers.length];
+        setMapLayer(next);
+      } else if (e.key === '/') {
+        e.preventDefault();
+        document.getElementById('map-search').focus();
+      } else if (e.key === '?') {
+        openKeybindingsModal();
+      }
+    });
+
+    // Initialize on DOM Ready
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+
+</body>
+</html>
