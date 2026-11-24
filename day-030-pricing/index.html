@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 030: Dynamic Pricing Calculator & Plan Customizer | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter, JetBrains Mono, Outfit, Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cloud: {
+              brand: '#6366F1',       // Indigo
+              brandHover: '#4F46E5',
+              cyan: '#06B6D4',
+              teal: '#14B8A6',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E',
+              purple: '#8B5CF6',
+              dark: '#030712',        // Deepest charcoal
+              card: '#0B0F19',
+              surface: '#111827',
+              border: '#1F2937',
+              borderLight: '#374151'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            accent: ['Space Grotesk', 'sans-serif']
+          },
+          animation: {
+            'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'shimmer': 'shimmer 2.5s infinite linear'
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-6px)' }
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Range Sliders */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 24px;
+      width: 24px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 3px solid #6366F1;
+      box-shadow: 0 0 14px rgba(99, 102, 241, 0.6), 0 2px 6px rgba(0,0,0,0.4);
+      cursor: grab;
+      margin-top: -8px;
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.18);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.9), 0 2px 8px rgba(0,0,0,0.6);
+    }
+    input[type=range]::-webkit-slider-thumb:active {
+      cursor: grabbing;
+      transform: scale(1.25);
+      border-color: #06B6D4;
+      box-shadow: 0 0 24px rgba(6, 182, 212, 1);
+    }
+    input[type=range]::-moz-range-thumb {
+      height: 24px;
+      width: 24px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 3px solid #6366F1;
+      box-shadow: 0 0 14px rgba(99, 102, 241, 0.6);
+      cursor: grab;
+      transition: transform 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 8px;
+      cursor: pointer;
+      border-radius: 9999px;
+      background: #1F2937;
+    }
+    input[type=range]::-moz-range-track {
+      width: 100%;
+      height: 8px;
+      cursor: pointer;
+      border-radius: 9999px;
+      background: #1F2937;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0F19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1F2937;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #374151;
+    }
+
+    /* Glassmorphism accents */
+    .glass-card {
+      background: rgba(11, 15, 25, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.65);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .glow-indigo {
+      box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.25);
+    }
+    .glow-cyan {
+      box-shadow: 0 0 35px -5px rgba(6, 182, 212, 0.25);
+    }
+
+    /* Shimmer effect on featured cards */
+    .shimmer-badge {
+      background: linear-gradient(90deg, #6366F1 0%, #06B6D4 50%, #6366F1 100%);
+      background-size: 200% 100%;
+      animation: shimmer 3s infinite linear;
+    }
+  </style>
+</head>
+<body class="bg-cloud-dark text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white flex flex-col font-sans relative overflow-x-hidden">
+
+  <!-- Ambient Background Glow Gradients -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute -top-[20%] left-1/4 w-[650px] h-[650px] bg-indigo-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute top-[40%] -right-[15%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[140px]"></div>
+    <div class="absolute -bottom-[10%] left-10 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(#1f2937_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+  </div>
+
+  <!-- Live ARIA Announcer for Screen Readers -->
+  <div id="price-live-announcer" class="sr-only" aria-live="polite" aria-atomic="true">
+    Plan pricing updated.
+  </div>
+
+  <!-- Top Sticky Navigation Bar -->
+  <header class="sticky top-0 z-40 border-b border-cloud-border/80 bg-cloud-dark/85 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Challenge Breadcrumb -->
+      <div class="flex items-center gap-3">
+        <a href="../" class="group flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm shadow-indigo-500/20">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-mono font-medium hidden sm:inline text-slate-400 group-hover:text-slate-200">Daily UI Hub</span>
+        </a>
+        <div class="h-4 w-[1px] bg-cloud-border"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/30 font-bold font-display text-sm">
+            30
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-sm font-bold tracking-tight text-white font-display">HyperScale AI & Compute Matrix</h1>
+              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                v3.4 LIVE
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 hidden md:block">Real-time resource capacity & dynamic billing customizer</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls & Quick Nav -->
+      <div class="flex items-center gap-3">
+        
+        <!-- Multi-Currency Selector -->
+        <div class="relative inline-block text-left">
+          <div class="flex items-center bg-cloud-surface border border-cloud-border rounded-lg p-1 text-xs">
+            <label for="currency-select" class="sr-only">Select Currency</label>
+            <i data-lucide="coins" class="w-3.5 h-3.5 text-slate-400 ml-1.5 mr-1"></i>
+            <select id="currency-select" class="bg-transparent text-slate-200 font-mono text-xs font-semibold focus:outline-none cursor-pointer pr-1 py-0.5">
+              <option value="USD" class="bg-cloud-surface text-slate-200">USD ($)</option>
+              <option value="EUR" class="bg-cloud-surface text-slate-200">EUR (€)</option>
+              <option value="GBP" class="bg-cloud-surface text-slate-200">GBP (£)</option>
+              <option value="JPY" class="bg-cloud-surface text-slate-200">JPY (¥)</option>
+              <option value="INR" class="bg-cloud-surface text-slate-200">INR (₹)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Audio Sound Effects Toggle -->
+        <button id="sound-toggle-btn" class="p-2 rounded-lg bg-cloud-surface border border-cloud-border text-slate-400 hover:text-indigo-400 hover:border-indigo-500/40 transition-all flex items-center justify-center text-xs" title="Toggle tactile audio synthesizer feedback">
+          <i id="sound-icon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+        </button>
+
+        <!-- Generate Official PDF Quote Button -->
+        <button id="open-quote-modal-btn" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 hover:border-indigo-500/50 transition-all shadow-sm">
+          <i data-lucide="file-text" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>Formal Quote</span>
+        </button>
+
+        <!-- Primary Deploy CTA -->
+        <button id="header-deploy-btn" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 transition-all transform active:scale-95">
+          <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i>
+          <span>Provision</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Workspace Content -->
+  <main class="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+
+    <!-- Hero Title & Billing Cycle Segment -->
+    <div class="text-center max-w-3xl mx-auto mb-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-mono font-medium mb-3">
+        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+        Interactive Resource Allocation Engine
+      </div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white font-display tracking-tight leading-tight">
+        Scale as you grow. <br class="hidden sm:inline">
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-cyan-300 to-purple-400">
+          Predictable AI cloud billing.
+        </span>
+      </h2>
+      <p class="mt-3 text-sm sm:text-base text-slate-400 leading-relaxed">
+        Tune your exact compute parameters, GPU clusters, storage throughput, and SLAs. Transparent rates with zero surprise ingress/egress tax.
+      </p>
+
+      <!-- Monthly / Annual Billing Toggle with Savings Callout -->
+      <div class="mt-8 inline-flex items-center justify-center p-1.5 rounded-2xl bg-cloud-surface border border-cloud-border shadow-xl relative">
+        <div class="flex items-center gap-2">
+          
+          <!-- Monthly Option -->
+          <button id="billing-monthly-btn" class="relative px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-white bg-indigo-600 shadow-md shadow-indigo-600/30">
+            Monthly Billing
+          </button>
+
+          <!-- Annual Option -->
+          <button id="billing-annual-btn" class="relative px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-slate-400 hover:text-white">
+            <span>Annual Commitment</span>
+            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              SAVE 20%
+            </span>
+          </button>
+
+        </div>
+      </div>
+      <p id="annual-savings-callout" class="text-xs font-mono text-emerald-400 mt-2 font-medium opacity-0 transition-opacity duration-300">
+        ✨ Annual discount applied: You are saving <span id="annual-savings-amount" class="font-bold">$0</span> per year!
+      </p>
+    </div>
+
+    <!-- Quick Workload Archetype Presets Bar -->
+    <div class="mb-10">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
+          <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider font-mono">Quick Workload Presets:</span>
+        </div>
+        <span class="text-xs text-slate-400">Click any preset to auto-configure optimal slider baselines</span>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- Preset 1: Solo Hacker -->
+        <button data-preset="hacker" class="preset-btn group p-3.5 rounded-xl bg-cloud-card border border-cloud-border hover:border-indigo-500/50 hover:bg-cloud-surface/80 text-left transition-all relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-bold text-white group-hover:text-indigo-400 transition-colors font-display">🚀 Solo AI Hacker</span>
+            <span class="text-[10px] font-mono text-slate-400">POC</span>
+          </div>
+          <p class="text-[11px] text-slate-400 line-clamp-1">500k API • 0 GPUs • 100GB • 1 Seat</p>
+          <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </button>
+
+        <!-- Preset 2: Seed Stage AI Startup -->
+        <button data-preset="seed" class="preset-btn group p-3.5 rounded-xl bg-cloud-card border border-cloud-border hover:border-indigo-500/50 hover:bg-cloud-surface/80 text-left transition-all relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors font-display">⚡ Seed AI Startup</span>
+            <span class="text-[10px] font-mono text-cyan-400 font-semibold">POPULAR</span>
+          </div>
+          <p class="text-[11px] text-slate-400 line-clamp-1">10M API • 2x H100 • 500GB • 5 Seats</p>
+          <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </button>
+
+        <!-- Preset 3: Series B Scale -->
+        <button data-preset="scale" class="preset-btn group p-3.5 rounded-xl bg-cloud-card border border-cloud-border hover:border-indigo-500/50 hover:bg-cloud-surface/80 text-left transition-all relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-bold text-white group-hover:text-purple-400 transition-colors font-display">🦄 Growth Scale-up</span>
+            <span class="text-[10px] font-mono text-purple-400 font-semibold">GROWTH</span>
+          </div>
+          <p class="text-[11px] text-slate-400 line-clamp-1">50M API • 8x H100 • 3TB NVMe • 25 Seats</p>
+          <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </button>
+
+        <!-- Preset 4: Sovereign Enterprise -->
+        <button data-preset="enterprise" class="preset-btn group p-3.5 rounded-xl bg-cloud-card border border-cloud-border hover:border-indigo-500/50 hover:bg-cloud-surface/80 text-left transition-all relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors font-display">🏢 Global Sovereign</span>
+            <span class="text-[10px] font-mono text-emerald-400 font-semibold">ENTERPRISE</span>
+          </div>
+          <p class="text-[11px] text-slate-400 line-clamp-1">200M+ API • 32x H100 • 12TB • 100 Seats</p>
+          <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Responsive Grid Layout: Left Configuration Matrix (7 cols) + Right Sticky Pricing Summary (5 cols) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT COLUMN: Sliders, Selectors, Add-ons (7 Cols) -->
+      <div class="lg:col-span-7 space-y-8">
+
+        <!-- Section: Dynamic Capacity Sliders Container -->
+        <div class="glass-card rounded-2xl p-6 sm:p-7 border border-cloud-border shadow-2xl relative">
+          
+          <div class="flex items-center justify-between pb-5 border-b border-cloud-border/70 mb-6">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <i data-lucide="sliders" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white font-display">Core Infrastructure Capacities</h3>
+                <p class="text-xs text-slate-400">Slide to define provisioned nodes, ingress rate, and storage</p>
+              </div>
+            </div>
+            <button id="reset-sliders-btn" class="text-xs text-slate-400 hover:text-indigo-400 transition-colors font-mono flex items-center gap-1">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <!-- Slider 1: Monthly API / Inference Calls -->
+          <div class="space-y-3 mb-8">
+            <div class="flex items-center justify-between">
+              <div>
+                <label for="slider-api" class="text-sm font-semibold text-white flex items-center gap-2">
+                  <i data-lucide="network" class="w-4 h-4 text-indigo-400"></i>
+                  <span>Monthly Inference & API Calls</span>
+                </label>
+                <span class="text-[11px] text-slate-400">Sub-15ms edge routing with global caching</span>
+              </div>
+              <div class="text-right">
+                <span id="badge-api-value" class="inline-block px-3 py-1 rounded-lg bg-indigo-950/70 text-indigo-300 font-mono font-bold text-sm border border-indigo-700/50">
+                  10,000,000 / mo
+                </span>
+              </div>
+            </div>
+
+            <!-- Custom Track & Range Input -->
+            <div class="relative py-2">
+              <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden pointer-events-none relative">
+                <div id="track-api-fill" class="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-75" style="width: 25%;"></div>
+              </div>
+              <input 
+                type="range" 
+                id="slider-api" 
+                min="0" 
+                max="100" 
+                step="1" 
+                value="25" 
+                aria-label="Monthly Inference & API Calls"
+                class="absolute inset-0 opacity-0 cursor-pointer h-full w-full z-10"
+              />
+            </div>
+
+            <!-- Range Markers & Quick Buttons -->
+            <div class="flex justify-between items-center text-[10px] text-slate-400 font-mono pt-1">
+              <button type="button" class="api-quick-btn hover:text-indigo-300 transition-colors" data-val="1">100K</button>
+              <button type="button" class="api-quick-btn hover:text-indigo-300 transition-colors" data-val="10">2M</button>
+              <button type="button" class="api-quick-btn hover:text-indigo-300 transition-colors text-indigo-400 font-bold" data-val="25">10M</button>
+              <button type="button" class="api-quick-btn hover:text-indigo-300 transition-colors" data-val="50">50M</button>
+              <button type="button" class="api-quick-btn hover:text-indigo-300 transition-colors" data-val="75">100M</button>
+              <button type="button" class="api-quick-btn hover:text-indigo-300 transition-colors" data-val="100">250M+</button>
+            </div>
+          </div>
+
+          <!-- Slider 2: Dedicated GPU Nodes -->
+          <div class="space-y-3 mb-8">
+            <div class="flex items-center justify-between">
+              <div>
+                <label for="slider-gpu" class="text-sm font-semibold text-white flex items-center gap-2">
+                  <i data-lucide="cpu" class="w-4 h-4 text-cyan-400"></i>
+                  <span>Dedicated GPU Nodes (NVIDIA H100 SXM5)</span>
+                </label>
+                <span class="text-[11px] text-slate-400">80GB HBM3 memory with 3.35 TB/s bandwidth per node</span>
+              </div>
+              <div class="text-right">
+                <span id="badge-gpu-value" class="inline-block px-3 py-1 rounded-lg bg-cyan-950/70 text-cyan-300 font-mono font-bold text-sm border border-cyan-700/50">
+                  2 Nodes (160 GB)
+                </span>
+              </div>
+            </div>
+
+            <div class="relative py-2">
+              <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden pointer-events-none relative">
+                <div id="track-gpu-fill" class="h-full bg-gradient-to-r from-cyan-500 to-teal-400 rounded-full transition-all duration-75" style="width: 6.25%;"></div>
+              </div>
+              <input 
+                type="range" 
+                id="slider-gpu" 
+                min="0" 
+                max="32" 
+                step="1" 
+                value="2" 
+                aria-label="Dedicated GPU Nodes"
+                class="absolute inset-0 opacity-0 cursor-pointer h-full w-full z-10"
+              />
+            </div>
+
+            <div class="flex justify-between items-center text-[10px] text-slate-400 font-mono pt-1">
+              <button type="button" class="gpu-quick-btn hover:text-cyan-300 transition-colors" data-val="0">0 (Serverless)</button>
+              <button type="button" class="gpu-quick-btn hover:text-cyan-300 transition-colors" data-val="2">2 Nodes</button>
+              <button type="button" class="gpu-quick-btn hover:text-cyan-300 transition-colors" data-val="4">4 Nodes</button>
+              <button type="button" class="gpu-quick-btn hover:text-cyan-300 transition-colors" data-val="8">8 Nodes</button>
+              <button type="button" class="gpu-quick-btn hover:text-cyan-300 transition-colors" data-val="16">16 Nodes</button>
+              <button type="button" class="gpu-quick-btn hover:text-cyan-300 transition-colors" data-val="32">32 Cluster</button>
+            </div>
+          </div>
+
+          <!-- Slider 3: Vector DB & High-Speed NVMe Storage -->
+          <div class="space-y-3 mb-8">
+            <div class="flex items-center justify-between">
+              <div>
+                <label for="slider-storage" class="text-sm font-semibold text-white flex items-center gap-2">
+                  <i data-lucide="hard-drive" class="w-4 h-4 text-purple-400"></i>
+                  <span>Vector Cache & NVMe Storage</span>
+                </label>
+                <span class="text-[11px] text-slate-400">Milvus / Qdrant vector index storage with 1.2M IOPS</span>
+              </div>
+              <div class="text-right">
+                <span id="badge-storage-value" class="inline-block px-3 py-1 rounded-lg bg-purple-950/70 text-purple-300 font-mono font-bold text-sm border border-purple-700/50">
+                  500 GB
+                </span>
+              </div>
+            </div>
+
+            <div class="relative py-2">
+              <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden pointer-events-none relative">
+                <div id="track-storage-fill" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-75" style="width: 5%;"></div>
+              </div>
+              <input 
+                type="range" 
+                id="slider-storage" 
+                min="50" 
+                max="10000" 
+                step="50" 
+                value="500" 
+                aria-label="High-Speed Storage Capacity"
+                class="absolute inset-0 opacity-0 cursor-pointer h-full w-full z-10"
+              />
+            </div>
+
+            <div class="flex justify-between items-center text-[10px] text-slate-400 font-mono pt-1">
+              <button type="button" class="storage-quick-btn hover:text-purple-300 transition-colors" data-val="100">100 GB</button>
+              <button type="button" class="storage-quick-btn hover:text-purple-300 transition-colors" data-val="500">500 GB</button>
+              <button type="button" class="storage-quick-btn hover:text-purple-300 transition-colors" data-val="2000">2 TB</button>
+              <button type="button" class="storage-quick-btn hover:text-purple-300 transition-colors" data-val="5000">5 TB</button>
+              <button type="button" class="storage-quick-btn hover:text-purple-300 transition-colors" data-val="10000">10 TB</button>
+            </div>
+          </div>
+
+          <!-- Slider 4: Team Seats & RBAC Licenses -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <label for="slider-seats" class="text-sm font-semibold text-white flex items-center gap-2">
+                  <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>
+                  <span>Engineering Seats & SSO Governance</span>
+                </label>
+                <span class="text-[11px] text-slate-400">Includes Okta/SAML SSO, audit trails, and role policies</span>
+              </div>
+              <div class="text-right">
+                <span id="badge-seats-value" class="inline-block px-3 py-1 rounded-lg bg-emerald-950/70 text-emerald-300 font-mono font-bold text-sm border border-emerald-700/50">
+                  5 Engineers
+                </span>
+              </div>
+            </div>
+
+            <div class="relative py-2">
+              <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden pointer-events-none relative">
+                <div id="track-seats-fill" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-75" style="width: 5%;"></div>
+              </div>
+              <input 
+                type="range" 
+                id="slider-seats" 
+                min="1" 
+                max="100" 
+                step="1" 
+                value="5" 
+                aria-label="Engineering Seats"
+                class="absolute inset-0 opacity-0 cursor-pointer h-full w-full z-10"
+              />
+            </div>
+
+            <div class="flex justify-between items-center text-[10px] text-slate-400 font-mono pt-1">
+              <button type="button" class="seats-quick-btn hover:text-emerald-300 transition-colors" data-val="1">1 Solo</button>
+              <button type="button" class="seats-quick-btn hover:text-emerald-300 transition-colors" data-val="5">5 Team</button>
+              <button type="button" class="seats-quick-btn hover:text-emerald-300 transition-colors" data-val="15">15 Dept</button>
+              <button type="button" class="seats-quick-btn hover:text-emerald-300 transition-colors" data-val="50">50 Corp</button>
+              <button type="button" class="seats-quick-btn hover:text-emerald-300 transition-colors" data-val="100">100+ Enterprise</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Section: Service Level Agreement (SLA) Selection -->
+        <div class="glass-card rounded-2xl p-6 sm:p-7 border border-cloud-border">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <i data-lucide="shield-alert" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-white font-display">Uptime Guarantee & SLA Level</h3>
+              <p class="text-xs text-slate-400">Select operational response speeds and uptime compliance</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <!-- SLA 1: Community 99.5% -->
+            <label class="sla-option relative flex flex-col p-4 rounded-xl border border-cloud-border bg-cloud-card cursor-pointer hover:border-slate-600 transition-all">
+              <input type="radio" name="sla-tier" value="standard" class="sr-only" checked>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-white">99.5% Standard</span>
+                <span class="text-[10px] font-mono text-emerald-400 font-semibold">INCLUDED</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mb-2">Community Discord & 24hr email ticketing.</p>
+              <span class="mt-auto text-[11px] font-mono text-slate-300">$0/mo</span>
+              <div class="sla-indicator absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-cloud-dark"></div>
+            </label>
+
+            <!-- SLA 2: Business 99.9% -->
+            <label class="sla-option relative flex flex-col p-4 rounded-xl border border-cloud-border bg-cloud-card cursor-pointer hover:border-slate-600 transition-all">
+              <input type="radio" name="sla-tier" value="business" class="sr-only">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-white">99.9% Business</span>
+                <span class="text-[10px] font-mono text-indigo-400 font-semibold">1-HR SLA</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mb-2">Priority triage queue with 1-hour critical response.</p>
+              <span class="mt-auto text-[11px] font-mono text-indigo-300 font-bold">+$150/mo</span>
+              <div class="sla-indicator hidden absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-cloud-dark"></div>
+            </label>
+
+            <!-- SLA 3: Enterprise 99.99% -->
+            <label class="sla-option relative flex flex-col p-4 rounded-xl border border-cloud-border bg-cloud-card cursor-pointer hover:border-slate-600 transition-all">
+              <input type="radio" name="sla-tier" value="enterprise" class="sr-only">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-white">99.99% Mission</span>
+                <span class="text-[10px] font-mono text-purple-400 font-semibold">15-MIN SLA</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mb-2">Dedicated Slack channel & incident war-room.</p>
+              <span class="mt-auto text-[11px] font-mono text-purple-300 font-bold">+$590/mo</span>
+              <div class="sla-indicator hidden absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-cloud-dark"></div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Section: Modular Security & Enterprise Add-ons -->
+        <div class="glass-card rounded-2xl p-6 sm:p-7 border border-cloud-border">
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <i data-lucide="package-plus" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-white font-display">Enterprise Modules & Add-Ons</h3>
+                <p class="text-xs text-slate-400">Click to attach isolated compliance, networking, and support</p>
+              </div>
+            </div>
+            <span class="text-xs font-mono text-slate-400"><span id="addons-count" class="text-cyan-400 font-bold">0</span> selected</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            
+            <!-- Addon 1: Dedicated Private VPC Peering -->
+            <label class="addon-card flex items-start gap-3 p-3.5 rounded-xl border border-cloud-border bg-cloud-card hover:bg-cloud-surface/60 cursor-pointer transition-all">
+              <input type="checkbox" id="addon-vpc" data-price="290" class="sr-only">
+              <div class="custom-checkbox w-5 h-5 rounded-md border border-slate-600 bg-slate-900 flex items-center justify-center text-white mt-0.5 transition-colors">
+                <i data-lucide="check" class="w-3.5 h-3.5 opacity-0 check-icon"></i>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-white">Private VPC Peering</span>
+                  <span class="text-xs font-mono text-indigo-400 font-semibold">+$290/mo</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">AWS DirectConnect / Google Cloud Interconnect with static egress IPs</p>
+              </div>
+            </label>
+
+            <!-- Addon 2: SOC2 & HIPAA Vault -->
+            <label class="addon-card flex items-start gap-3 p-3.5 rounded-xl border border-cloud-border bg-cloud-card hover:bg-cloud-surface/60 cursor-pointer transition-all">
+              <input type="checkbox" id="addon-hipaa" data-price="390" class="sr-only">
+              <div class="custom-checkbox w-5 h-5 rounded-md border border-slate-600 bg-slate-900 flex items-center justify-center text-white mt-0.5 transition-colors">
+                <i data-lucide="check" class="w-3.5 h-3.5 opacity-0 check-icon"></i>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-white">HIPAA & SOC2 Vault</span>
+                  <span class="text-xs font-mono text-indigo-400 font-semibold">+$390/mo</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">Zero data retention BAA compliance with BYOK KMS encryption</p>
+              </div>
+            </label>
+
+            <!-- Addon 3: Automated Custom LoRA Fine-Tuning -->
+            <label class="addon-card flex items-start gap-3 p-3.5 rounded-xl border border-cloud-border bg-cloud-card hover:bg-cloud-surface/60 cursor-pointer transition-all">
+              <input type="checkbox" id="addon-finetuning" data-price="450" class="sr-only">
+              <div class="custom-checkbox w-5 h-5 rounded-md border border-slate-600 bg-slate-900 flex items-center justify-center text-white mt-0.5 transition-colors">
+                <i data-lucide="check" class="w-3.5 h-3.5 opacity-0 check-icon"></i>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-white">Continuous Model Tuning</span>
+                  <span class="text-xs font-mono text-indigo-400 font-semibold">+$450/mo</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">Automated LoRA weights checkpointing and eval regression suite</p>
+              </div>
+            </label>
+
+            <!-- Addon 4: 24/7 Red Phone Incident Hotline -->
+            <label class="addon-card flex items-start gap-3 p-3.5 rounded-xl border border-cloud-border bg-cloud-card hover:bg-cloud-surface/60 cursor-pointer transition-all">
+              <input type="checkbox" id="addon-redphone" data-price="750" class="sr-only">
+              <div class="custom-checkbox w-5 h-5 rounded-md border border-slate-600 bg-slate-900 flex items-center justify-center text-white mt-0.5 transition-colors">
+                <i data-lucide="check" class="w-3.5 h-3.5 opacity-0 check-icon"></i>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-white">Dedicated Lead Architect</span>
+                  <span class="text-xs font-mono text-indigo-400 font-semibold">+$750/mo</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">Assigned Principal Systems Architect with monthly architecture audits</p>
+              </div>
+            </label>
+
+          </div>
+        </div>
+
+        <!-- Section: Intelligent Tier Recommendation Cards -->
+        <div class="glass-card rounded-2xl p-6 sm:p-7 border border-cloud-border">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-base font-bold text-white font-display">Plan Base Alignment</h3>
+              <p class="text-xs text-slate-400">Our engine dynamically determines the optimal tier for your volume</p>
+            </div>
+            <div id="tier-badge-container">
+              <span id="tier-auto-badge" class="px-2.5 py-1 rounded-full text-xs font-mono font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                Recommended: Growth Scale
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <!-- Tier 1: Developer Core -->
+            <div id="tier-card-starter" class="tier-card p-4 rounded-xl border border-cloud-border bg-cloud-card flex flex-col transition-all relative">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-white">Developer Core</span>
+                <span class="text-[10px] font-mono text-slate-400">BASE $49</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mb-3">Up to 2M API requests, shared compute, 1-3 seats.</p>
+              <div class="mt-auto pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                <i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> Zero cold-start latency
+              </div>
+            </div>
+
+            <!-- Tier 2: Growth Scale (Default Recommended) -->
+            <div id="tier-card-growth" class="tier-card p-4 rounded-xl border-2 border-indigo-500 bg-indigo-950/20 flex flex-col transition-all relative shadow-lg shadow-indigo-500/10">
+              <div class="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full text-[9px] font-bold font-mono bg-indigo-500 text-white uppercase tracking-wider">
+                ACTIVE TIER
+              </div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-white">Growth Scale</span>
+                <span class="text-[10px] font-mono text-indigo-300 font-semibold">BASE $249</span>
+              </div>
+              <p class="text-[11px] text-slate-300 mb-3">Up to 50M requests, dedicated GPUs, vector caching.</p>
+              <div class="mt-auto pt-2 border-t border-indigo-900/60 text-[10px] font-mono text-indigo-300 flex items-center gap-1">
+                <i data-lucide="check" class="w-3 h-3 text-cyan-400"></i> Auto-scaling H100 mesh
+              </div>
+            </div>
+
+            <!-- Tier 3: Enterprise Sovereign -->
+            <div id="tier-card-enterprise" class="tier-card p-4 rounded-xl border border-cloud-border bg-cloud-card flex flex-col transition-all relative">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-white">Enterprise Sovereign</span>
+                <span class="text-[10px] font-mono text-slate-400">BASE $999</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mb-3">50M+ requests, multi-cluster H100 pods, custom SLA.</p>
+              <div class="mt-auto pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                <i data-lucide="check" class="w-3 h-3 text-purple-400"></i> Dedicated hardware isolation
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Sticky Real-time Quote & Dynamic Breakdown Summary (5 Cols) -->
+      <div class="lg:col-span-5 sticky top-24 space-y-5">
+
+        <!-- Main Ticker Card -->
+        <div class="glass-card rounded-2xl p-6 sm:p-7 border border-cloud-border shadow-2xl relative overflow-hidden">
+          
+          <!-- Decorative Top Accent Glow -->
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-cyan-400 to-purple-500"></div>
+          
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-mono font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="calculator" class="w-4 h-4"></i>
+              Estimated Cloud Investment
+            </span>
+            <span id="billing-cycle-tag" class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+              Monthly Billed
+            </span>
+          </div>
+
+          <!-- Total Price Big Display -->
+          <div class="py-2 mb-4">
+            <div class="flex items-baseline gap-1">
+              <span id="price-currency-symbol" class="text-2xl sm:text-3xl font-bold font-mono text-slate-300">$</span>
+              <span id="price-total-display" class="text-4xl sm:text-5xl font-black font-display text-white tracking-tight">
+                989
+              </span>
+              <span class="text-slate-400 font-mono text-sm ml-1.5">/ month</span>
+            </div>
+            <div class="flex items-center gap-2 mt-1">
+              <span id="price-annualized-rate" class="text-xs text-slate-400 font-mono">
+                Billed as <span id="price-annualized-sum" class="text-slate-200 font-semibold">$11,868</span> / year
+              </span>
+              <span id="summary-savings-pill" class="hidden px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                SAVE 20%
+              </span>
+            </div>
+          </div>
+
+          <!-- Instant ROI Benchmark Comparison -->
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 mb-5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="trending-down" class="w-4 h-4 text-emerald-400"></i>
+              <span class="text-[11px] text-slate-300">Vs. Self-Hosted On-Prem / AWS</span>
+            </div>
+            <span id="roi-savings-pct" class="text-xs font-mono font-bold text-emerald-400">Save ~38%</span>
+          </div>
+
+          <!-- Itemized Breakdown Accordion / List -->
+          <div class="space-y-2.5 pt-3 border-t border-slate-800/80 mb-6 text-xs font-mono">
+            
+            <!-- Line Item: Tier Base Fee -->
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span id="summary-line-tier">Growth Scale Plan Base</span>
+              </span>
+              <span id="summary-price-tier" class="font-bold text-slate-200">$249.00</span>
+            </div>
+
+            <!-- Line Item: API Requests -->
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <i data-lucide="network" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span id="summary-line-api">API Volume (10,000,000)</span>
+              </span>
+              <span id="summary-price-api" class="font-bold text-slate-200">$150.00</span>
+            </div>
+
+            <!-- Line Item: GPU Nodes -->
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span id="summary-line-gpu">GPU H100 (2 Nodes)</span>
+              </span>
+              <span id="summary-price-gpu" class="font-bold text-slate-200">$500.00</span>
+            </div>
+
+            <!-- Line Item: Storage -->
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-purple-400"></i>
+                <span id="summary-line-storage">NVMe Storage (500 GB)</span>
+              </span>
+              <span id="summary-price-storage" class="font-bold text-slate-200">$40.00</span>
+            </div>
+
+            <!-- Line Item: Team Seats -->
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span id="summary-line-seats">Seats (5 Engineers)</span>
+              </span>
+              <span id="summary-price-seats" class="font-bold text-slate-200">$50.00</span>
+            </div>
+
+            <!-- Line Item: SLA Level -->
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span id="summary-line-sla">SLA Guarantee</span>
+              </span>
+              <span id="summary-price-sla" class="font-bold text-slate-200">$0.00</span>
+            </div>
+
+            <!-- Line Item: Add-ons Total -->
+            <div class="flex items-center justify-between text-slate-300">
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <i data-lucide="package-plus" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span id="summary-line-addons">Selected Add-ons (0)</span>
+              </span>
+              <span id="summary-price-addons" class="font-bold text-slate-200">$0.00</span>
+            </div>
+
+            <!-- Line Item: Annual Discount Deduction -->
+            <div id="summary-discount-row" class="hidden flex items-center justify-between text-emerald-400 pt-1">
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>Annual Saver (20% Off)</span>
+              </span>
+              <span id="summary-price-discount" class="font-bold">-$0.00</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="space-y-3">
+            <button id="primary-provision-btn" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all transform active:scale-[0.99]">
+              <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+              <span>Deploy Cluster & Start 14-Day Trial</span>
+            </button>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button id="trigger-pdf-quote-btn" class="py-2.5 px-3 rounded-lg bg-cloud-surface hover:bg-slate-800 border border-cloud-border text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+                <i data-lucide="file-down" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span>Download Quote</span>
+              </button>
+
+              <button id="trigger-schedule-btn" class="py-2.5 px-3 rounded-lg bg-cloud-surface hover:bg-slate-800 border border-cloud-border text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>Book Architecture Call</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Trust Badges & Guarantees -->
+          <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+            <span class="flex items-center gap-1">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+              No credit card upfront
+            </span>
+            <span class="flex items-center gap-1">
+              <i data-lucide="lock" class="w-3.5 h-3.5 text-indigo-400"></i>
+              Cancel anytime
+            </span>
+            <span class="flex items-center gap-1">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
+              Instant provisioning
+            </span>
+          </div>
+
+        </div>
+
+        <!-- Quick Help Card / Contact Architect -->
+        <div class="glass-panel rounded-xl p-4 border border-cloud-border flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <i data-lucide="messages-square" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-white">Need Custom GPU Hardware?</h4>
+              <p class="text-[11px] text-slate-400">Custom clusters up to 1024x B200 available</p>
+            </div>
+          </div>
+          <button id="talk-sales-btn" class="px-2.5 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-semibold transition-all border border-indigo-500/30">
+            Talk to Eng
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Frequently Asked Billing Questions (Accordion) -->
+    <div class="mt-16 pt-12 border-t border-cloud-border">
+      <div class="max-w-3xl mx-auto">
+        <div class="text-center mb-8">
+          <h3 class="text-xl sm:text-2xl font-bold text-white font-display">Frequently Asked Pricing Questions</h3>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Everything you need to know about inference billing and quota elasticity</p>
+        </div>
+
+        <div class="space-y-3">
+          
+          <!-- FAQ 1 -->
+          <div class="faq-item rounded-xl border border-cloud-border bg-cloud-card overflow-hidden transition-all">
+            <button class="faq-trigger w-full p-4 text-left flex items-center justify-between text-sm font-semibold text-white hover:text-indigo-300">
+              <span>How are API requests counted and what happens if we spike?</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 faq-icon transition-transform"></i>
+            </button>
+            <div class="faq-content hidden px-4 pb-4 text-xs text-slate-400 leading-relaxed border-t border-slate-800 pt-3">
+              Each HTTP/gRPC invocation is metered per token generated or inference pass executed. In the event of a sudden viral surge, our elastic mesh cushions burst capacity up to 150% without dropping requests. Overages are billed at transparent wholesale tier pricing ($0.000015 per extra call) with zero penalty multipliers.
+            </div>
+          </div>
+
+          <!-- FAQ 2 -->
+          <div class="faq-item rounded-xl border border-cloud-border bg-cloud-card overflow-hidden transition-all">
+            <button class="faq-trigger w-full p-4 text-left flex items-center justify-between text-sm font-semibold text-white hover:text-indigo-300">
+              <span>Can we pause or dynamically resize dedicated GPU instances?</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 faq-icon transition-transform"></i>
+            </button>
+            <div class="faq-content hidden px-4 pb-4 text-xs text-slate-400 leading-relaxed border-t border-slate-800 pt-3">
+              Yes. GPU nodes can be scaled down to zero standby mode through our Terraform provider or CLI (`hyper cluster scale --nodes=0`). While paused, you only pay for persistent NVMe block storage without incurring active GPU wattage charges.
+            </div>
+          </div>
+
+          <!-- FAQ 3 -->
+          <div class="faq-item rounded-xl border border-cloud-border bg-cloud-card overflow-hidden transition-all">
+            <button class="faq-trigger w-full p-4 text-left flex items-center justify-between text-sm font-semibold text-white hover:text-indigo-300">
+              <span>Are enterprise discounts available for multi-year commitments?</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 faq-icon transition-transform"></i>
+            </button>
+            <div class="faq-content hidden px-4 pb-4 text-xs text-slate-400 leading-relaxed border-t border-slate-800 pt-3">
+              Yes! For contracts exceeding $50k/year or 24/36-month terms, we offer up to 35% savings, customized SOC2 audit clauses, and direct reserved cluster allocation guarantees in US-East, EU-Central, and APAC sovereign availability zones.
+            </div>
+          </div>
+
+          <!-- FAQ 4 -->
+          <div class="faq-item rounded-xl border border-cloud-border bg-cloud-card overflow-hidden transition-all">
+            <button class="faq-trigger w-full p-4 text-left flex items-center justify-between text-sm font-semibold text-white hover:text-indigo-300">
+              <span>What compliance certifications are active on all instances?</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 faq-icon transition-transform"></i>
+            </button>
+            <div class="faq-content hidden px-4 pb-4 text-xs text-slate-400 leading-relaxed border-t border-slate-800 pt-3">
+              All infrastructure nodes are hosted in ISO 27001, SOC 2 Type II, and PCI-DSS Level 1 compliant secure data centers with physical biometric perimeter controls. Model inference weights are held strictly ephemeral unless customer persistent checkpoints are specified.
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal 1: Formal PDF Quote Generator Modal -->
+  <div id="quote-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-cloud-card border border-cloud-border rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      
+      <!-- Close Button -->
+      <button id="close-quote-modal-btn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex items-center gap-3 pb-4 border-b border-cloud-border mb-5">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+          <i data-lucide="file-check-2" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white font-display">Official Enterprise Quote Specification</h3>
+          <p class="text-xs text-slate-400 font-mono">Reference: <span id="modal-quote-ref" class="text-indigo-400 font-bold">EST-2026-X8819</span> • Valid for 30 Days</p>
+        </div>
+      </div>
+
+      <!-- Quote Meta Inputs -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Company / Organization</label>
+          <input type="text" id="quote-company-input" value="Acme Robotics & AI Labs" class="w-full px-3 py-2 rounded-lg bg-cloud-surface border border-cloud-border text-white text-xs font-mono focus:border-indigo-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Primary Architect Email</label>
+          <input type="email" id="quote-email-input" value="infra@acme-robotics.ai" class="w-full px-3 py-2 rounded-lg bg-cloud-surface border border-cloud-border text-white text-xs font-mono focus:border-indigo-500 focus:outline-none">
+        </div>
+      </div>
+
+      <!-- Quote Itemized Table Preview -->
+      <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4 mb-6 text-xs font-mono">
+        <div class="flex justify-between pb-2 border-b border-slate-800 font-bold text-slate-300">
+          <span>Provisioned Component</span>
+          <span>Allocated Spec</span>
+          <span>Monthly Rate</span>
+        </div>
+        <div class="space-y-2 py-2 text-slate-400">
+          <div class="flex justify-between">
+            <span class="text-slate-300">Base Tier Architecture</span>
+            <span id="quote-table-tier">Growth Scale</span>
+            <span id="quote-table-tier-rate" class="text-slate-200 font-bold">$249.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">Inference Throughput</span>
+            <span id="quote-table-api">10,000,000 Req</span>
+            <span id="quote-table-api-rate" class="text-slate-200 font-bold">$150.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">Dedicated Compute</span>
+            <span id="quote-table-gpu">2x H100 SXM5</span>
+            <span id="quote-table-gpu-rate" class="text-slate-200 font-bold">$500.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">High-IOPS Storage</span>
+            <span id="quote-table-storage">500 GB NVMe</span>
+            <span id="quote-table-storage-rate" class="text-slate-200 font-bold">$40.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">SSO & Governance</span>
+            <span id="quote-table-seats">5 Seats</span>
+            <span id="quote-table-seats-rate" class="text-slate-200 font-bold">$50.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">SLA Guarantee</span>
+            <span id="quote-table-sla">Standard 99.5%</span>
+            <span id="quote-table-sla-rate" class="text-slate-200 font-bold">$0.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">Add-ons Pack</span>
+            <span id="quote-table-addons">0 Attached</span>
+            <span id="quote-table-addons-rate" class="text-slate-200 font-bold">$0.00</span>
+          </div>
+        </div>
+        <div class="pt-3 border-t border-slate-800 flex justify-between items-baseline">
+          <span class="font-bold text-white uppercase">Total Estimated Rate:</span>
+          <div class="text-right">
+            <span id="quote-table-total" class="text-lg font-bold text-indigo-400 font-display">$989.00</span>
+            <span class="text-[10px] text-slate-400">/ month</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Actions -->
+      <div class="flex items-center justify-end gap-3">
+        <button id="modal-cancel-btn" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white text-xs font-semibold">
+          Cancel
+        </button>
+        <button id="download-simulated-pdf-btn" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition-all">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Generate Signed PDF</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal 2: Provisioning Simulation Terminal Modal -->
+  <div id="deploy-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-cloud-card border border-cloud-border rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-cloud-border mb-4">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+          <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+          <span class="text-xs font-mono text-slate-400 ml-2">hyper-daemon :: provision-cluster</span>
+        </div>
+        <button id="close-deploy-modal-btn" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div id="deploy-terminal" class="bg-black/80 rounded-xl p-4 font-mono text-xs text-slate-300 h-64 overflow-y-auto space-y-2 border border-slate-900">
+        <p class="text-slate-400">[INIT] Initializing cluster deployment token...</p>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between pt-3 border-t border-cloud-border">
+        <div class="flex items-center gap-2">
+          <div id="deploy-spinner" class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <span id="deploy-status-label" class="text-xs font-mono text-indigo-400 font-semibold">Provisioning nodes...</span>
+        </div>
+        <button id="deploy-finish-btn" class="hidden px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all">
+          Open Cloud Console
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Footer -->
+  <footer class="mt-20 border-t border-cloud-border/70 bg-cloud-dark py-8 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="font-display font-bold text-slate-300">Daily UI/UX Series</span>
+        <span class="text-slate-600">•</span>
+        <span>Day 030: Dynamic Pricing Calculator & Plan Customizer</span>
+      </div>
+      <div class="font-mono text-[11px] text-slate-400">
+        Engineered with Tailwind CSS & Web Audio API synthesis
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic & Web Audio Synthesizer Script -->
+  <script>
+    // --- 1. Sound Synthesis Engine (Web Audio API) ---
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playSliderTick(freq = 300) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        
+        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.04);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.045);
+      }
+
+      playToggle() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.08);
+
+        gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.085);
+      }
+
+      playAffirmative() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+        notes.forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.06);
+
+          gain.gain.setValueAtTime(0.05, now + i * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.06 + 0.15);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now + i * 0.06);
+          osc.stop(now + i * 0.06 + 0.16);
+        });
+      }
+
+      playSuccessFanfare() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const notes = [440, 554.37, 659.25, 880];
+        const now = this.ctx.currentTime;
+        notes.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + idx * 0.07);
+
+          gain.gain.setValueAtTime(0.07, now + idx * 0.07);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.07 + 0.25);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now + idx * 0.07);
+          osc.stop(now + idx * 0.07 + 0.26);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // --- 2. State & Pricing Constants ---
+    const CURRENCY_RATES = {
+      USD: { symbol: '$', rate: 1.0, precision: 0 },
+      EUR: { symbol: '€', rate: 0.92, precision: 0 },
+      GBP: { symbol: '£', rate: 0.79, precision: 0 },
+      JPY: { symbol: '¥', rate: 155.0, precision: 0 },
+      INR: { symbol: '₹', rate: 83.5, precision: 0 }
+    };
+
+    const state = {
+      isAnnual: false,
+      currency: 'USD',
+      apiPct: 25,        // mapped to requests
+      gpuNodes: 2,       // 0 - 32
+      storageGB: 500,    // 50 - 10000 GB
+      seats: 5,          // 1 - 100
+      sla: 'standard',   // standard, business, enterprise
+      addons: {
+        vpc: false,
+        hipaa: false,
+        finetuning: false,
+        redphone: false
+      }
+    };
+
+    // --- 3. Calculation Logic & Formulae ---
+    function getApiRequestsCount(pct) {
+      // Non-linear mapping from 0-100% to 100k up to 250M
+      if (pct <= 5) return 100000;
+      if (pct <= 15) return 1000000;
+      if (pct <= 35) return Math.round(1000000 + (pct - 15) * 450000); // 1M - 10M
+      if (pct <= 70) return Math.round(10000000 + (pct - 35) * 2571428); // 10M - 100M
+      return Math.round(100000000 + (pct - 70) * 5000000); // 100M - 250M
+    }
+
+    function formatNumberCompact(num) {
+      if (num >= 1000000) {
+        return (num / 1000000).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'M';
+      }
+      if (num >= 1000) {
+        return (num / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 }) + 'K';
+      }
+      return num.toString();
+    }
+
+    function calculateBilling() {
+      const apiReqs = getApiRequestsCount(state.apiPct);
+
+      // Base Tier Selection:
+      // Starter: < 3M api, 0 gpu, <= 300GB, <= 3 seats
+      // Growth: 3M - 80M api OR <= 8 gpus OR <= 4TB OR <= 30 seats
+      // Enterprise: > 80M api OR > 8 gpus OR > 4TB OR > 30 seats OR enterprise SLA
+      let tier = 'growth';
+      let tierBasePrice = 249;
+      let tierName = 'Growth Scale';
+
+      if (apiReqs <= 3000000 && state.gpuNodes === 0 && state.storageGB <= 300 && state.seats <= 3 && state.sla === 'standard') {
+        tier = 'starter';
+        tierBasePrice = 49;
+        tierName = 'Developer Core';
+      } else if (apiReqs > 80000000 || state.gpuNodes > 8 || state.storageGB > 4000 || state.seats > 30 || state.sla === 'enterprise') {
+        tier = 'enterprise';
+        tierBasePrice = 999;
+        tierName = 'Enterprise Sovereign';
+      }
+
+      // Cost Components (in USD):
+      // API Overages: $15 per 1M requests above tier base allowance
+      const freeApiQuota = tier === 'starter' ? 500000 : (tier === 'growth' ? 5000000 : 20000000);
+      const billableApi = Math.max(0, apiReqs - freeApiQuota);
+      const apiPrice = Math.round((billableApi / 1000000) * 15);
+
+      // GPU Compute: $250 / month per dedicated H100 node
+      const gpuPrice = state.gpuNodes * 250;
+
+      // Storage: $0.08 per GB / month
+      const storagePrice = Math.round(state.storageGB * 0.08);
+
+      // Seats: $10 per seat (first 2 free in starter, 5 free in growth, 10 free in enterprise)
+      const freeSeats = tier === 'starter' ? 1 : (tier === 'growth' ? 3 : 10);
+      const billableSeats = Math.max(0, state.seats - freeSeats);
+      const seatsPrice = billableSeats * 10;
+
+      // SLA
+      let slaPrice = 0;
+      if (state.sla === 'business') slaPrice = 150;
+      if (state.sla === 'enterprise') slaPrice = 590;
+
+      // Addons
+      let addonsPrice = 0;
+      let activeAddonsCount = 0;
+      if (state.addons.vpc) { addonsPrice += 290; activeAddonsCount++; }
+      if (state.addons.hipaa) { addonsPrice += 390; activeAddonsCount++; }
+      if (state.addons.finetuning) { addonsPrice += 450; activeAddonsCount++; }
+      if (state.addons.redphone) { addonsPrice += 750; activeAddonsCount++; }
+
+      const rawMonthlySubtotal = tierBasePrice + apiPrice + gpuPrice + storagePrice + seatsPrice + slaPrice + addonsPrice;
+
+      // Annual Discount (20%)
+      const discountPct = state.isAnnual ? 0.20 : 0;
+      const discountAmount = Math.round(rawMonthlySubtotal * discountPct);
+      const finalMonthlyPrice = rawMonthlySubtotal - discountAmount;
+      const annualizedTotal = finalMonthlyPrice * 12;
+      const annualSavingsYearly = (rawMonthlySubtotal * 0.20) * 12;
+
+      return {
+        tier,
+        tierName,
+        tierBasePrice,
+        apiReqs,
+        apiPrice,
+        gpuPrice,
+        storagePrice,
+        seatsPrice,
+        slaPrice,
+        addonsPrice,
+        activeAddonsCount,
+        rawMonthlySubtotal,
+        discountAmount,
+        finalMonthlyPrice,
+        annualizedTotal,
+        annualSavingsYearly
+      };
+    }
+
+    // Convert and Format Money
+    function formatMoney(amountUSD) {
+      const curr = CURRENCY_RATES[state.currency];
+      const converted = amountUSD * curr.rate;
+      if (curr.precision === 0) {
+        return curr.symbol + Math.round(converted).toLocaleString('en-US');
+      }
+      return curr.symbol + converted.toLocaleString('en-US', { minimumFractionDigits: curr.precision, maximumFractionDigits: curr.precision });
+    }
+
+    // --- 4. DOM Update Render Loop ---
+    function render() {
+      const bill = calculateBilling();
+      const curr = CURRENCY_RATES[state.currency];
+
+      // Sliders badges & fill tracks
+      // 1. API
+      const apiBadge = document.getElementById('badge-api-value');
+      apiBadge.textContent = bill.apiReqs.toLocaleString('en-US') + ' / mo';
+      document.getElementById('track-api-fill').style.width = state.apiPct + '%';
+
+      // 2. GPU
+      const gpuBadge = document.getElementById('badge-gpu-value');
+      gpuBadge.textContent = state.gpuNodes === 0 ? '0 (Serverless)' : `${state.gpuNodes} Node${state.gpuNodes > 1 ? 's' : ''} (${state.gpuNodes * 80} GB)`;
+      document.getElementById('track-gpu-fill').style.width = (state.gpuNodes / 32 * 100) + '%';
+
+      // 3. Storage
+      const storageBadge = document.getElementById('badge-storage-value');
+      storageBadge.textContent = state.storageGB >= 1000 ? `${(state.storageGB / 1000).toFixed(1)} TB NVMe` : `${state.storageGB} GB NVMe`;
+      document.getElementById('track-storage-fill').style.width = ((state.storageGB - 50) / (10000 - 50) * 100) + '%';
+
+      // 4. Seats
+      const seatsBadge = document.getElementById('badge-seats-value');
+      seatsBadge.textContent = `${state.seats} Engineer${state.seats > 1 ? 's' : ''}`;
+      document.getElementById('track-seats-fill').style.width = (state.seats / 100 * 100) + '%';
+
+      // Dynamic Tier Recommendation Highlight
+      document.getElementById('tier-card-starter').className = bill.tier === 'starter'
+        ? 'tier-card p-4 rounded-xl border-2 border-indigo-500 bg-indigo-950/30 flex flex-col transition-all relative shadow-lg shadow-indigo-500/20'
+        : 'tier-card p-4 rounded-xl border border-cloud-border bg-cloud-card flex flex-col transition-all relative opacity-75';
+
+      document.getElementById('tier-card-growth').className = bill.tier === 'growth'
+        ? 'tier-card p-4 rounded-xl border-2 border-indigo-500 bg-indigo-950/30 flex flex-col transition-all relative shadow-lg shadow-indigo-500/20'
+        : 'tier-card p-4 rounded-xl border border-cloud-border bg-cloud-card flex flex-col transition-all relative opacity-75';
+
+      document.getElementById('tier-card-enterprise').className = bill.tier === 'enterprise'
+        ? 'tier-card p-4 rounded-xl border-2 border-purple-500 bg-purple-950/30 flex flex-col transition-all relative shadow-lg shadow-purple-500/20'
+        : 'tier-card p-4 rounded-xl border border-cloud-border bg-cloud-card flex flex-col transition-all relative opacity-75';
+
+      document.getElementById('tier-auto-badge').textContent = `Recommended: ${bill.tierName}`;
+
+      // Currency Symbol & Total Display
+      document.getElementById('price-currency-symbol').textContent = curr.symbol;
+      const convertedMonthly = Math.round(bill.finalMonthlyPrice * curr.rate);
+      document.getElementById('price-total-display').textContent = convertedMonthly.toLocaleString('en-US');
+
+      // Annualized text & savings pill
+      const annualizedSum = Math.round(bill.annualizedTotal * curr.rate);
+      document.getElementById('price-annualized-sum').textContent = curr.symbol + annualizedSum.toLocaleString('en-US');
+
+      const savingsPill = document.getElementById('summary-savings-pill');
+      const annualSavingsCallout = document.getElementById('annual-savings-callout');
+      const annualSavingsAmount = document.getElementById('annual-savings-amount');
+      const discountRow = document.getElementById('summary-discount-row');
+
+      if (state.isAnnual) {
+        savingsPill.classList.remove('hidden');
+        annualSavingsCallout.classList.remove('opacity-0');
+        const yearlySavingsFormatted = curr.symbol + Math.round(bill.annualSavingsYearly * curr.rate).toLocaleString('en-US');
+        annualSavingsAmount.textContent = yearlySavingsFormatted;
+        discountRow.classList.remove('hidden');
+        document.getElementById('summary-price-discount').textContent = '-' + formatMoney(bill.discountAmount);
+        document.getElementById('billing-cycle-tag').textContent = 'Annual (20% Off)';
+      } else {
+        savingsPill.classList.add('hidden');
+        annualSavingsCallout.classList.add('opacity-0');
+        discountRow.classList.add('hidden');
+        document.getElementById('billing-cycle-tag').textContent = 'Monthly Billed';
+      }
+
+      // Line items breakdown
+      document.getElementById('summary-line-tier').textContent = bill.tierName + ' Base';
+      document.getElementById('summary-price-tier').textContent = formatMoney(bill.tierBasePrice);
+
+      document.getElementById('summary-line-api').textContent = `Inference Calls (${formatNumberCompact(bill.apiReqs)})`;
+      document.getElementById('summary-price-api').textContent = formatMoney(bill.apiPrice);
+
+      document.getElementById('summary-line-gpu').textContent = state.gpuNodes === 0 ? 'GPU Nodes (Serverless)' : `H100 GPUs (${state.gpuNodes} Nodes)`;
+      document.getElementById('summary-price-gpu').textContent = formatMoney(bill.gpuPrice);
+
+      document.getElementById('summary-line-storage').textContent = `Storage (${state.storageGB >= 1000 ? (state.storageGB/1000).toFixed(1)+'TB' : state.storageGB+'GB'})`;
+      document.getElementById('summary-price-storage').textContent = formatMoney(bill.storagePrice);
+
+      document.getElementById('summary-line-seats').textContent = `Team Seats (${state.seats})`;
+      document.getElementById('summary-price-seats').textContent = formatMoney(bill.seatsPrice);
+
+      document.getElementById('summary-line-sla').textContent = `SLA Level (${state.sla.toUpperCase()})`;
+      document.getElementById('summary-price-sla').textContent = formatMoney(bill.slaPrice);
+
+      document.getElementById('summary-line-addons').textContent = `Selected Add-ons (${bill.activeAddonsCount})`;
+      document.getElementById('summary-price-addons').textContent = formatMoney(bill.addonsPrice);
+      document.getElementById('addons-count').textContent = bill.activeAddonsCount;
+
+      // Update ARIA announcer
+      document.getElementById('price-live-announcer').textContent = 
+        `Updated total cost: ${formatMoney(bill.finalMonthlyPrice)} per month on ${bill.tierName} plan with ${state.isAnnual ? 'annual discount' : 'monthly billing'}.`;
+
+      // Update Quote Modal preview table
+      document.getElementById('quote-table-tier').textContent = bill.tierName;
+      document.getElementById('quote-table-tier-rate').textContent = formatMoney(bill.tierBasePrice);
+      document.getElementById('quote-table-api').textContent = formatNumberCompact(bill.apiReqs) + ' Req';
+      document.getElementById('quote-table-api-rate').textContent = formatMoney(bill.apiPrice);
+      document.getElementById('quote-table-gpu').textContent = state.gpuNodes === 0 ? '0 Serverless' : `${state.gpuNodes}x H100`;
+      document.getElementById('quote-table-gpu-rate').textContent = formatMoney(bill.gpuPrice);
+      document.getElementById('quote-table-storage').textContent = state.storageGB >= 1000 ? `${(state.storageGB/1000).toFixed(1)} TB` : `${state.storageGB} GB`;
+      document.getElementById('quote-table-storage-rate').textContent = formatMoney(bill.storagePrice);
+      document.getElementById('quote-table-seats').textContent = `${state.seats} Engineers`;
+      document.getElementById('quote-table-seats-rate').textContent = formatMoney(bill.seatsPrice);
+      document.getElementById('quote-table-sla').textContent = state.sla.toUpperCase();
+      document.getElementById('quote-table-sla-rate').textContent = formatMoney(bill.slaPrice);
+      document.getElementById('quote-table-addons').textContent = `${bill.activeAddonsCount} Modules`;
+      document.getElementById('quote-table-addons-rate').textContent = formatMoney(bill.addonsPrice);
+      document.getElementById('quote-table-total').textContent = formatMoney(bill.finalMonthlyPrice);
+    }
+
+    // --- 5. Interactive Event Listeners & Preset Bindings ---
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize Lucide icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      // Slider 1: API
+      const sliderApi = document.getElementById('slider-api');
+      sliderApi.addEventListener('input', (e) => {
+        state.apiPct = parseInt(e.target.value, 10);
+        sound.playSliderTick(200 + state.apiPct * 6);
+        render();
+      });
+
+      // Slider 2: GPU
+      const sliderGpu = document.getElementById('slider-gpu');
+      sliderGpu.addEventListener('input', (e) => {
+        state.gpuNodes = parseInt(e.target.value, 10);
+        sound.playSliderTick(240 + state.gpuNodes * 18);
+        render();
+      });
+
+      // Slider 3: Storage
+      const sliderStorage = document.getElementById('slider-storage');
+      sliderStorage.addEventListener('input', (e) => {
+        state.storageGB = parseInt(e.target.value, 10);
+        sound.playSliderTick(220 + (state.storageGB / 10000) * 400);
+        render();
+      });
+
+      // Slider 4: Seats
+      const sliderSeats = document.getElementById('slider-seats');
+      sliderSeats.addEventListener('input', (e) => {
+        state.seats = parseInt(e.target.value, 10);
+        sound.playSliderTick(220 + state.seats * 5);
+        render();
+      });
+
+      // Quick jumps for API
+      document.querySelectorAll('.api-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.apiPct = parseInt(btn.dataset.val, 10);
+          sliderApi.value = state.apiPct;
+          sound.playAffirmative();
+          render();
+        });
+      });
+
+      // Quick jumps for GPU
+      document.querySelectorAll('.gpu-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.gpuNodes = parseInt(btn.dataset.val, 10);
+          sliderGpu.value = state.gpuNodes;
+          sound.playAffirmative();
+          render();
+        });
+      });
+
+      // Quick jumps for Storage
+      document.querySelectorAll('.storage-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.storageGB = parseInt(btn.dataset.val, 10);
+          sliderStorage.value = state.storageGB;
+          sound.playAffirmative();
+          render();
+        });
+      });
+
+      // Quick jumps for Seats
+      document.querySelectorAll('.seats-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.seats = parseInt(btn.dataset.val, 10);
+          sliderSeats.value = state.seats;
+          sound.playAffirmative();
+          render();
+        });
+      });
+
+      // Billing Cycle Toggle (Monthly vs Annual)
+      const monthlyBtn = document.getElementById('billing-monthly-btn');
+      const annualBtn = document.getElementById('billing-annual-btn');
+
+      monthlyBtn.addEventListener('click', () => {
+        if (!state.isAnnual) return;
+        state.isAnnual = false;
+        monthlyBtn.className = "relative px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-white bg-indigo-600 shadow-md shadow-indigo-600/30";
+        annualBtn.className = "relative px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-slate-400 hover:text-white";
+        sound.playToggle();
+        render();
+      });
+
+      annualBtn.addEventListener('click', () => {
+        if (state.isAnnual) return;
+        state.isAnnual = true;
+        annualBtn.className = "relative px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-white bg-indigo-600 shadow-md shadow-indigo-600/30";
+        monthlyBtn.className = "relative px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-slate-400 hover:text-white";
+        sound.playAffirmative();
+        showToast('✨ 20% Annual Commitment Discount Applied!');
+        render();
+      });
+
+      // Currency Selector
+      const currencySelect = document.getElementById('currency-select');
+      currencySelect.addEventListener('change', (e) => {
+        state.currency = e.target.value;
+        sound.playToggle();
+        showToast(`Currency updated to ${state.currency}`);
+        render();
+      });
+
+      // Reset Button
+      document.getElementById('reset-sliders-btn').addEventListener('click', () => {
+        state.apiPct = 25;
+        state.gpuNodes = 2;
+        state.storageGB = 500;
+        state.seats = 5;
+        state.sla = 'standard';
+        state.addons = { vpc: false, hipaa: false, finetuning: false, redphone: false };
+        
+        sliderApi.value = 25;
+        sliderGpu.value = 2;
+        sliderStorage.value = 500;
+        sliderSeats.value = 5;
+
+        // Reset SLA radios
+        document.querySelector('input[name="sla-tier"][value="standard"]').checked = true;
+        updateSlaUI();
+
+        // Reset Addon checkboxes
+        ['vpc', 'hipaa', 'finetuning', 'redphone'].forEach(k => {
+          const el = document.getElementById(`addon-${k}`);
+          el.checked = false;
+          updateAddonCheckboxUI(el);
+        });
+
+        sound.playAffirmative();
+        showToast('Sliders restored to balanced default configuration');
+        render();
+      });
+
+      // SLA Radio selection
+      const slaRadios = document.querySelectorAll('input[name="sla-tier"]');
+      function updateSlaUI() {
+        document.querySelectorAll('.sla-option').forEach(opt => {
+          const radio = opt.querySelector('input');
+          const indicator = opt.querySelector('.sla-indicator');
+          if (radio.checked) {
+            opt.classList.add('border-indigo-500', 'bg-indigo-950/20');
+            opt.classList.remove('border-cloud-border', 'bg-cloud-card');
+            indicator.classList.remove('hidden');
+          } else {
+            opt.classList.remove('border-indigo-500', 'bg-indigo-950/20');
+            opt.classList.add('border-cloud-border', 'bg-cloud-card');
+            indicator.classList.add('hidden');
+          }
+        });
+      }
+
+      slaRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          state.sla = e.target.value;
+          sound.playAffirmative();
+          updateSlaUI();
+          render();
+        });
+      });
+
+      // Addons Checkboxes
+      function updateAddonCheckboxUI(cb) {
+        const card = cb.closest('.addon-card');
+        const customBox = card.querySelector('.custom-checkbox');
+        const checkIcon = card.querySelector('.check-icon');
+
+        if (cb.checked) {
+          card.classList.add('border-cyan-500', 'bg-cyan-950/20');
+          card.classList.remove('border-cloud-border', 'bg-cloud-card');
+          customBox.classList.add('bg-cyan-500', 'border-cyan-400');
+          checkIcon.classList.remove('opacity-0');
+        } else {
+          card.classList.remove('border-cyan-500', 'bg-cyan-950/20');
+          card.classList.add('border-cloud-border', 'bg-cloud-card');
+          customBox.classList.remove('bg-cyan-500', 'border-cyan-400');
+          checkIcon.classList.add('opacity-0');
+        }
+      }
+
+      ['vpc', 'hipaa', 'finetuning', 'redphone'].forEach(k => {
+        const cb = document.getElementById(`addon-${k}`);
+        cb.addEventListener('change', () => {
+          state.addons[k] = cb.checked;
+          sound.playToggle();
+          updateAddonCheckboxUI(cb);
+          render();
+        });
+      });
+
+      // Preset Buttons
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const preset = btn.dataset.preset;
+          applyPreset(preset);
+          sound.playAffirmative();
+          showToast(`Applied preset: ${btn.querySelector('span').textContent}`);
+        });
+      });
+
+      function applyPreset(preset) {
+        if (preset === 'hacker') {
+          state.apiPct = 5;
+          state.gpuNodes = 0;
+          state.storageGB = 100;
+          state.seats = 1;
+          state.sla = 'standard';
+          state.addons = { vpc: false, hipaa: false, finetuning: false, redphone: false };
+        } else if (preset === 'seed') {
+          state.apiPct = 25;
+          state.gpuNodes = 2;
+          state.storageGB = 500;
+          state.seats = 5;
+          state.sla = 'standard';
+          state.addons = { vpc: true, hipaa: false, finetuning: false, redphone: false };
+        } else if (preset === 'scale') {
+          state.apiPct = 55;
+          state.gpuNodes = 8;
+          state.storageGB = 3000;
+          state.seats = 25;
+          state.sla = 'business';
+          state.addons = { vpc: true, hipaa: true, finetuning: false, redphone: false };
+        } else if (preset === 'enterprise') {
+          state.apiPct = 90;
+          state.gpuNodes = 32;
+          state.storageGB = 10000;
+          state.seats = 100;
+          state.sla = 'enterprise';
+          state.addons = { vpc: true, hipaa: true, finetuning: true, redphone: true };
+        }
+
+        sliderApi.value = state.apiPct;
+        sliderGpu.value = state.gpuNodes;
+        sliderStorage.value = state.storageGB;
+        sliderSeats.value = state.seats;
+
+        document.querySelector(`input[name="sla-tier"][value="${state.sla}"]`).checked = true;
+        updateSlaUI();
+
+        ['vpc', 'hipaa', 'finetuning', 'redphone'].forEach(k => {
+          const el = document.getElementById(`addon-${k}`);
+          el.checked = state.addons[k];
+          updateAddonCheckboxUI(el);
+        });
+
+        render();
+      }
+
+      // Audio Sound Toggle Button
+      const soundBtn = document.getElementById('sound-toggle-btn');
+      const soundIcon = document.getElementById('sound-icon');
+      soundBtn.addEventListener('click', () => {
+        sound.muted = !sound.muted;
+        if (sound.muted) {
+          soundIcon.setAttribute('data-lucide', 'volume-x');
+          soundIcon.classList.remove('text-emerald-400');
+          soundIcon.classList.add('text-slate-500');
+          showToast('Audio synthesizer muted');
+        } else {
+          soundIcon.setAttribute('data-lucide', 'volume-2');
+          soundIcon.classList.remove('text-slate-500');
+          soundIcon.classList.add('text-emerald-400');
+          sound.playAffirmative();
+          showToast('Audio synthesizer active');
+        }
+        lucide.createIcons();
+      });
+
+      // FAQ Accordion
+      document.querySelectorAll('.faq-trigger').forEach(trigger => {
+        trigger.addEventListener('click', () => {
+          const item = trigger.closest('.faq-item');
+          const content = item.querySelector('.faq-content');
+          const icon = item.querySelector('.faq-icon');
+          const isHidden = content.classList.contains('hidden');
+
+          document.querySelectorAll('.faq-content').forEach(c => c.classList.add('hidden'));
+          document.querySelectorAll('.faq-icon').forEach(i => i.classList.remove('rotate-180'));
+
+          if (isHidden) {
+            content.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+            sound.playToggle();
+          }
+        });
+      });
+
+      // --- Modals: PDF Quote & Deploy Terminal ---
+      const quoteModal = document.getElementById('quote-modal');
+      const openQuoteBtns = [document.getElementById('open-quote-modal-btn'), document.getElementById('trigger-pdf-quote-btn')];
+      const closeQuoteBtns = [document.getElementById('close-quote-modal-btn'), document.getElementById('modal-cancel-btn')];
+
+      openQuoteBtns.forEach(btn => {
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+          quoteModal.classList.remove('hidden');
+          setTimeout(() => quoteModal.classList.remove('opacity-0'), 10);
+          sound.playAffirmative();
+        });
+      });
+
+      closeQuoteBtns.forEach(btn => {
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+          quoteModal.classList.add('opacity-0');
+          setTimeout(() => quoteModal.classList.add('hidden'), 200);
+        });
+      });
+
+      document.getElementById('download-simulated-pdf-btn').addEventListener('click', () => {
+        const company = document.getElementById('quote-company-input').value || 'Organization';
+        sound.playSuccessFanfare();
+        showToast(`📄 Generating official cryptographic PDF quote for ${company}...`);
+        
+        // Close modal after simulated delay
+        setTimeout(() => {
+          quoteModal.classList.add('opacity-0');
+          setTimeout(() => quoteModal.classList.add('hidden'), 200);
+          showToast('✅ Download initiated: HyperScale-Quote-2026.pdf');
+        }, 1200);
+      });
+
+      // Deploy Modal & Simulation Terminal
+      const deployModal = document.getElementById('deploy-modal');
+      const deployBtns = [document.getElementById('header-deploy-btn'), document.getElementById('primary-provision-btn')];
+      const closeDeployBtn = document.getElementById('close-deploy-modal-btn');
+      const deployTerminal = document.getElementById('deploy-terminal');
+      const deploySpinner = document.getElementById('deploy-spinner');
+      const deployStatusLabel = document.getElementById('deploy-status-label');
+      const deployFinishBtn = document.getElementById('deploy-finish-btn');
+
+      deployBtns.forEach(btn => {
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+          startDeploySimulation();
+        });
+      });
+
+      closeDeployBtn.addEventListener('click', () => {
+        deployModal.classList.add('opacity-0');
+        setTimeout(() => deployModal.classList.add('hidden'), 200);
+      });
+
+      deployFinishBtn.addEventListener('click', () => {
+        deployModal.classList.add('opacity-0');
+        setTimeout(() => deployModal.classList.add('hidden'), 200);
+        showToast('🚀 Navigating to HyperScale Cloud Console...');
+      });
+
+      function startDeploySimulation() {
+        deployModal.classList.remove('hidden');
+        setTimeout(() => deployModal.classList.remove('opacity-0'), 10);
+        sound.playAffirmative();
+
+        deployTerminal.innerHTML = '<p class="text-indigo-400 font-bold">[CLUSTER-ORCHESTRATOR] Initializing provisioning sequence...</p>';
+        deploySpinner.classList.remove('hidden');
+        deployFinishBtn.classList.add('hidden');
+        deployStatusLabel.textContent = 'Allocating datacenter quotas...';
+
+        const logs = [
+          { text: '✓ [NET] Creating VPC subnet peering in us-east-4a [10.240.0.0/16]', delay: 400 },
+          { text: `✓ [GPU] Claiming ${state.gpuNodes}x NVIDIA H100 SXM5 80GB HBM3 nodes...`, delay: 900 },
+          { text: `✓ [NVME] Formatting ${state.storageGB}GB high-IOPS persistent storage volume...`, delay: 1400 },
+          { text: `✓ [AUTH] Injecting ${state.seats} developer IAM policy keys & Okta SAML tokens...`, delay: 1900 },
+          { text: `✓ [SLA] Attaching ${state.sla.toUpperCase()} telemetry health-check probe...`, delay: 2400 },
+          { text: '🎉 [READY] Kubernetes AI Pods running. Ingress ready at https://api.hyperscale.ai/v1', delay: 3000 }
+        ];
+
+        logs.forEach((item, index) => {
+          setTimeout(() => {
+            const p = document.createElement('p');
+            p.className = index === logs.length - 1 ? 'text-emerald-400 font-bold' : 'text-slate-300';
+            p.textContent = item.text;
+            deployTerminal.appendChild(p);
+            deployTerminal.scrollTop = deployTerminal.scrollHeight;
+            sound.playSliderTick(350 + index * 60);
+
+            if (index === logs.length - 1) {
+              deploySpinner.classList.add('hidden');
+              deployStatusLabel.textContent = 'Cluster Online & Ready';
+              deployFinishBtn.classList.remove('hidden');
+              sound.playSuccessFanfare();
+            }
+          }, item.delay);
+        });
+      }
+
+      // Schedule architecture call button
+      document.getElementById('trigger-schedule-btn').addEventListener('click', () => {
+        sound.playAffirmative();
+        showToast('📅 Calendar invite dispatched to your architect team');
+      });
+
+      document.getElementById('talk-sales-btn').addEventListener('click', () => {
+        sound.playAffirmative();
+        showToast('💬 Connecting to Principal Solution Architect...');
+      });
+
+      // Initial Render
+      render();
+    });
+
+    // Toast Notification helper
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'px-4 py-2.5 rounded-xl bg-cloud-card border border-indigo-500/50 text-white text-xs font-semibold shadow-2xl flex items-center gap-2 transform translate-y-3 opacity-0 transition-all duration-300 backdrop-blur-md pointer-events-auto';
+      toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-cyan-400 flex-shrink-0"></i> <span>${message}</span>`;
+      container.appendChild(toast);
+      
+      if (window.lucide) {
+        lucide.createIcons({ root: toast });
+      }
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-3', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-3');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
