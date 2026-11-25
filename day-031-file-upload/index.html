@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 031: File Upload & Asset Processing Suite | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter, JetBrains Mono, Outfit, Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vault: {
+              brand: '#3B82F6',        // Electric Blue
+              brandHover: '#2563EB',
+              cyan: '#06B6D4',
+              teal: '#14B8A6',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E',
+              violet: '#8B5CF6',
+              dark: '#050811',         // Deep obsidian
+              card: '#0B1120',
+              surface: '#111A2E',
+              border: '#1E293B',
+              borderLight: '#334155'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            accent: ['Space Grotesk', 'sans-serif']
+          },
+          animation: {
+            'pulse-glow': 'pulseGlow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'radar': 'radarSweep 3s linear infinite',
+            'shimmer': 'shimmer 2s infinite linear'
+          },
+          keyframes: {
+            pulseGlow: {
+              '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+              '50%': { opacity: '0.8', transform: 'scale(1.02)' }
+            },
+            radarSweep: {
+              '0%': { transform: 'rotate(0deg)' },
+              '100%': { transform: 'rotate(360deg)' }
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B1120;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* Glassmorphism Classes */
+    .glass-card {
+      background: rgba(11, 17, 32, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-panel {
+      background: rgba(17, 26, 46, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Dropzone Active Pulse State */
+    .dropzone-active {
+      border-color: #3B82F6 !important;
+      background: rgba(59, 130, 246, 0.08) !important;
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.3) !important;
+      transform: scale(1.008);
+    }
+
+    /* Progress bar stripes */
+    .progress-stripes {
+      background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.15) 75%,
+        transparent 75%,
+        transparent
+      );
+      background-size: 1rem 1rem;
+      animation: progressStripeMove 1s linear infinite;
+    }
+    @keyframes progressStripeMove {
+      from { background-position: 1rem 0; }
+      to { background-position: 0 0; }
+    }
+  </style>
+</head>
+<body class="bg-vault-dark text-slate-100 min-h-screen selection:bg-blue-500 selection:text-white flex flex-col font-sans relative overflow-x-hidden">
+
+  <!-- Ambient Background Lighting -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute -top-[15%] left-1/3 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute top-[45%] -right-[10%] w-[550px] h-[550px] bg-cyan-500/10 rounded-full blur-[130px]"></div>
+    <div class="absolute -bottom-[10%] -left-[5%] w-[500px] h-[500px] bg-violet-600/10 rounded-full blur-[140px]"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+  </div>
+
+  <!-- Live ARIA Announcer for Screen Readers -->
+  <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true">
+    Asset processing hub ready.
+  </div>
+
+  <!-- Navigation Bar -->
+  <header class="sticky top-0 z-40 border-b border-vault-border/80 bg-vault-dark/85 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Hub Nav -->
+      <div class="flex items-center gap-3">
+        <a href="../" class="group flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-mono font-medium hidden sm:inline text-slate-400 group-hover:text-slate-200">Daily UI Hub</span>
+        </a>
+        <div class="h-4 w-[1px] bg-vault-border"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 via-cyan-500 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/30 font-bold font-display text-sm">
+            31
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-sm font-bold tracking-tight text-white font-display">OmniDrop Media & Asset Pipeline</h1>
+              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                EDGE V4.2
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 hidden md:block">Multipart chunking, instant AVIF/WebP transcoding, CDN token generator</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls & Quick Presets -->
+      <div class="flex items-center gap-3">
+        
+        <!-- Load Sample Media Preset -->
+        <button id="load-sample-btn" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-vault-surface hover:bg-slate-800 text-slate-200 text-xs font-medium border border-vault-border hover:border-blue-500/50 transition-all shadow-sm">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span>Sample Assets</span>
+        </button>
+
+        <!-- Audio Synthesizer Toggle -->
+        <button id="sound-toggle-btn" class="p-2 rounded-lg bg-vault-surface border border-vault-border text-slate-400 hover:text-blue-400 hover:border-blue-500/40 transition-all flex items-center justify-center" title="Toggle acoustic feedback">
+          <i id="sound-icon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+        </button>
+
+        <!-- Storage Quota Badge -->
+        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-vault-card border border-vault-border text-xs font-mono">
+          <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-slate-400"></i>
+          <span class="text-slate-400">Storage:</span>
+          <span id="quota-used-text" class="text-slate-200 font-bold">2.41 GB</span>
+          <span class="text-slate-500">/ 10 GB</span>
+        </div>
+
+        <!-- Primary Upload Trigger -->
+        <label for="native-file-input" class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-xs shadow-md shadow-blue-600/30 transition-all transform active:scale-95">
+          <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+          <span>Select Files</span>
+        </label>
+        <input type="file" id="native-file-input" class="sr-only" multiple accept="image/*,video/*,application/pdf,.json,.csv,.svg,.zip">
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Top Headline & Pipeline Features Header -->
+    <div class="text-center max-w-3xl mx-auto mb-8">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono font-medium mb-3">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        Zero-Latency Chunked Ingestion Mesh
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-white font-display tracking-tight leading-tight">
+        High-Throughput Asset Processing & Cloud Dropzone
+      </h2>
+      <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+        Drag files anywhere or paste directly from your clipboard (<kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[11px] text-slate-300">Ctrl + V</kbd>). Automated virus inspection, multi-resolution WebP/AVIF transcoding, and instant edge CDN distribution.
+      </p>
+    </div>
+
+    <!-- Interactive Grid: Left Dropzone & Configuration Pipeline (7 Cols) + Right Live Asset Queue & Telemetry (5 Cols) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT COLUMN: Dropzone & Automated Transformation Controls (7 Cols) -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- Interactive Drag & Drop Area -->
+        <div 
+          id="dropzone" 
+          tabindex="0"
+          role="region"
+          aria-label="File Drag and Drop Upload Area"
+          class="relative rounded-2xl border-2 border-dashed border-vault-borderLight/80 hover:border-blue-500/80 bg-vault-card/70 p-8 sm:p-10 text-center transition-all duration-200 cursor-pointer group focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 shadow-2xl"
+        >
+          <!-- Subtle radar sweep background glow -->
+          <div class="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden opacity-30">
+            <div class="absolute -inset-[100%] bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.15)_0%,transparent_70%)]"></div>
+          </div>
+
+          <!-- Dropzone Center Content -->
+          <div class="relative z-10 flex flex-col items-center">
+            
+            <!-- Animated Icon Sphere -->
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-blue-600/20 via-cyan-500/20 to-indigo-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-5 group-hover:scale-110 group-hover:text-white group-hover:border-blue-400 transition-all shadow-lg shadow-blue-500/10">
+              <i data-lucide="cloud-upload" class="w-10 h-10 transition-transform group-hover:-translate-y-1"></i>
+            </div>
+
+            <h3 class="text-lg sm:text-xl font-bold text-white font-display mb-1.5">
+              Drag & Drop your media, models, or archives here
+            </h3>
+            <p class="text-xs text-slate-400 max-w-md mx-auto mb-4 leading-relaxed">
+              Or click anywhere to browse from local disk. Direct clipboard image paste (<kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-slate-300">Ctrl+V</kbd>) is enabled.
+            </p>
+
+            <!-- Supported Extensions Badges -->
+            <div class="flex flex-wrap items-center justify-center gap-1.5 max-w-lg mb-6">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">IMAGES: PNG, JPG, WebP, SVG</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">VIDEO: MP4, ProRes, WebM</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">DOCS: PDF, CSV, JSON</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-slate-800 text-slate-400 border border-slate-700">MAX 500 MB</span>
+            </div>
+
+            <!-- Alternative Cloud Import Source Buttons -->
+            <div class="flex items-center gap-2 pt-2 border-t border-vault-border/60 w-full justify-center">
+              <span class="text-[11px] text-slate-500 font-mono">Quick Import:</span>
+              <button type="button" id="import-gdrive-btn" class="px-2.5 py-1 rounded-md bg-vault-surface hover:bg-slate-800 text-slate-300 text-[11px] font-medium border border-vault-border transition-colors flex items-center gap-1">
+                <i data-lucide="hard-drive" class="w-3 h-3 text-emerald-400"></i> Google Drive
+              </button>
+              <button type="button" id="import-s3-btn" class="px-2.5 py-1 rounded-md bg-vault-surface hover:bg-slate-800 text-slate-300 text-[11px] font-medium border border-vault-border transition-colors flex items-center gap-1">
+                <i data-lucide="database" class="w-3 h-3 text-amber-400"></i> S3 Bucket
+              </button>
+              <button type="button" id="import-url-btn" class="px-2.5 py-1 rounded-md bg-vault-surface hover:bg-slate-800 text-slate-300 text-[11px] font-medium border border-vault-border transition-colors flex items-center gap-1">
+                <i data-lucide="link" class="w-3 h-3 text-blue-400"></i> Direct URL
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Automated Transcoding & Edge Pipeline Settings Card -->
+        <div class="glass-card rounded-2xl p-6 border border-vault-border shadow-xl">
+          <div class="flex items-center justify-between pb-4 border-b border-vault-border/80 mb-5">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <i data-lucide="cpu" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold text-white font-display">Automated Ingestion Pipeline</h4>
+                <p class="text-[11px] text-slate-400">Rules executed on upload before pushing to edge CDN</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+              PIPELINE ACTIVE
+            </span>
+          </div>
+
+          <!-- Rules Toggles Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            
+            <!-- Rule 1: Auto WebP / AVIF Transcoding -->
+            <label class="flex items-start gap-3 p-3 rounded-xl bg-vault-surface/60 border border-vault-border hover:border-slate-700 cursor-pointer transition-all">
+              <input type="checkbox" id="rule-transcode" checked class="mt-0.5 rounded border-slate-700 text-blue-600 focus:ring-blue-500 bg-slate-900">
+              <div>
+                <span class="text-xs font-bold text-white block">Transcode to AVIF / WebP</span>
+                <span class="text-[11px] text-slate-400">Compresses visual payload by ~65% with lossless fidelity</span>
+              </div>
+            </label>
+
+            <!-- Rule 2: Strip EXIF & Geolocation Metadata -->
+            <label class="flex items-start gap-3 p-3 rounded-xl bg-vault-surface/60 border border-vault-border hover:border-slate-700 cursor-pointer transition-all">
+              <input type="checkbox" id="rule-exif" checked class="mt-0.5 rounded border-slate-700 text-blue-600 focus:ring-blue-500 bg-slate-900">
+              <div>
+                <span class="text-xs font-bold text-white block">Sanitize EXIF & GPS Tags</span>
+                <span class="text-[11px] text-slate-400">Removes camera device info and personal geospatial coordinates</span>
+              </div>
+            </label>
+
+            <!-- Rule 3: Malware & Antivirus Cloud Scan -->
+            <label class="flex items-start gap-3 p-3 rounded-xl bg-vault-surface/60 border border-vault-border hover:border-slate-700 cursor-pointer transition-all">
+              <input type="checkbox" id="rule-antivirus" checked class="mt-0.5 rounded border-slate-700 text-blue-600 focus:ring-blue-500 bg-slate-900">
+              <div>
+                <span class="text-xs font-bold text-white block">Heuristic Malware Inspection</span>
+                <span class="text-[11px] text-slate-400">ClamAV deep bytecode scan before granting CDN access</span>
+              </div>
+            </label>
+
+            <!-- Rule 4: Multi-Resolution Sprites & Thumbnails -->
+            <label class="flex items-start gap-3 p-3 rounded-xl bg-vault-surface/60 border border-vault-border hover:border-slate-700 cursor-pointer transition-all">
+              <input type="checkbox" id="rule-thumbnails" checked class="mt-0.5 rounded border-slate-700 text-blue-600 focus:ring-blue-500 bg-slate-900">
+              <div>
+                <span class="text-xs font-bold text-white block">Generate Responsive Responsive Resizes</span>
+                <span class="text-[11px] text-slate-400">Creates 1x, 2x, 3x preview derivatives & CSS blur placeholders</span>
+              </div>
+            </label>
+
+          </div>
+
+          <!-- Target Bucket Selection -->
+          <div class="mt-4 pt-3 border-t border-vault-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400 font-mono text-[11px]">Destination Bucket:</span>
+              <select id="target-bucket-select" class="px-2.5 py-1 rounded-lg bg-vault-card border border-vault-border text-slate-200 font-mono text-xs focus:outline-none focus:border-blue-500">
+                <option value="us-east-edge">us-east-fast-cdn (Direct Ingress)</option>
+                <option value="eu-central-vault">eu-central-sovereign (GDPR Vault)</option>
+                <option value="apac-cold">apac-glacier-archive (Low Cost)</option>
+              </select>
+            </div>
+            <span class="text-[11px] text-slate-500 font-mono flex items-center gap-1">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> TLS 1.3 / AES-256 Encrypted
+            </span>
+          </div>
+
+        </div>
+
+        <!-- Global Storage Allocation Bar -->
+        <div class="glass-panel rounded-xl p-4 border border-vault-border">
+          <div class="flex items-center justify-between text-xs font-mono mb-2">
+            <span class="text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="database" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Tenant Cloud Storage Quota</span>
+            </span>
+            <span class="text-slate-300 font-bold"><span id="storage-meter-pct">24.1</span>% Allocated</span>
+          </div>
+          <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+            <div id="storage-meter-bar" class="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 rounded-full transition-all duration-300" style="width: 24.1%;"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-1.5">
+            <span>2.41 GB Used</span>
+            <span>7.59 GB Free (Tier Limit: 10.00 GB)</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Active Upload Queue & Asset Inspector (5 Cols) -->
+      <div class="lg:col-span-5 space-y-5">
+        
+        <!-- Queue Header & Batch Operations -->
+        <div class="glass-card rounded-2xl p-5 border border-vault-border shadow-2xl">
+          
+          <div class="flex items-center justify-between pb-3 border-b border-vault-border/80 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-bold text-white font-display">Upload Stream</span>
+              <span id="queue-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                0 Items
+              </span>
+            </div>
+
+            <!-- Batch Action Controls -->
+            <div class="flex items-center gap-1.5">
+              <button id="batch-pause-btn" class="p-1.5 rounded-lg bg-vault-surface hover:bg-slate-800 text-slate-400 hover:text-white border border-vault-border text-xs transition-colors" title="Pause or Resume All In-Flight Uploads">
+                <i data-lucide="pause" class="w-3.5 h-3.5"></i>
+              </button>
+              <button id="batch-clear-btn" class="p-1.5 rounded-lg bg-vault-surface hover:bg-slate-800 text-slate-400 hover:text-rose-400 border border-vault-border text-xs transition-colors" title="Clear Completed Items">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Queue Filter Tabs -->
+          <div class="flex items-center gap-1 p-1 bg-vault-surface rounded-lg mb-4 text-xs font-mono">
+            <button class="filter-tab flex-1 py-1 px-2 rounded-md font-semibold text-white bg-blue-600 transition-all" data-filter="all">All</button>
+            <button class="filter-tab flex-1 py-1 px-2 rounded-md text-slate-400 hover:text-white transition-all" data-filter="active">Active</button>
+            <button class="filter-tab flex-1 py-1 px-2 rounded-md text-slate-400 hover:text-white transition-all" data-filter="completed">Ready</button>
+            <button class="filter-tab flex-1 py-1 px-2 rounded-md text-slate-400 hover:text-white transition-all" data-filter="media">Media</button>
+          </div>
+
+          <!-- File Items Container -->
+          <div id="file-queue-container" class="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+            
+            <!-- Empty State Placeholder -->
+            <div id="queue-empty-state" class="py-12 text-center text-slate-500 space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-center mx-auto text-slate-400">
+                <i data-lucide="inbox" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <p class="text-xs font-medium text-slate-300">Upload stream is currently empty</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">Drag files into the dropzone or load demo assets</p>
+              </div>
+              <button id="empty-state-sample-btn" class="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-semibold font-mono transition-all">
+                Load Sample Media
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Queue Bottom Status Summary -->
+          <div id="queue-bottom-bar" class="hidden mt-4 pt-3 border-t border-vault-border/80 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+            <div class="flex items-center gap-1.5">
+              <span id="queue-status-indicator" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="queue-aggregate-speed">14.2 MB/s Transfer Speed</span>
+            </div>
+            <span id="queue-aggregate-eta">ETA: 00:08</span>
+          </div>
+
+        </div>
+
+        <!-- Real-Time Edge Network Health Box -->
+        <div class="glass-panel rounded-xl p-4 border border-vault-border flex items-center justify-between text-xs font-mono">
+          <div class="flex items-center gap-2.5">
+            <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+            <div>
+              <span class="text-slate-200 font-bold">Edge Edge PoP: BOM-01</span>
+              <p class="text-[10px] text-slate-400">Latency: 11ms • Multiplex HTTP/3 QUIC</p>
+            </div>
+          </div>
+          <span class="text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 text-[10px]">
+            HEALTHY
+          </span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Modal: Asset Inspector & CDN Preview Drawer -->
+  <div id="preview-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-vault-card border border-vault-border rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      
+      <!-- Close Button -->
+      <button id="close-preview-modal-btn" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex items-center gap-3 pb-4 border-b border-vault-border mb-5">
+        <div id="modal-type-icon-container" class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+          <i id="modal-type-icon" data-lucide="image" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="modal-filename" class="text-base font-bold text-white font-display truncate max-w-sm">Asset Preview</h3>
+          <p id="modal-filesize-badge" class="text-xs text-slate-400 font-mono">2.4 MB • Image/PNG</p>
+        </div>
+      </div>
+
+      <!-- Preview Visual Display (Image or File Icon Banner) -->
+      <div id="modal-preview-visual" class="rounded-xl border border-vault-border bg-slate-950 p-3 mb-5 flex items-center justify-center overflow-hidden min-h-[220px]">
+        <img id="modal-preview-img" src="" alt="File Preview" class="max-h-60 max-w-full rounded-lg object-contain shadow-md">
+        <div id="modal-preview-generic" class="hidden flex-col items-center justify-center py-8 text-slate-400">
+          <i data-lucide="file-text" class="w-16 h-16 text-blue-400 mb-2"></i>
+          <span class="text-xs font-mono text-slate-300">Binary Document Preview Rendered</span>
+        </div>
+      </div>
+
+      <!-- Detailed Asset Metadata Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5 text-xs font-mono">
+        <div class="p-2.5 rounded-lg bg-vault-surface border border-vault-border">
+          <span class="text-[10px] text-slate-500 block">RESOLUTION</span>
+          <span id="modal-meta-res" class="font-bold text-slate-200">3840 x 2160</span>
+        </div>
+        <div class="p-2.5 rounded-lg bg-vault-surface border border-vault-border">
+          <span class="text-[10px] text-slate-500 block">COMPRESSION</span>
+          <span id="modal-meta-savings" class="font-bold text-emerald-400">-64.2% AVIF</span>
+        </div>
+        <div class="p-2.5 rounded-lg bg-vault-surface border border-vault-border">
+          <span class="text-[10px] text-slate-500 block">SECURITY SCAN</span>
+          <span class="font-bold text-emerald-400 flex items-center gap-1">
+            <i data-lucide="check" class="w-3 h-3"></i> Passed
+          </span>
+        </div>
+        <div class="p-2.5 rounded-lg bg-vault-surface border border-vault-border col-span-2 sm:col-span-3">
+          <span class="text-[10px] text-slate-500 block mb-1">GLOBAL EDGE CDN ENDPOINT</span>
+          <div class="flex items-center justify-between gap-2 bg-slate-900 px-2 py-1.5 rounded border border-slate-800">
+            <code id="modal-cdn-url" class="text-[11px] text-blue-300 truncate">https://cdn.omnidrop.cloud/v1/assets/9941a2.avif</code>
+            <button id="copy-cdn-url-btn" class="text-xs text-slate-300 hover:text-white px-2 py-0.5 rounded bg-blue-600 hover:bg-blue-500 font-semibold flex items-center gap-1 transition-colors flex-shrink-0">
+              <i data-lucide="copy" class="w-3 h-3"></i> Copy
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-vault-border">
+        <button id="modal-delete-btn" class="px-4 py-2 rounded-lg text-rose-400 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Asset
+        </button>
+        <button id="modal-done-btn" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/30">
+          Done
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Footer -->
+  <footer class="mt-20 border-t border-vault-border/70 bg-vault-dark py-8 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="font-display font-bold text-slate-300">Daily UI/UX Series</span>
+        <span class="text-slate-600">•</span>
+        <span>Day 031: File Upload & Asset Processing Suite</span>
+      </div>
+      <div class="font-mono text-[11px] text-slate-400">
+        HTML5 Drag & Drop API, Clipboard API, and Web Audio API Synthesis
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic & Sound Engine Script -->
+  <script>
+    // --- 1. Sound Synthesis Engine (Web Audio API) ---
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playDropThud() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.12);
+
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.12);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.13);
+      }
+
+      playSuccessChime() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const freqs = [587.33, 880]; // D5, A5
+        freqs.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now + idx * 0.08);
+
+          gain.gain.setValueAtTime(0.05, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.18);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.19);
+        });
+      }
+
+      playBatchCompleteFanfare() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const chords = [523.25, 659.25, 783.99, 1046.50]; // C Major arpeggio
+        chords.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + idx * 0.06);
+
+          gain.gain.setValueAtTime(0.06, now + idx * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.06 + 0.22);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now + idx * 0.06);
+          osc.stop(now + idx * 0.06 + 0.23);
+        });
+      }
+
+      playErrorBuzzer() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(110, this.ctx.currentTime + 0.08);
+
+        gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.18);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.19);
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // --- 2. State & Data Structures ---
+    let activeFilter = 'all';
+    let fileQueue = [];
+    let isAllPaused = false;
+    let currentlyInspectedItem = null;
+
+    // Helper: Format Bytes to Human Readable string
+    function formatBytes(bytes, decimals = 1) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // --- 3. Queue Renderer & UI Updates ---
+    function renderQueue() {
+      const container = document.getElementById('file-queue-container');
+      const emptyState = document.getElementById('queue-empty-state');
+      const queueCountBadge = document.getElementById('queue-count-badge');
+      const bottomBar = document.getElementById('queue-bottom-bar');
+
+      queueCountBadge.textContent = `${fileQueue.length} Item${fileQueue.length === 1 ? '' : 's'}`;
+
+      if (fileQueue.length === 0) {
+        container.innerHTML = '';
+        container.appendChild(emptyState);
+        emptyState.classList.remove('hidden');
+        bottomBar.classList.add('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      bottomBar.classList.remove('hidden');
+
+      // Filter items
+      const filtered = fileQueue.filter(item => {
+        if (activeFilter === 'active') return item.status === 'uploading' || item.status === 'processing';
+        if (activeFilter === 'completed') return item.status === 'ready';
+        if (activeFilter === 'media') return item.type.startsWith('image/') || item.type.startsWith('video/');
+        return true;
+      });
+
+      container.innerHTML = '';
+
+      filtered.forEach(item => {
+        const card = document.createElement('div');
+        card.className = `file-card p-3.5 rounded-xl border ${item.status === 'ready' ? 'border-emerald-500/30 bg-emerald-950/10' : (item.status === 'error' ? 'border-rose-500/30 bg-rose-950/10' : 'border-vault-border bg-vault-surface/60')} transition-all flex flex-col gap-2.5`;
+        
+        let iconName = 'file';
+        let iconColor = 'text-blue-400';
+        if (item.type.startsWith('image/')) { iconName = 'image'; iconColor = 'text-cyan-400'; }
+        else if (item.type.startsWith('video/')) { iconName = 'film'; iconColor = 'text-violet-400'; }
+        else if (item.type.includes('pdf')) { iconName = 'file-text'; iconColor = 'text-amber-400'; }
+        else if (item.type.includes('json') || item.type.includes('csv')) { iconName = 'code-2'; iconColor = 'text-emerald-400'; }
+
+        // Status badge format
+        let statusBadge = '';
+        if (item.status === 'uploading') {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span> ${Math.round(item.progress)}%</span>`;
+        } else if (item.status === 'processing') {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-spin"></span> TRANSCODING</span>`;
+        } else if (item.status === 'ready') {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> READY</span>`;
+        } else if (item.status === 'paused') {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">PAUSED</span>`;
+        } else if (item.status === 'error') {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">FAILED</span>`;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-lg bg-vault-card border border-vault-border flex items-center justify-center ${iconColor} flex-shrink-0">
+                <i data-lucide="${iconName}" class="w-5 h-5"></i>
+              </div>
+              <div class="min-w-0">
+                <h5 class="text-xs font-bold text-white truncate hover:text-blue-400 cursor-pointer inspect-trigger font-display" title="Click to inspect metadata">${item.name}</h5>
+                <div class="flex items-center gap-2 text-[10px] font-mono text-slate-400 mt-0.5">
+                  <span>${formatBytes(item.size)}</span>
+                  <span>•</span>
+                  <span>${item.type.split('/')[1]?.toUpperCase() || 'BIN'}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              ${statusBadge}
+              <button class="remove-btn p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition-colors" title="Remove item">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          ${item.status === 'uploading' || item.status === 'processing' ? `
+            <div class="space-y-1">
+              <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-150 progress-stripes" style="width: ${item.progress}%;"></div>
+              </div>
+              <div class="flex justify-between text-[10px] font-mono text-slate-400">
+                <span>${item.status === 'processing' ? 'Encoding AVIF & checking signatures...' : `${formatBytes(item.size * (item.progress/100))} / ${formatBytes(item.size)}`}</span>
+                <span>${item.status === 'processing' ? 'Finalizing' : item.speed}</span>
+              </div>
+            </div>
+          ` : ''}
+
+          ${item.status === 'ready' ? `
+            <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1 border-t border-slate-800/60">
+              <span class="text-emerald-400 flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Scanned • CDN Distributed</span>
+              <button class="inspect-btn text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1">
+                <i data-lucide="external-link" class="w-3 h-3"></i> Inspect Asset
+              </button>
+            </div>
+          ` : ''}
+        `;
+
+        // Event bindings
+        const inspectTrigger = card.querySelector('.inspect-trigger');
+        if (inspectTrigger) {
+          inspectTrigger.addEventListener('click', () => openPreviewModal(item));
+        }
+        const inspectBtn = card.querySelector('.inspect-btn');
+        if (inspectBtn) {
+          inspectBtn.addEventListener('click', () => openPreviewModal(item));
+        }
+        const removeBtn = card.querySelector('.remove-btn');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', () => {
+            fileQueue = fileQueue.filter(f => f.id !== item.id);
+            sound.playDropThud();
+            renderQueue();
+            updateStorageMetrics();
+          });
+        }
+
+        container.appendChild(card);
+      });
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      // Update aggregate transfer speed & indicator
+      const activeCount = fileQueue.filter(i => i.status === 'uploading' || i.status === 'processing').length;
+      const indicator = document.getElementById('queue-status-indicator');
+      const speedLabel = document.getElementById('queue-aggregate-speed');
+      const etaLabel = document.getElementById('queue-aggregate-eta');
+
+      if (activeCount > 0) {
+        indicator.className = 'w-2 h-2 rounded-full bg-blue-400 animate-ping';
+        speedLabel.textContent = `${(activeCount * 7.4).toFixed(1)} MB/s Aggregate Throughput`;
+        etaLabel.textContent = `ETA: ~00:0${Math.max(2, activeCount * 3)}`;
+      } else {
+        indicator.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        speedLabel.textContent = 'All Streams Ingested & Deployed';
+        etaLabel.textContent = 'Idle';
+      }
+    }
+
+    // --- 4. Simulation Engine for Uploads & Transcoding ---
+    function addFilesToQueue(files) {
+      sound.playDropThud();
+      let addedCount = 0;
+
+      Array.from(files).forEach(file => {
+        // Validation: Max 500 MB
+        if (file.size > 500 * 1024 * 1024) {
+          showToast(`⚠️ File "${file.name}" exceeds 500MB max payload limit`, 'rose');
+          sound.playErrorBuzzer();
+          return;
+        }
+
+        const item = {
+          id: 'FILE_' + Math.random().toString(36).substring(2, 9),
+          name: file.name,
+          size: file.size,
+          type: file.type || 'application/octet-stream',
+          progress: 0,
+          status: 'uploading', // uploading, processing, ready, paused, error
+          speed: '12.4 MB/s',
+          previewUrl: null,
+          cdnUrl: `https://cdn.omnidrop.cloud/v1/assets/${Math.random().toString(36).substring(2, 8)}.${file.name.split('.').pop() || 'bin'}`,
+          dimensions: '3840 x 2160',
+          savings: '-64.2%'
+        };
+
+        // If image, create local object URL for preview
+        if (file.type.startsWith('image/')) {
+          item.previewUrl = URL.createObjectURL(file);
+        }
+
+        fileQueue.unshift(item);
+        addedCount++;
+        simulateUpload(item);
+      });
+
+      if (addedCount > 0) {
+        showToast(`Ingesting ${addedCount} asset${addedCount > 1 ? 's' : ''} into pipeline...`, 'blue');
+        announceA11y(`${addedCount} new files added to upload pipeline.`);
+      }
+
+      renderQueue();
+      updateStorageMetrics();
+    }
+
+    function simulateUpload(item) {
+      const stepDuration = 80; // ms
+      const interval = setInterval(() => {
+        if (isAllPaused || item.status === 'paused') return;
+
+        if (item.progress < 90) {
+          item.progress += Math.random() * 9 + 4;
+          item.speed = `${(Math.random() * 8 + 8).toFixed(1)} MB/s`;
+          renderQueue();
+        } else if (item.progress < 100) {
+          item.progress = 100;
+          item.status = 'processing';
+          renderQueue();
+          
+          // Processing delay (transcoding + virus scan simulation)
+          setTimeout(() => {
+            item.status = 'ready';
+            sound.playSuccessChime();
+            renderQueue();
+            updateStorageMetrics();
+
+            // Check if all are finished
+            const remaining = fileQueue.filter(f => f.status === 'uploading' || f.status === 'processing').length;
+            if (remaining === 0) {
+              sound.playBatchCompleteFanfare();
+              showToast('🎉 All pipeline assets sanitized and deployed to CDN!', 'emerald');
+            }
+          }, 1200);
+
+          clearInterval(interval);
+        }
+      }, stepDuration);
+    }
+
+    function updateStorageMetrics() {
+      const totalBytes = fileQueue.reduce((acc, cur) => acc + cur.size, 0);
+      const baseGB = 2.41;
+      const additionalGB = totalBytes / (1024 * 1024 * 1024);
+      const totalGB = Math.min(10.0, baseGB + additionalGB);
+      const pct = (totalGB / 10.0 * 100).toFixed(1);
+
+      document.getElementById('quota-used-text').textContent = `${totalGB.toFixed(2)} GB`;
+      document.getElementById('storage-meter-pct').textContent = pct;
+      document.getElementById('storage-meter-bar').style.width = `${pct}%`;
+    }
+
+    // --- 5. Interactive Modal Inspector ---
+    function openPreviewModal(item) {
+      currentlyInspectedItem = item;
+      const modal = document.getElementById('preview-modal');
+      const filenameEl = document.getElementById('modal-filename');
+      const sizeBadgeEl = document.getElementById('modal-filesize-badge');
+      const previewImg = document.getElementById('modal-preview-img');
+      const genericPreview = document.getElementById('modal-preview-generic');
+      const cdnUrlEl = document.getElementById('modal-cdn-url');
+      const savingsEl = document.getElementById('modal-meta-savings');
+
+      filenameEl.textContent = item.name;
+      sizeBadgeEl.textContent = `${formatBytes(item.size)} • ${item.type}`;
+      cdnUrlEl.textContent = item.cdnUrl;
+      savingsEl.textContent = item.savings;
+
+      if (item.previewUrl) {
+        previewImg.src = item.previewUrl;
+        previewImg.classList.remove('hidden');
+        genericPreview.classList.add('hidden');
+      } else {
+        previewImg.classList.add('hidden');
+        genericPreview.classList.remove('hidden');
+      }
+
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+      sound.playDropThud();
+    }
+
+    function closePreviewModal() {
+      const modal = document.getElementById('preview-modal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+      currentlyInspectedItem = null;
+    }
+
+    // --- 6. Event Listeners & Drag/Drop Interactivity ---
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      const dropzone = document.getElementById('dropzone');
+      const nativeInput = document.getElementById('native-file-input');
+
+      // Drag Events
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add('dropzone-active');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove('dropzone-active');
+        }, false);
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
+          addFilesToQueue(files);
+        }
+      });
+
+      // Click dropzone to open native selector
+      dropzone.addEventListener('click', (e) => {
+        // Prevent trigger if clicking on child buttons
+        if (e.target.closest('button')) return;
+        nativeInput.click();
+      });
+
+      // Keyboard accessible trigger
+      dropzone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          nativeInput.click();
+        }
+      });
+
+      // Native Input Change
+      nativeInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          addFilesToQueue(e.target.files);
+          nativeInput.value = ''; // reset for re-uploading same file
+        }
+      });
+
+      // Direct Clipboard Image Paste Listener
+      window.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        const pastedFiles = [];
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].kind === 'file') {
+            const blob = items[i].getAsFile();
+            pastedFiles.push(new File([blob], `clipboard-asset-${Date.now()}.png`, { type: blob.type }));
+          }
+        }
+        if (pastedFiles.length > 0) {
+          addFilesToQueue(pastedFiles);
+          showToast('📋 Captured asset directly from system clipboard!', 'cyan');
+        }
+      });
+
+      // Demo Preset Asset Loader
+      function loadSampleAssets() {
+        // Synthesize rich mock assets
+        const mockAssets = [
+          {
+            name: 'nebula-8k-cinematic-render.png',
+            size: 28450120, // ~28.4 MB
+            type: 'image/png',
+            previewUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+            dimensions: '7680 x 4320',
+            savings: '-72.4% AVIF'
+          },
+          {
+            name: 'teaser-trailer-h265-master.mp4',
+            size: 142600400, // ~142.6 MB
+            type: 'video/mp4',
+            previewUrl: null,
+            dimensions: '3840 x 2160 (60fps)',
+            savings: '-48.1% HLS'
+          },
+          {
+            name: 'q3-financial-audit-report.pdf',
+            size: 8940020, // ~8.9 MB
+            type: 'application/pdf',
+            previewUrl: null,
+            dimensions: '28 Pages',
+            savings: '-31.5% Web-PDF'
+          },
+          {
+            name: 'design-tokens-and-icon-sprites.svg',
+            size: 1250300, // ~1.2 MB
+            type: 'image/svg+xml',
+            previewUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
+            dimensions: 'Vector Scalable',
+            savings: '-54.0% Gzip'
+          }
+        ];
+
+        sound.playDropThud();
+        mockAssets.forEach(m => {
+          const item = {
+            id: 'FILE_' + Math.random().toString(36).substring(2, 9),
+            name: m.name,
+            size: m.size,
+            type: m.type,
+            progress: 0,
+            status: 'uploading',
+            speed: '18.6 MB/s',
+            previewUrl: m.previewUrl,
+            cdnUrl: `https://cdn.omnidrop.cloud/v1/assets/${Math.random().toString(36).substring(2, 8)}.${m.name.split('.').pop()}`,
+            dimensions: m.dimensions,
+            savings: m.savings
+          };
+          fileQueue.unshift(item);
+          simulateUpload(item);
+        });
+
+        showToast('🚀 Loaded 4 production sample media assets!', 'blue');
+        renderQueue();
+        updateStorageMetrics();
+      }
+
+      document.getElementById('load-sample-btn').addEventListener('click', loadSampleAssets);
+      document.getElementById('empty-state-sample-btn').addEventListener('click', loadSampleAssets);
+
+      // Cloud Import Buttons
+      document.getElementById('import-gdrive-btn').addEventListener('click', () => {
+        sound.playSuccessChime();
+        showToast('🔗 Connecting to Google Drive OAuth provider...');
+        setTimeout(loadSampleAssets, 800);
+      });
+      document.getElementById('import-s3-btn').addEventListener('click', () => {
+        sound.playSuccessChime();
+        showToast('📦 Synchronizing remote AWS S3 prefix...');
+        setTimeout(loadSampleAssets, 800);
+      });
+      document.getElementById('import-url-btn').addEventListener('click', () => {
+        sound.playSuccessChime();
+        showToast('🌐 Fetching remote URL stream...');
+        setTimeout(loadSampleAssets, 800);
+      });
+
+      // Filter Tabs
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.filter-tab').forEach(t => {
+            t.className = 'filter-tab flex-1 py-1 px-2 rounded-md text-slate-400 hover:text-white transition-all';
+          });
+          tab.className = 'filter-tab flex-1 py-1 px-2 rounded-md font-semibold text-white bg-blue-600 transition-all';
+          activeFilter = tab.dataset.filter;
+          renderQueue();
+        });
+      });
+
+      // Batch Pause / Resume
+      document.getElementById('batch-pause-btn').addEventListener('click', () => {
+        isAllPaused = !isAllPaused;
+        const icon = document.querySelector('#batch-pause-btn i');
+        if (isAllPaused) {
+          icon.setAttribute('data-lucide', 'play');
+          showToast('⏸️ In-flight upload streams paused');
+        } else {
+          icon.setAttribute('data-lucide', 'pause');
+          showToast('▶️ Resumed in-flight uploads');
+        }
+        lucide.createIcons();
+      });
+
+      // Batch Clear Completed
+      document.getElementById('batch-clear-btn').addEventListener('click', () => {
+        fileQueue = fileQueue.filter(f => f.status !== 'ready');
+        sound.playDropThud();
+        showToast('🧹 Cleared all completed uploads from queue');
+        renderQueue();
+        updateStorageMetrics();
+      });
+
+      // Audio Toggle Button
+      const soundBtn = document.getElementById('sound-toggle-btn');
+      const soundIcon = document.getElementById('sound-icon');
+      soundBtn.addEventListener('click', () => {
+        sound.muted = !sound.muted;
+        if (sound.muted) {
+          soundIcon.setAttribute('data-lucide', 'volume-x');
+          soundIcon.classList.remove('text-emerald-400');
+          soundIcon.classList.add('text-slate-500');
+          showToast('Audio feedback muted');
+        } else {
+          soundIcon.setAttribute('data-lucide', 'volume-2');
+          soundIcon.classList.remove('text-slate-500');
+          soundIcon.classList.add('text-emerald-400');
+          sound.playSuccessChime();
+          showToast('Audio feedback enabled');
+        }
+        lucide.createIcons();
+      });
+
+      // Modal Actions
+      document.getElementById('close-preview-modal-btn').addEventListener('click', closePreviewModal);
+      document.getElementById('modal-done-btn').addEventListener('click', closePreviewModal);
+
+      document.getElementById('modal-delete-btn').addEventListener('click', () => {
+        if (currentlyInspectedItem) {
+          fileQueue = fileQueue.filter(f => f.id !== currentlyInspectedItem.id);
+          sound.playDropThud();
+          showToast('🗑️ Asset purged from bucket & edge CDN');
+          closePreviewModal();
+          renderQueue();
+          updateStorageMetrics();
+        }
+      });
+
+      document.getElementById('copy-cdn-url-btn').addEventListener('click', () => {
+        const url = document.getElementById('modal-cdn-url').textContent;
+        navigator.clipboard.writeText(url).then(() => {
+          sound.playSuccessChime();
+          showToast('📋 CDN URL copied to clipboard!', 'cyan');
+        });
+      });
+
+      // Initial Render
+      renderQueue();
+    });
+
+    // Announce to Screen Readers via ARIA live region
+    function announceA11y(msg) {
+      const el = document.getElementById('a11y-announcer');
+      if (el) el.textContent = msg;
+    }
+
+    // Toast Notification Helper
+    function showToast(message, variant = 'blue') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      let borderGlow = 'border-blue-500/50';
+      let iconColor = 'text-blue-400';
+      if (variant === 'emerald') { borderGlow = 'border-emerald-500/50'; iconColor = 'text-emerald-400'; }
+      if (variant === 'rose') { borderGlow = 'border-rose-500/50'; iconColor = 'text-rose-400'; }
+      if (variant === 'cyan') { borderGlow = 'border-cyan-500/50'; iconColor = 'text-cyan-400'; }
+
+      toast.className = `px-4 py-2.5 rounded-xl bg-vault-card border ${borderGlow} text-white text-xs font-semibold shadow-2xl flex items-center gap-2 transform translate-y-3 opacity-0 transition-all duration-300 backdrop-blur-md pointer-events-auto`;
+      toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 ${iconColor} flex-shrink-0"></i> <span>${message}</span>`;
+      container.appendChild(toast);
+
+      if (window.lucide) {
+        lucide.createIcons({ root: toast });
+      }
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-3', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-3');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>

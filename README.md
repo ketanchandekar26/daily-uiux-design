@@ -49,7 +49,8 @@ Every daily challenge is executed under four core engineering pillars:
 | **028** | **Contact Us & Interactive Help Center** | Support / Communication | [Day 028 Prototype](./day-028-contact-us/index.html) | ✅ Completed |
 | **029** | **Interactive Map & Geospatial Route Explorer** | Maps / Navigation | [Day 029 Prototype](./day-029-map/index.html) | ✅ Completed |
 | **030** | **Dynamic Pricing Calculator & Plan Customizer** | SaaS / Billing | [Day 030 Prototype](./day-030-pricing/index.html) | ✅ Completed |
-| **031** | File Upload & Asset Processing Suite | Utility / Productivity | *Upcoming* | ⏳ Queued |
+| **031** | **File Upload & Asset Processing Suite** | Utility / Productivity | [Day 031 Prototype](./day-031-file-upload/index.html) | ✅ Completed |
+| **032** | Crowdfunding & Backer Pledge Studio | Fintech / Social | *Upcoming* | ⏳ Queued |
 
 ---
 
