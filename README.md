@@ -51,7 +51,8 @@ Every daily challenge is executed under four core engineering pillars:
 | **030** | **Dynamic Pricing Calculator & Plan Customizer** | SaaS / Billing | [Day 030 Prototype](./day-030-pricing/index.html) | ✅ Completed |
 | **031** | **File Upload & Asset Processing Suite** | Utility / Productivity | [Day 031 Prototype](./day-031-file-upload/index.html) | ✅ Completed |
 | **032** | **Crowdfunding & Backer Pledge Studio** | Fintech / Social | [Day 032 Prototype](./day-032-crowdfunding/index.html) | ✅ Completed |
-| **033** | Customize Product & 3D Configurator | E-Commerce / 3D | *Upcoming* | ⏳ Queued |
+| **033** | **Customize Product & 3D Configurator** | E-Commerce / 3D | [Day 033 Prototype](./day-033-product-customizer/index.html) | ✅ Completed |
+| **034** | Automotive Dashboard & EV Telemetry Hub | IoT / Automotive | *Upcoming* | ⏳ Queued |
 
 ---
 
