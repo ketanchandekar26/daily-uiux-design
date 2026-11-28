@@ -52,7 +52,8 @@ Every daily challenge is executed under four core engineering pillars:
 | **031** | **File Upload & Asset Processing Suite** | Utility / Productivity | [Day 031 Prototype](./day-031-file-upload/index.html) | ✅ Completed |
 | **032** | **Crowdfunding & Backer Pledge Studio** | Fintech / Social | [Day 032 Prototype](./day-032-crowdfunding/index.html) | ✅ Completed |
 | **033** | **Customize Product & 3D Configurator** | E-Commerce / 3D | [Day 033 Prototype](./day-033-product-customizer/index.html) | ✅ Completed |
-| **034** | Automotive Dashboard & EV Telemetry Hub | IoT / Automotive | *Upcoming* | ⏳ Queued |
+| **034** | **Automotive Dashboard & EV Telemetry Hub** | IoT / Automotive | [Day 034 Prototype](./day-034-car-interface/index.html) | ✅ Completed |
+| **035** | Blog Post & Editorial Reading Studio | Content / Typography | *Upcoming* | ⏳ Queued |
 
 ---
 

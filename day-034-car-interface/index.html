@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 034: Automotive Dashboard & EV Telemetry Hub | Daily UI/UX</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter, JetBrains Mono, Outfit, Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cockpit: {
+              cyan: '#06B6D4',
+              teal: '#14B8A6',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              crimson: '#EF4444',
+              violet: '#8B5CF6',
+              dark: '#05070D',        // Deepest cockpit obsidian
+              card: '#0A0F1D',
+              surface: '#10172A',
+              border: '#1C263D',
+              borderLight: '#2D3D5E'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            accent: ['Space Grotesk', 'sans-serif']
+          },
+          animation: {
+            'pulse-subtle': 'pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'radar': 'radarScan 4s linear infinite',
+            'shimmer': 'shimmer 2.5s infinite linear'
+          },
+          keyframes: {
+            radarScan: {
+              '0%': { transform: 'rotate(0deg)' },
+              '100%': { transform: 'rotate(360deg)' }
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0A0F1D;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1C263D;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2D3D5E;
+    }
+
+    /* Glassmorphism */
+    .glass-card {
+      background: rgba(10, 15, 29, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-panel {
+      background: rgba(16, 23, 42, 0.72);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Drive mode thematic ambient glows */
+    .glow-eco {
+      box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.35);
+    }
+    .glow-comfort {
+      box-shadow: 0 0 35px -5px rgba(6, 182, 212, 0.35);
+    }
+    .glow-sport {
+      box-shadow: 0 0 35px -5px rgba(239, 68, 68, 0.45);
+    }
+    .glow-autopilot {
+      box-shadow: 0 0 35px -5px rgba(139, 92, 246, 0.4);
+    }
+  </style>
+</head>
+<body class="bg-cockpit-dark text-slate-100 min-h-screen selection:bg-cyan-500 selection:text-white flex flex-col font-sans relative overflow-x-hidden">
+
+  <!-- Ambient Dynamic Mood Glow (Adapts with Drive Mode) -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div id="ambient-glow-1" class="absolute -top-[15%] left-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[140px] transition-colors duration-700"></div>
+    <div id="ambient-glow-2" class="absolute top-[40%] -right-[10%] w-[550px] h-[550px] bg-blue-600/10 rounded-full blur-[130px] transition-colors duration-700"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(#1c263d_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+  </div>
+
+  <!-- Live ARIA Announcer for Screen Readers -->
+  <div id="a11y-cockpit-announcer" class="sr-only" aria-live="polite" aria-atomic="true">
+    Cockpit OS initialized. Ready in Park mode.
+  </div>
+
+  <!-- Top Vehicle Status & Safety Bar -->
+  <header class="sticky top-0 z-40 border-b border-cockpit-border/80 bg-cockpit-dark/90 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Hub Breadcrumb & Model Badge -->
+      <div class="flex items-center gap-3">
+        <a href="../" class="group flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-600 group-hover:text-white transition-all shadow-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-mono font-medium hidden sm:inline text-slate-400 group-hover:text-slate-200">Daily UI Hub</span>
+        </a>
+        <div class="h-4 w-[1px] bg-cockpit-border"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 via-teal-500 to-blue-500 flex items-center justify-center text-white shadow-md shadow-cyan-500/30 font-bold font-display text-sm">
+            34
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-sm font-bold tracking-tight text-white font-display">Apex Cyber-GT Cockpit OS</h1>
+              <span id="header-drive-badge" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                COMFORT TOURING
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 hidden md:block">Real-time EV Telemetry, Powertrain Simulation &amp; ADAS Vision</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Toggles & Controls -->
+      <div class="flex items-center gap-3">
+        
+        <!-- Speed Units Toggle (km/h vs mph) -->
+        <button id="unit-toggle-btn" class="px-2.5 py-1 rounded-lg bg-cockpit-surface border border-cockpit-border text-xs font-mono font-bold text-slate-300 hover:text-white transition-colors">
+          <span id="unit-label">KM/H</span>
+        </button>
+
+        <!-- Turn Signal Left / Hazard / Turn Signal Right Controls -->
+        <div class="flex items-center gap-1 bg-cockpit-surface border border-cockpit-border rounded-lg p-1 text-xs">
+          <button id="signal-left-btn" class="p-1 rounded text-slate-400 hover:text-emerald-400 transition-colors" title="Left Turn Signal">
+            <i data-lucide="arrow-left-circle" class="w-4 h-4"></i>
+          </button>
+          <button id="hazard-btn" class="p-1 rounded text-slate-400 hover:text-amber-400 transition-colors" title="Hazard Flasher">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+          </button>
+          <button id="signal-right-btn" class="p-1 rounded text-slate-400 hover:text-emerald-400 transition-colors" title="Right Turn Signal">
+            <i data-lucide="arrow-right-circle" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Synthesizer Audio Toggle -->
+        <button id="sound-toggle-btn" class="p-2 rounded-lg bg-cockpit-surface border border-cockpit-border text-slate-400 hover:text-cyan-400 hover:border-cyan-500/40 transition-all flex items-center justify-center text-xs font-mono" title="Toggle EV Motor &amp; Cockpit Audio">
+          <i id="sound-icon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+        </button>
+
+        <!-- Headlights Toggle -->
+        <button id="headlights-btn" class="p-2 rounded-lg bg-cockpit-surface border border-cockpit-border text-slate-400 hover:text-cyan-300 transition-all" title="Toggle Matrix LED Headlights">
+          <i id="headlights-icon" data-lucide="sun" class="w-4 h-4 text-cyan-400"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Cockpit Layout -->
+  <main class="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Drive Mode Selector Bar -->
+    <div class="glass-panel rounded-2xl p-2.5 border border-cockpit-border flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2 overflow-x-auto text-xs font-mono">
+        <span class="text-slate-500 text-[11px] font-bold px-2 hidden sm:inline">DRIVE MODE:</span>
+        <button class="drive-mode-btn active-mode px-3.5 py-1.5 rounded-xl font-bold text-slate-950 bg-cyan-400 shadow-md shadow-cyan-500/30 transition-all flex items-center gap-1.5" data-mode="comfort">
+          <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+          <span>Comfort</span>
+        </button>
+        <button class="drive-mode-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all flex items-center gap-1.5" data-mode="eco">
+          <i data-lucide="leaf" class="w-3.5 h-3.5"></i>
+          <span>Eco Range+</span>
+        </button>
+        <button class="drive-mode-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all flex items-center gap-1.5" data-mode="sport">
+          <i data-lucide="flame" class="w-3.5 h-3.5"></i>
+          <span>Track GT</span>
+        </button>
+        <button class="drive-mode-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all flex items-center gap-1.5" data-mode="autopilot">
+          <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+          <span>Neural Drive</span>
+        </button>
+      </div>
+
+      <!-- Gear Selector PRND Matrix -->
+      <div class="flex items-center gap-1 bg-black/60 p-1 rounded-xl border border-cockpit-border text-xs font-mono font-bold">
+        <button class="gear-btn px-2.5 py-1 rounded-lg text-emerald-400 bg-emerald-500/20 border border-emerald-500/40 active-gear" data-gear="P">P</button>
+        <button class="gear-btn px-2.5 py-1 rounded-lg text-slate-500 hover:text-white transition-colors" data-gear="R">R</button>
+        <button class="gear-btn px-2.5 py-1 rounded-lg text-slate-500 hover:text-white transition-colors" data-gear="N">N</button>
+        <button class="gear-btn px-2.5 py-1 rounded-lg text-slate-500 hover:text-white transition-colors" data-gear="D">D</button>
+      </div>
+    </div>
+
+    <!-- Central Cockpit Grid: Left Primary Instrument Cluster (7 Cols) + Right ADAS & Controls (5 Cols) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- LEFT: Dynamic Instrument Cluster & Throttle Simulation (7 Cols) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- Main Speedometer & Power Dial Card -->
+        <div class="glass-card rounded-2xl p-6 border border-cockpit-border relative overflow-hidden shadow-2xl flex flex-col items-center justify-center">
+          
+          <!-- Top Telemetry Status (SoC & Range) -->
+          <div class="w-full flex items-center justify-between pb-3 border-b border-cockpit-border/80 text-xs font-mono mb-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="battery-charging" class="w-4 h-4 text-emerald-400"></i>
+              <span class="text-slate-400">Battery SoC:</span>
+              <span id="soc-pct" class="text-emerald-400 font-bold">82%</span>
+              <span class="text-slate-500">(102 kWh)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400">Est. Range:</span>
+              <span id="range-val" class="text-cyan-400 font-bold">486 km</span>
+              <span class="text-slate-500 text-[10px]">@ 164 Wh/km</span>
+            </div>
+          </div>
+
+          <!-- HTML5 Canvas for Dynamic Speedometer & Power Dial -->
+          <div class="relative w-full max-w-[420px] aspect-square flex items-center justify-center my-2">
+            <canvas id="gauge-canvas" width="450" height="450" class="w-full h-full object-contain"></canvas>
+            
+            <!-- Central Digital Readout Layer -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+              <span id="digital-gear-label" class="text-xs font-mono font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 mb-1">
+                PARKED
+              </span>
+              <div class="flex items-baseline justify-center">
+                <span id="digital-speed" class="text-6xl sm:text-7xl font-black font-display text-white tracking-tight leading-none">
+                  0
+                </span>
+              </div>
+              <span id="digital-unit" class="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest mt-1">
+                KM/H
+              </span>
+              <div class="mt-2 flex items-center gap-2 text-[11px] font-mono">
+                <span id="power-kw-display" class="text-cyan-400 font-bold">0 kW</span>
+                <span class="text-slate-600">•</span>
+                <span id="g-force-display" class="text-slate-400">0.00 G</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Throttle / Brake Virtual Pedals & Hotkeys Bar -->
+          <div class="w-full pt-4 border-t border-cockpit-border/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <!-- Brake Pedal Button -->
+              <button id="brake-pedal-btn" class="flex-1 sm:flex-none px-5 py-3 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-all transform active:scale-95 select-none" title="Hold to Brake / Regenerative Recharging (Down Arrow)">
+                <i data-lucide="disc" class="w-4 h-4"></i>
+                <span>Regen Brake (<kbd class="text-[10px] bg-slate-900 px-1 py-0.5 rounded border border-slate-700">↓</kbd>)</span>
+              </button>
+
+              <!-- Accelerate Pedal Button -->
+              <button id="throttle-pedal-btn" class="flex-1 sm:flex-none px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 transition-all transform active:scale-95 select-none" title="Hold to Accelerate (Up Arrow)">
+                <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+                <span>Accelerate (<kbd class="text-[10px] bg-slate-900 px-1 py-0.5 rounded border border-slate-700">↑</kbd>)</span>
+              </button>
+            </div>
+
+            <!-- Driving Safety Warning Hint -->
+            <span class="text-[10px] font-mono text-slate-500 text-center sm:text-right">
+              Switch gear to <kbd class="px-1 text-slate-300 bg-slate-800 rounded">D</kbd> Drive first to accelerate.
+            </span>
+          </div>
+
+        </div>
+
+        <!-- Powertrain Telemetry & TPMS Tire Status -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          <!-- TPMS 4-Wheel Pressure & Temp -->
+          <div class="glass-panel rounded-2xl p-4 border border-cockpit-border">
+            <div class="flex items-center justify-between pb-2 border-b border-cockpit-border/80 mb-3">
+              <span class="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                <i data-lucide="circle-dot" class="w-3.5 h-3.5 text-cyan-400"></i>
+                Tire Pressure (TPMS)
+              </span>
+              <span class="text-[10px] font-mono text-emerald-400 font-bold">ALL OPTIMAL</span>
+            </div>
+
+            <!-- 4 Tires Visual Layout -->
+            <div class="grid grid-cols-2 gap-2 text-xs font-mono text-center">
+              <div class="p-2 rounded-lg bg-cockpit-card border border-cockpit-border">
+                <span class="text-[10px] text-slate-500 block">FRONT LEFT</span>
+                <span class="font-bold text-white">38.2 PSI</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">32°C</span>
+              </div>
+              <div class="p-2 rounded-lg bg-cockpit-card border border-cockpit-border">
+                <span class="text-[10px] text-slate-500 block">FRONT RIGHT</span>
+                <span class="font-bold text-white">38.4 PSI</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">33°C</span>
+              </div>
+              <div class="p-2 rounded-lg bg-cockpit-card border border-cockpit-border">
+                <span class="text-[10px] text-slate-500 block">REAR LEFT</span>
+                <span class="font-bold text-white">39.0 PSI</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">35°C</span>
+              </div>
+              <div class="p-2 rounded-lg bg-cockpit-card border border-cockpit-border">
+                <span class="text-[10px] text-slate-500 block">REAR RIGHT</span>
+                <span class="font-bold text-white">39.1 PSI</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5">35°C</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Suspension & Aero Actuators -->
+          <div class="glass-panel rounded-2xl p-4 border border-cockpit-border flex flex-col justify-between">
+            <div class="flex items-center justify-between pb-2 border-b border-cockpit-border/80 mb-3">
+              <span class="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i>
+                Adaptive Air Suspension
+              </span>
+              <span id="suspension-status-label" class="text-[10px] font-mono text-cyan-400 font-bold">135 mm (Normal)</span>
+            </div>
+
+            <!-- Suspension Height Buttons -->
+            <div class="grid grid-cols-3 gap-2 text-xs font-mono mb-2">
+              <button class="susp-btn p-2 rounded-lg border border-cockpit-border bg-cockpit-card hover:border-cyan-500/50 text-slate-300" data-height="low" data-val="105 mm (Low Track)">Low</button>
+              <button class="susp-btn active-susp p-2 rounded-lg border-2 border-cyan-500 bg-cyan-950/30 text-white font-bold" data-height="mid" data-val="135 mm (Normal)">Standard</button>
+              <button class="susp-btn p-2 rounded-lg border border-cockpit-border bg-cockpit-card hover:border-cyan-500/50 text-slate-300" data-height="high" data-val="165 mm (High)">High Lift</button>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-cockpit-border">
+              <span>Active Rear Aero Wing:</span>
+              <span id="aero-wing-status" class="text-slate-200 font-bold">Auto Deployed @ 90 km/h</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: ADAS LiDAR Mesh, Cabin Climate & Infotainment (5 Cols) -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- ADAS Vision & LiDAR Road Mesh View -->
+        <div class="glass-card rounded-2xl p-5 border border-cockpit-border shadow-2xl relative overflow-hidden">
+          
+          <div class="flex items-center justify-between pb-3 border-b border-cockpit-border/80 mb-3 text-xs font-mono">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span class="font-bold text-white font-display">Neural ADAS Vision Feed</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">LiDAR 360° • 120 FPS</span>
+          </div>
+
+          <!-- Simulated Road Perspective Canvas / Visual -->
+          <div class="relative rounded-xl overflow-hidden bg-slate-950 aspect-[16/10] border border-cockpit-border flex items-center justify-center">
+            
+            <!-- Road Horizon Perspective Grid Lines -->
+            <div class="absolute inset-0 opacity-40 bg-[linear-gradient(to_bottom,transparent_0%,rgba(6,182,212,0.15)_100%),radial-gradient(circle_at_50%_0%,rgba(6,182,212,0.2),transparent_70%)]"></div>
+            
+            <!-- Animated Road Lane Markings -->
+            <div class="w-24 h-full border-x-2 border-dashed border-cyan-500/50 relative flex items-center justify-center">
+              <!-- Lead Vehicle Target Marker -->
+              <div id="adas-lead-car" class="w-12 h-16 rounded-lg bg-cyan-900/60 border border-cyan-400 flex flex-col items-center justify-center text-[9px] font-mono text-cyan-300 absolute top-8 shadow-lg shadow-cyan-500/20">
+                <i data-lucide="car" class="w-5 h-5 mb-0.5"></i>
+                <span>42m</span>
+              </div>
+
+              <!-- Own Vehicle Anchor -->
+              <div class="w-14 h-20 rounded-xl bg-blue-600/30 border-2 border-cyan-400 flex flex-col items-center justify-center text-[10px] font-mono text-white absolute bottom-3 shadow-xl shadow-cyan-500/30">
+                <i data-lucide="shield-check" class="w-5 h-5 text-cyan-300 mb-0.5"></i>
+                <span class="font-bold">APEX</span>
+              </div>
+            </div>
+
+            <!-- ADAS Active Status Badge -->
+            <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md text-[10px] font-mono text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+              <i data-lucide="check-circle" class="w-3 h-3"></i> Lane Centering Active
+            </div>
+            <div class="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md text-[10px] font-mono text-cyan-400 border border-cyan-500/30">
+              Blindspot Clear
+            </div>
+
+          </div>
+
+          <!-- Vehicle Doors & Locks Quick Controls -->
+          <div class="grid grid-cols-4 gap-2 pt-3 text-xs font-mono text-center">
+            <button id="lock-doors-btn" class="p-2 rounded-lg bg-cockpit-surface border border-cockpit-border hover:border-slate-500 text-slate-300 hover:text-white transition-colors">
+              <i id="lock-icon" data-lucide="lock" class="w-4 h-4 mx-auto mb-1 text-cyan-400"></i>
+              <span class="text-[10px] block">Doors</span>
+            </button>
+            <button id="frunk-btn" class="p-2 rounded-lg bg-cockpit-surface border border-cockpit-border hover:border-slate-500 text-slate-300 hover:text-white transition-colors">
+              <i data-lucide="box" class="w-4 h-4 mx-auto mb-1 text-slate-400"></i>
+              <span class="text-[10px] block">Frunk</span>
+            </button>
+            <button id="trunk-btn" class="p-2 rounded-lg bg-cockpit-surface border border-cockpit-border hover:border-slate-500 text-slate-300 hover:text-white transition-colors">
+              <i data-lucide="archive" class="w-4 h-4 mx-auto mb-1 text-slate-400"></i>
+              <span class="text-[10px] block">Trunk</span>
+            </button>
+            <button id="charge-port-btn" class="p-2 rounded-lg bg-cockpit-surface border border-cockpit-border hover:border-slate-500 text-slate-300 hover:text-white transition-colors">
+              <i data-lucide="plug-zap" class="w-4 h-4 mx-auto mb-1 text-emerald-400"></i>
+              <span class="text-[10px] block">Charge Port</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Cabin Climate & Heated Seats Station -->
+        <div class="glass-card rounded-2xl p-5 border border-cockpit-border">
+          <div class="flex items-center justify-between pb-3 border-b border-cockpit-border/80 mb-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="thermometer-snowflake" class="w-4 h-4 text-cyan-400"></i>
+              <h4 class="text-xs font-bold text-white uppercase font-mono tracking-wider">Dual-Zone Climate Station</h4>
+            </div>
+            <button id="ac-power-btn" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              AC AUTO ON
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 text-xs font-mono">
+            
+            <!-- Driver Temp -->
+            <div class="p-3 rounded-xl bg-cockpit-surface/80 border border-cockpit-border flex flex-col items-center">
+              <span class="text-[10px] text-slate-400 mb-1">DRIVER (LEFT)</span>
+              <div class="flex items-center gap-3 my-1">
+                <button id="temp-driver-down" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center font-bold text-slate-300">-</button>
+                <span id="temp-driver-val" class="text-xl font-bold font-display text-white">21.5°</span>
+                <button id="temp-driver-up" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center font-bold text-slate-300">+</button>
+              </div>
+              <button id="seat-driver-btn" class="mt-2 text-[10px] text-slate-400 hover:text-amber-400 flex items-center gap-1 font-mono">
+                <i data-lucide="flame" class="w-3 h-3 text-amber-500"></i> Heat: <span id="seat-driver-level">Level 2</span>
+              </button>
+            </div>
+
+            <!-- Passenger Temp -->
+            <div class="p-3 rounded-xl bg-cockpit-surface/80 border border-cockpit-border flex flex-col items-center">
+              <span class="text-[10px] text-slate-400 mb-1">PASSENGER (RIGHT)</span>
+              <div class="flex items-center gap-3 my-1">
+                <button id="temp-pass-down" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center font-bold text-slate-300">-</button>
+                <span id="temp-pass-val" class="text-xl font-bold font-display text-white">22.0°</span>
+                <button id="temp-pass-up" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center font-bold text-slate-300">+</button>
+              </div>
+              <button id="seat-pass-btn" class="mt-2 text-[10px] text-slate-400 hover:text-amber-400 flex items-center gap-1 font-mono">
+                <i data-lucide="flame" class="w-3 h-3 text-amber-500"></i> Heat: <span id="seat-pass-level">Level 1</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Spatial Audio & Media Player Station -->
+        <div class="glass-panel rounded-2xl p-4 border border-cockpit-border flex items-center justify-between gap-3 text-xs font-mono">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 p-0.5 flex-shrink-0">
+              <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=120&q=80" alt="Album Cover" class="w-full h-full object-cover rounded-md">
+            </div>
+            <div class="min-w-0">
+              <h5 class="text-xs font-bold text-white truncate">Solaris Neon Highway (FLAC Spatial)</h5>
+              <span class="text-[10px] text-slate-400 truncate block">Kavinsky &amp; Daft Punk • Dolby Atmos</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="media-prev-btn" class="p-1 rounded text-slate-400 hover:text-white transition-colors">
+              <i data-lucide="skip-back" class="w-4 h-4"></i>
+            </button>
+            <button id="media-play-btn" class="w-7 h-7 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center transition-all shadow-md shadow-cyan-500/30">
+              <i id="media-play-icon" data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+            </button>
+            <button id="media-next-btn" class="p-1 rounded text-slate-400 hover:text-white transition-colors">
+              <i data-lucide="skip-forward" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Footer -->
+  <footer class="mt-20 border-t border-cockpit-border/70 bg-cockpit-dark py-8 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="font-display font-bold text-slate-300">Daily UI/UX Series</span>
+        <span class="text-slate-600">•</span>
+        <span>Day 034: Automotive Dashboard &amp; EV Telemetry Hub</span>
+      </div>
+      <div class="font-mono text-[11px] text-slate-400">
+        HTML5 Canvas Real-Time Gauge, Web Audio API EV Motor Synthesis &amp; ADAS Telemetry
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic & Web Audio Engine Script -->
+  <script>
+    // --- 1. Sound Synthesis Engine (Web Audio API) ---
+    class EVSoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.motorOsc = null;
+        this.motorGain = null;
+        this.isMotorRunning = false;
+        this.signalInterval = null;
+        this.signalActive = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      startMotorWhine() {
+        if (this.muted || this.isMotorRunning) return;
+        this.init();
+        if (!this.ctx) return;
+
+        this.motorOsc = this.ctx.createOscillator();
+        this.motorGain = this.ctx.createGain();
+
+        this.motorOsc.type = 'sine';
+        this.motorOsc.frequency.setValueAtTime(80, this.ctx.currentTime);
+        this.motorGain.gain.setValueAtTime(0.01, this.ctx.currentTime);
+
+        this.motorOsc.connect(this.motorGain);
+        this.motorGain.connect(this.ctx.destination);
+
+        this.motorOsc.start();
+        this.isMotorRunning = true;
+      }
+
+      updateMotorFrequency(speedKmH, powerKW) {
+        if (!this.isMotorRunning || !this.motorOsc) return;
+        // Pitch scales smoothly from 80Hz up to 600Hz as speed reaches 250 km/h
+        const freq = Math.min(650, 80 + speedKmH * 2.2);
+        this.motorOsc.frequency.setTargetAtTime(freq, this.ctx.currentTime, 0.05);
+
+        // Volume scales with power demand
+        const vol = Math.min(0.08, 0.01 + Math.abs(powerKW) / 5000);
+        this.motorGain.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.05);
+      }
+
+      stopMotorWhine() {
+        if (!this.isMotorRunning || !this.motorGain) return;
+        this.motorGain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.1);
+        setTimeout(() => {
+          if (this.motorOsc) {
+            try { this.motorOsc.stop(); } catch(e){}
+            this.motorOsc = null;
+            this.isMotorRunning = false;
+          }
+        }, 110);
+      }
+
+      playGearClick() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.06);
+
+        gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.06);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.065);
+      }
+
+      playTurnTick(isHigh = true) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(isHigh ? 900 : 750, this.ctx.currentTime);
+
+        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.035);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.04);
+      }
+    }
+
+    const sound = new EVSoundEngine();
+
+    // --- 2. Cockpit Telemetry State ---
+    const vehicle = {
+      speed: 0,            // km/h (0 to 320)
+      targetSpeed: 0,
+      powerKW: 0,          // -180 kW regen to +580 kW boost
+      gear: 'P',           // P, R, N, D
+      driveMode: 'comfort',// eco, comfort, sport, autopilot
+      socPct: 82,          // %
+      unit: 'KM/H',        // KM/H or MPH
+      driverTemp: 21.5,
+      passTemp: 22.0,
+      driverSeatHeat: 2,
+      passSeatHeat: 1,
+      doorsLocked: true,
+      frunkOpen: false,
+      trunkOpen: false,
+      chargePortOpen: false,
+      suspension: 'mid',
+      headlights: true,
+      turnSignal: null     // 'left', 'right', 'hazard', or null
+    };
+
+    // --- 3. Dynamic Instrument Gauge Canvas Engine ---
+    class InstrumentGaugeRenderer {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.currentSpeed = 0;
+        this.currentPower = 0;
+        this.startLoop();
+      }
+
+      startLoop() {
+        const render = () => {
+          // Smooth physics lerp
+          this.currentSpeed += (vehicle.speed - this.currentSpeed) * 0.15;
+          this.currentPower += (vehicle.powerKW - this.currentPower) * 0.15;
+          this.draw();
+          requestAnimationFrame(render);
+        };
+        requestAnimationFrame(render);
+      }
+
+      draw() {
+        const ctx = this.ctx;
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        const cx = width / 2;
+        const cy = height / 2;
+        const radius = 175;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. Background Arc Track (from 135 deg to 405 deg)
+        const startAngle = (135 * Math.PI) / 180;
+        const endAngle = (405 * Math.PI) / 180;
+        const totalAngle = endAngle - startAngle;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, startAngle, endAngle);
+        ctx.strokeStyle = '#141c2e';
+        ctx.lineWidth = 14;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // 2. Active Speed Fill Arc
+        const maxSpeed = vehicle.unit === 'KM/H' ? 320 : 200;
+        const speedPct = Math.min(1.0, Math.max(0, this.currentSpeed / maxSpeed));
+        const activeEndAngle = startAngle + totalAngle * speedPct;
+
+        if (speedPct > 0.005) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius, startAngle, activeEndAngle);
+
+          // Theme color gradient depending on drive mode
+          const grad = ctx.createLinearGradient(0, 0, width, height);
+          if (vehicle.driveMode === 'eco') {
+            grad.addColorStop(0, '#10b981');
+            grad.addColorStop(1, '#06b6d4');
+          } else if (vehicle.driveMode === 'sport') {
+            grad.addColorStop(0, '#f59e0b');
+            grad.addColorStop(1, '#ef4444');
+          } else if (vehicle.driveMode === 'autopilot') {
+            grad.addColorStop(0, '#8b5cf6');
+            grad.addColorStop(1, '#3b82f6');
+          } else {
+            grad.addColorStop(0, '#06b6d4');
+            grad.addColorStop(1, '#3b82f6');
+          }
+
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 14;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+        }
+
+        // 3. Tick Marks
+        ctx.save();
+        ctx.translate(cx, cy);
+        const tickCount = 20;
+        for (let i = 0; i <= tickCount; i++) {
+          const tAngle = startAngle + (totalAngle / tickCount) * i;
+          const isMajor = i % 5 === 0;
+          const innerR = radius - (isMajor ? 20 : 12);
+          const outerR = radius - 6;
+
+          const x1 = Math.cos(tAngle) * innerR;
+          const y1 = Math.sin(tAngle) * innerR;
+          const x2 = Math.cos(tAngle) * outerR;
+          const y2 = Math.sin(tAngle) * outerR;
+
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.strokeStyle = isMajor ? '#64748b' : '#334155';
+          ctx.lineWidth = isMajor ? 2 : 1;
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // 4. Power & Regen Meter Inner Arc
+        // Regen: -180 kW (Emerald left arc)
+        // Acceleration: +580 kW (Cyan right arc)
+        const powerRadius = radius - 34;
+        ctx.beginPath();
+        ctx.arc(cx, cy, powerRadius, startAngle, endAngle);
+        ctx.strokeStyle = '#0d1322';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+
+        // Active Power Needle / Segment
+        const centerAngle = (270 * Math.PI) / 180;
+        if (this.currentPower < 0) {
+          // Regenerative braking (green arc to the left)
+          const regenPct = Math.min(1.0, Math.abs(this.currentPower) / 180);
+          const rAngle = centerAngle - (totalAngle / 2) * regenPct * 0.7;
+          ctx.beginPath();
+          ctx.arc(cx, cy, powerRadius, rAngle, centerAngle);
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 6;
+          ctx.stroke();
+        } else if (this.currentPower > 0) {
+          // Positive Acceleration kW (cyan/red arc to the right)
+          const accPct = Math.min(1.0, this.currentPower / 580);
+          const aAngle = centerAngle + (totalAngle / 2) * accPct * 0.7;
+          ctx.beginPath();
+          ctx.arc(cx, cy, powerRadius, centerAngle, aAngle);
+          ctx.strokeStyle = vehicle.driveMode === 'sport' ? '#ef4444' : '#06b6d4';
+          ctx.lineWidth = 6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    let gaugeRenderer = null;
+
+    // --- 4. Vehicle Dynamics & Simulation Loop ---
+    let isThrottleHeld = false;
+    let isBrakeHeld = false;
+
+    function tickPhysics() {
+      if (vehicle.gear === 'D') {
+        if (isThrottleHeld) {
+          // Acceleration dynamics
+          const accelRate = vehicle.driveMode === 'sport' ? 3.4 : (vehicle.driveMode === 'eco' ? 1.4 : 2.2);
+          const topSpeed = vehicle.driveMode === 'sport' ? 315 : (vehicle.driveMode === 'eco' ? 150 : 250);
+          vehicle.speed = Math.min(topSpeed, vehicle.speed + accelRate);
+          vehicle.powerKW = Math.min(580, vehicle.speed * 2.1 + 80);
+
+          sound.startMotorWhine();
+          sound.updateMotorFrequency(vehicle.speed, vehicle.powerKW);
+        } else if (isBrakeHeld) {
+          // Regenerative Braking
+          vehicle.speed = Math.max(0, vehicle.speed - 4.5);
+          vehicle.powerKW = vehicle.speed > 5 ? -145 : 0;
+          sound.updateMotorFrequency(vehicle.speed, vehicle.powerKW);
+        } else {
+          // Coasting drag
+          vehicle.speed = Math.max(0, vehicle.speed - 0.7);
+          vehicle.powerKW = vehicle.speed > 5 ? -25 : 0;
+          if (vehicle.speed <= 0) sound.stopMotorWhine();
+        }
+      } else if (vehicle.gear === 'R') {
+        if (isThrottleHeld) {
+          vehicle.speed = Math.min(45, vehicle.speed + 1.2);
+          vehicle.powerKW = 45;
+          sound.startMotorWhine();
+        } else {
+          vehicle.speed = Math.max(0, vehicle.speed - 1.0);
+          vehicle.powerKW = 0;
+        }
+      } else {
+        // Park or Neutral
+        vehicle.speed = Math.max(0, vehicle.speed - 2.0);
+        vehicle.powerKW = 0;
+        sound.stopMotorWhine();
+      }
+
+      // Update Digital Readouts
+      const displayedSpeed = vehicle.unit === 'KM/H' ? Math.round(vehicle.speed) : Math.round(vehicle.speed * 0.621371);
+      document.getElementById('digital-speed').textContent = displayedSpeed;
+      document.getElementById('power-kw-display').textContent = `${Math.round(vehicle.powerKW)} kW`;
+
+      // G-force calculation
+      const gForce = (isThrottleHeld ? (vehicle.driveMode === 'sport' ? 0.85 : 0.42) : (isBrakeHeld ? -0.75 : 0.05)).toFixed(2);
+      document.getElementById('g-force-display').textContent = `${gForce} G`;
+
+      // Dynamic Range calculation based on SoC and speed
+      const baseRangeKm = Math.round((vehicle.socPct / 100) * 590);
+      const displayedRange = vehicle.unit === 'KM/H' ? `${baseRangeKm} km` : `${Math.round(baseRangeKm * 0.621371)} mi`;
+      document.getElementById('range-val').textContent = displayedRange;
+    }
+
+    setInterval(tickPhysics, 50);
+
+    // --- 5. Event Listeners & Hardware Toggles ---
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      gaugeRenderer = new InstrumentGaugeRenderer('gauge-canvas');
+
+      // Pedal Event Listeners (Virtual Pedals)
+      const throttleBtn = document.getElementById('throttle-pedal-btn');
+      const brakeBtn = document.getElementById('brake-pedal-btn');
+
+      ['mousedown', 'touchstart'].forEach(evt => {
+        throttleBtn.addEventListener(evt, (e) => {
+          e.preventDefault();
+          if (vehicle.gear === 'P') {
+            showToast('⚠️ Shift into Drive (D) to accelerate!');
+            return;
+          }
+          isThrottleHeld = true;
+          isBrakeHeld = false;
+        });
+
+        brakeBtn.addEventListener(evt, (e) => {
+          e.preventDefault();
+          isBrakeHeld = true;
+          isThrottleHeld = false;
+        });
+      });
+
+      ['mouseup', 'mouseleave', 'touchend'].forEach(evt => {
+        throttleBtn.addEventListener(evt, () => { isThrottleHeld = false; });
+        brakeBtn.addEventListener(evt, () => { isBrakeHeld = false; });
+      });
+
+      // Keyboard Controls (Up = Throttle, Down = Brake, P/R/N/D)
+      window.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+          e.preventDefault();
+          if (vehicle.gear === 'P') {
+            showToast('⚠️ Shift to Drive (D) first!');
+            return;
+          }
+          isThrottleHeld = true;
+          isBrakeHeld = false;
+        } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+          e.preventDefault();
+          isBrakeHeld = true;
+          isThrottleHeld = false;
+        } else if (['p', 'P'].includes(e.key)) {
+          setGear('P');
+        } else if (['r', 'R'].includes(e.key)) {
+          setGear('R');
+        } else if (['n', 'N'].includes(e.key)) {
+          setGear('N');
+        } else if (['d', 'D'].includes(e.key)) {
+          setGear('D');
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (['ArrowUp', 'w', 'W'].includes(e.key)) isThrottleHeld = false;
+        if (['ArrowDown', 's', 'S'].includes(e.key)) isBrakeHeld = false;
+      });
+
+      // Gear Selector Function
+      function setGear(g) {
+        if (vehicle.speed > 5 && g === 'P') {
+          showToast('⚠️ Bring vehicle to complete stop before Park!');
+          return;
+        }
+        vehicle.gear = g;
+        sound.playGearClick();
+
+        document.querySelectorAll('.gear-btn').forEach(btn => {
+          if (btn.dataset.gear === g) {
+            btn.className = 'gear-btn px-2.5 py-1 rounded-lg text-emerald-400 bg-emerald-500/20 border border-emerald-500/40 font-bold active-gear';
+          } else {
+            btn.className = 'gear-btn px-2.5 py-1 rounded-lg text-slate-500 hover:text-white transition-colors';
+          }
+        });
+
+        const labelMap = { P: 'PARKED', R: 'REVERSE', N: 'NEUTRAL', D: 'DRIVE' };
+        document.getElementById('digital-gear-label').textContent = labelMap[g];
+        announceA11y(`Gear engaged: ${labelMap[g]}`);
+        showToast(`Gear shifted to ${labelMap[g]}`);
+      }
+
+      document.querySelectorAll('.gear-btn').forEach(btn => {
+        btn.addEventListener('click', () => setGear(btn.dataset.gear));
+      });
+
+      // Drive Mode Selector
+      const driveButtons = document.querySelectorAll('.drive-mode-btn');
+      const ambient1 = document.getElementById('ambient-glow-1');
+      const headerDriveBadge = document.getElementById('header-drive-badge');
+
+      driveButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          driveButtons.forEach(b => {
+            b.className = 'drive-mode-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+          });
+
+          vehicle.driveMode = btn.dataset.mode;
+          sound.playGearClick();
+
+          if (vehicle.driveMode === 'eco') {
+            btn.className = 'drive-mode-btn active-mode px-3.5 py-1.5 rounded-xl font-bold text-slate-950 bg-emerald-400 shadow-md shadow-emerald-500/30 transition-all flex items-center gap-1.5';
+            ambient1.className = 'absolute -top-[15%] left-1/4 w-[600px] h-[600px] bg-emerald-600/15 rounded-full blur-[140px] transition-colors duration-700';
+            headerDriveBadge.textContent = 'ECO RANGE+';
+            headerDriveBadge.className = 'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+            showToast('🌿 Eco Range+ Mode: Throttle smoothed, +18% battery range');
+          } else if (vehicle.driveMode === 'sport') {
+            btn.className = 'drive-mode-btn active-mode px-3.5 py-1.5 rounded-xl font-bold text-white bg-rose-600 shadow-md shadow-rose-600/30 transition-all flex items-center gap-1.5';
+            ambient1.className = 'absolute -top-[15%] left-1/4 w-[600px] h-[600px] bg-rose-600/20 rounded-full blur-[140px] transition-colors duration-700';
+            headerDriveBadge.textContent = 'TRACK GT';
+            headerDriveBadge.className = 'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20';
+            showToast('🔥 Track GT Mode: Full 580 kW torque unleashed');
+          } else if (vehicle.driveMode === 'autopilot') {
+            btn.className = 'drive-mode-btn active-mode px-3.5 py-1.5 rounded-xl font-bold text-white bg-violet-600 shadow-md shadow-violet-600/30 transition-all flex items-center gap-1.5';
+            ambient1.className = 'absolute -top-[15%] left-1/4 w-[600px] h-[600px] bg-violet-600/20 rounded-full blur-[140px] transition-colors duration-700';
+            headerDriveBadge.textContent = 'NEURAL AUTOPILOT';
+            headerDriveBadge.className = 'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20';
+            showToast('👁️ Neural Drive Engaged: Hands-on monitoring active');
+          } else {
+            btn.className = 'drive-mode-btn active-mode px-3.5 py-1.5 rounded-xl font-bold text-slate-950 bg-cyan-400 shadow-md shadow-cyan-500/30 transition-all flex items-center gap-1.5';
+            ambient1.className = 'absolute -top-[15%] left-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[140px] transition-colors duration-700';
+            headerDriveBadge.textContent = 'COMFORT TOURING';
+            headerDriveBadge.className = 'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20';
+            showToast('⚡ Comfort Mode Active: Balanced active damping');
+          }
+        });
+      });
+
+      // Unit Toggle (KM/H vs MPH)
+      document.getElementById('unit-toggle-btn').addEventListener('click', () => {
+        vehicle.unit = vehicle.unit === 'KM/H' ? 'MPH' : 'KM/H';
+        document.getElementById('unit-label').textContent = vehicle.unit;
+        document.getElementById('digital-unit').textContent = vehicle.unit;
+        sound.playGearClick();
+        showToast(`Speedometer units set to ${vehicle.unit}`);
+      });
+
+      // Turn Signals Relay simulation
+      let signalState = false;
+      const leftBtn = document.getElementById('signal-left-btn');
+      const rightBtn = document.getElementById('signal-right-btn');
+      const hazardBtn = document.getElementById('hazard-btn');
+
+      function startTurnSignals(mode) {
+        if (vehicle.turnSignal === mode) {
+          // Toggle off
+          clearInterval(sound.signalInterval);
+          vehicle.turnSignal = null;
+          leftBtn.classList.remove('text-emerald-400');
+          rightBtn.classList.remove('text-emerald-400');
+          hazardBtn.classList.remove('text-amber-400');
+          return;
+        }
+
+        clearInterval(sound.signalInterval);
+        vehicle.turnSignal = mode;
+
+        sound.signalInterval = setInterval(() => {
+          signalState = !signalState;
+          sound.playTurnTick(signalState);
+
+          if (mode === 'left') {
+            leftBtn.classList.toggle('text-emerald-400', signalState);
+          } else if (mode === 'right') {
+            rightBtn.classList.toggle('text-emerald-400', signalState);
+          } else if (mode === 'hazard') {
+            hazardBtn.classList.toggle('text-amber-400', signalState);
+            leftBtn.classList.toggle('text-amber-400', signalState);
+            rightBtn.classList.toggle('text-amber-400', signalState);
+          }
+        }, 380);
+      }
+
+      leftBtn.addEventListener('click', () => startTurnSignals('left'));
+      rightBtn.addEventListener('click', () => startTurnSignals('right'));
+      hazardBtn.addEventListener('click', () => startTurnSignals('hazard'));
+
+      // Dual-Zone Climate Controls
+      const tempDriverEl = document.getElementById('temp-driver-val');
+      const tempPassEl = document.getElementById('temp-pass-val');
+
+      document.getElementById('temp-driver-up').addEventListener('click', () => {
+        vehicle.driverTemp = Math.min(28.0, vehicle.driverTemp + 0.5);
+        tempDriverEl.textContent = vehicle.driverTemp.toFixed(1) + '°';
+        sound.playGearClick();
+      });
+      document.getElementById('temp-driver-down').addEventListener('click', () => {
+        vehicle.driverTemp = Math.max(16.0, vehicle.driverTemp - 0.5);
+        tempDriverEl.textContent = vehicle.driverTemp.toFixed(1) + '°';
+        sound.playGearClick();
+      });
+
+      document.getElementById('temp-pass-up').addEventListener('click', () => {
+        vehicle.passTemp = Math.min(28.0, vehicle.passTemp + 0.5);
+        tempPassEl.textContent = vehicle.passTemp.toFixed(1) + '°';
+        sound.playGearClick();
+      });
+      document.getElementById('temp-pass-down').addEventListener('click', () => {
+        vehicle.passTemp = Math.max(16.0, vehicle.passTemp - 0.5);
+        tempPassEl.textContent = vehicle.passTemp.toFixed(1) + '°';
+        sound.playGearClick();
+      });
+
+      // Heated Seats Toggles
+      const driverSeatBtn = document.getElementById('seat-driver-btn');
+      const driverSeatLevel = document.getElementById('seat-driver-level');
+      driverSeatBtn.addEventListener('click', () => {
+        vehicle.driverSeatHeat = (vehicle.driverSeatHeat + 1) % 4;
+        driverSeatLevel.textContent = vehicle.driverSeatHeat === 0 ? 'OFF' : `Level ${vehicle.driverSeatHeat}`;
+        sound.playGearClick();
+      });
+
+      const passSeatBtn = document.getElementById('seat-pass-btn');
+      const passSeatLevel = document.getElementById('seat-pass-level');
+      passSeatBtn.addEventListener('click', () => {
+        vehicle.passSeatHeat = (vehicle.passSeatHeat + 1) % 4;
+        passSeatLevel.textContent = vehicle.passSeatHeat === 0 ? 'OFF' : `Level ${vehicle.passSeatHeat}`;
+        sound.playGearClick();
+      });
+
+      // Door Locks / Frunk / Trunk / Charge Port
+      const lockDoorsBtn = document.getElementById('lock-doors-btn');
+      const lockIcon = document.getElementById('lock-icon');
+      lockDoorsBtn.addEventListener('click', () => {
+        vehicle.doorsLocked = !vehicle.doorsLocked;
+        lockIcon.setAttribute('data-lucide', vehicle.doorsLocked ? 'lock' : 'unlock');
+        lockIcon.className = vehicle.doorsLocked ? 'w-4 h-4 mx-auto mb-1 text-cyan-400' : 'w-4 h-4 mx-auto mb-1 text-amber-400';
+        sound.playGearClick();
+        showToast(vehicle.doorsLocked ? '🔒 All doors locked' : '🔓 All doors unlocked');
+        lucide.createIcons();
+      });
+
+      document.getElementById('frunk-btn').addEventListener('click', () => {
+        vehicle.frunkOpen = !vehicle.frunkOpen;
+        sound.playGearClick();
+        showToast(vehicle.frunkOpen ? '📦 Front trunk (Frunk) unlatched' : '📦 Front trunk secured');
+      });
+
+      document.getElementById('trunk-btn').addEventListener('click', () => {
+        vehicle.trunkOpen = !vehicle.trunkOpen;
+        sound.playGearClick();
+        showToast(vehicle.trunkOpen ? '🚗 Power liftgate opened' : '🚗 Power liftgate closed');
+      });
+
+      document.getElementById('charge-port-btn').addEventListener('click', () => {
+        vehicle.chargePortOpen = !vehicle.chargePortOpen;
+        sound.playGearClick();
+        showToast(vehicle.chargePortOpen ? '⚡ CCS / NACS Charge door opened' : '⚡ Charge door closed');
+      });
+
+      // Suspension Height Buttons
+      const suspBtns = document.querySelectorAll('.susp-btn');
+      const suspLabel = document.getElementById('suspension-status-label');
+      suspBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          suspBtns.forEach(b => {
+            b.className = 'susp-btn p-2 rounded-lg border border-cockpit-border bg-cockpit-card hover:border-cyan-500/50 text-slate-300';
+          });
+          btn.className = 'susp-btn active-susp p-2 rounded-lg border-2 border-cyan-500 bg-cyan-950/30 text-white font-bold';
+          suspLabel.textContent = btn.dataset.val;
+          sound.playGearClick();
+          showToast(`Suspension calibrated to ${btn.dataset.val}`);
+        });
+      });
+
+      // Media Play/Pause
+      let isPlaying = false;
+      const mediaPlayBtn = document.getElementById('media-play-btn');
+      const mediaPlayIcon = document.getElementById('media-play-icon');
+      mediaPlayBtn.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        mediaPlayIcon.setAttribute('data-lucide', isPlaying ? 'pause' : 'play');
+        sound.playGearClick();
+        showToast(isPlaying ? '🎵 Playing: Solaris Neon Highway (Spatial)' : '⏸️ Media playback paused');
+        lucide.createIcons();
+      });
+
+      // Sound Engine Mute Toggle
+      const soundBtn = document.getElementById('sound-toggle-btn');
+      const soundIcon = document.getElementById('sound-icon');
+      soundBtn.addEventListener('click', () => {
+        sound.muted = !sound.muted;
+        if (sound.muted) {
+          soundIcon.setAttribute('data-lucide', 'volume-x');
+          soundIcon.classList.remove('text-emerald-400');
+          soundIcon.classList.add('text-slate-500');
+          showToast('Cockpit audio muted');
+        } else {
+          soundIcon.setAttribute('data-lucide', 'volume-2');
+          soundIcon.classList.remove('text-slate-500');
+          soundIcon.classList.add('text-emerald-400');
+          sound.playGearClick();
+          showToast('Cockpit audio synthesizer active');
+        }
+        lucide.createIcons();
+      });
+    });
+
+    function announceA11y(msg) {
+      const announcer = document.getElementById('a11y-cockpit-announcer');
+      if (announcer) announcer.textContent = msg;
+    }
+
+    // Toast Notification helper
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'px-4 py-2.5 rounded-xl bg-cockpit-card border border-cyan-500/50 text-white text-xs font-semibold shadow-2xl flex items-center gap-2 transform translate-y-3 opacity-0 transition-all duration-300 backdrop-blur-md pointer-events-auto font-mono';
+      toast.innerHTML = `<i data-lucide="zap" class="w-4 h-4 text-cyan-400 flex-shrink-0"></i> <span>${message}</span>`;
+      container.appendChild(toast);
+
+      if (window.lucide) {
+        lucide.createIcons({ root: toast });
+      }
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-3', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-3');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
